@@ -1,0 +1,3 @@
+# LightNES
+
+A NES emulator.
