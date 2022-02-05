@@ -1,0 +1,16 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "light-nes",
+    "version-semver": "0.0.1",
+    "dependencies": [
+        "spdlog"
+    ],
+    "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
+    "overrides": [
+        {
+            "name": "spdlog",
+            "version": "1.9.0",
+            "port-version": 1
+        }
+    ]
+}

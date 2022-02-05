@@ -1,0 +1,6 @@
+#ifndef LN_CONSOLE_SPEC_HPP
+#define LN_CONSOLE_SPEC_HPP
+
+#define LN_INTERNAL_RAM_SIZE (2 * 1024) // 2KiB
+
+#endif // LN_CONSOLE_SPEC_HPP
