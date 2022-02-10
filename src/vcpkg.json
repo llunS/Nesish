@@ -3,7 +3,8 @@
     "name": "light-nes",
     "version-semver": "0.0.1",
     "dependencies": [
-        "spdlog"
+        "spdlog",
+        "gtest"
     ],
     "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
     "overrides": [
@@ -11,6 +12,10 @@
             "name": "spdlog",
             "version": "1.9.0",
             "port-version": 1
+        },
+        {
+            "name": "gtest",
+            "version": "1.11.0"
         }
     ]
 }

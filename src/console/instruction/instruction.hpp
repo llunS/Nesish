@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include "common/klass.hpp"
+
 namespace ln {
 
 enum class OpCode
@@ -116,6 +118,7 @@ enum class AddressMode
 struct Instruction {
   public:
     Instruction(uint8_t i_raw_instruction);
+    LN_KLZ_DEFAULT_COPY(Instruction);
 
     OpCode op_code;
     AddressMode address_mode;

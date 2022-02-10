@@ -4,10 +4,15 @@
 #include <cstdint>
 
 #include "console/spec.hpp"
+#include "common/klass.hpp"
 
 namespace ln {
 
 struct Memory {
+  public:
+    Memory();
+    LN_KLZ_DELETE_COPY_MOVE(Memory);
+
   public:
     friend struct CPU;
 

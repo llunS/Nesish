@@ -4,6 +4,7 @@
 #include "common/error.hpp"
 #include "console/cpu.hpp"
 #include "console/memory.hpp"
+#include "common/klass.hpp"
 
 #include <string>
 
@@ -12,6 +13,7 @@ namespace ln {
 struct Emulator {
   public:
     Emulator();
+    LN_KLZ_DELETE_COPY_MOVE(Emulator);
 
     Error
     insert_cartridge(const std::string &i_rom_path);

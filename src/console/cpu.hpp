@@ -4,12 +4,14 @@
 #include <cstdint>
 
 #include "console/memory.hpp"
+#include "common/klass.hpp"
 
 namespace ln {
 
 struct CPU {
   public:
     CPU(Memory *i_memory);
+    LN_KLZ_DELETE_COPY_MOVE(CPU);
 
   public:
     struct OpCodeExec;
