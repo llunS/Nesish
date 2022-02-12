@@ -1,5 +1,5 @@
-#ifndef LN_CONSOLE_INSTRUCTION_HPP
-#define LN_CONSOLE_INSTRUCTION_HPP
+#ifndef LN_CONSOLE_INSTRUCTION_INSTRUCTION_HPP
+#define LN_CONSOLE_INSTRUCTION_INSTRUCTION_HPP
 
 #include <cstdint>
 
@@ -84,6 +84,7 @@ enum class OpCode
     SRE,
     ALR,
     RRA,
+    ARR,
     SAX,
     XAA,
     AHX,
@@ -101,24 +102,27 @@ enum class AddressMode
 {
     // http://www.oxyron.de/html/opcodes02.html
 
-    IMP,
-    IMM,
-    ZP0, // Zeropage, pad 0 at the end the make it 3.
-    ZPX,
-    ZPY,
-    IZX,
-    IZY,
-    ABS,
-    ABX,
-    ABY,
-    IND,
-    REL,
+    IMP, // Implicit
+    IMM, // Immediate
+    ZP0, // Zeropage, pad 0 at the end the make it 3
+    ZPX, // Zero page indexed X
+    ZPY, // Zero page indexed Y
+    IZX, // Indexed indirect X
+    IZY, // Indexed indirect Y
+    ABS, // Absolute
+    ABX, // Absolute indexed X
+    ABY, // Absolute indexed Y
+    IND, // Indirect
+    REL, // Relative
 };
 
 struct Instruction {
   public:
-    Instruction(uint8_t i_raw_instruction);
+    Instruction(OpCode i_op_code, AddressMode i_address_mode);
     LN_KLZ_DEFAULT_COPY(Instruction);
+
+    static Instruction
+    decode(uint8_t i_raw_instruction);
 
     OpCode op_code;
     AddressMode address_mode;
@@ -126,4 +130,4 @@ struct Instruction {
 
 } // namespace ln
 
-#endif // LN_CONSOLE_INSTRUCTION_HPP
+#endif // LN_CONSOLE_INSTRUCTION_INSTRUCTION_HPP

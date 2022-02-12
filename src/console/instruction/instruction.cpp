@@ -1,11 +1,19 @@
 #include "instruction.hpp"
 
+#include "console/instruction/instruction_map.hpp"
+
 namespace ln {
 
-Instruction::Instruction(uint8_t i_raw_instruction)
+Instruction::Instruction(OpCode i_op_code, AddressMode i_address_mode)
+    : op_code(i_op_code)
+    , address_mode(i_address_mode)
 {
-    // @TODO: decode raw byte.
-    (void)(i_raw_instruction);
+}
+
+Instruction
+Instruction::decode(uint8_t i_raw_instruction)
+{
+    return g_instruction_map[i_raw_instruction];
 }
 
 } // namespace ln

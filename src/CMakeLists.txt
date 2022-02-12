@@ -77,6 +77,7 @@ list(APPEND Sources console/memory.cpp)
 list(APPEND Sources console/instruction/instruction.cpp)
 list(APPEND Sources console/instruction/opcode_exec.cpp)
 list(APPEND Sources console/instruction/operand_get.cpp)
+list(APPEND Sources console/instruction/instruction_map.cpp)
 
 list(APPEND Sources cartridge/cartridge_loader.cpp)
 list(APPEND Sources cartridge/ines.cpp)

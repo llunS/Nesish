@@ -1,5 +1,5 @@
-#ifndef LN_CONSOLE_OPCODEEXEC_HPP
-#define LN_CONSOLE_OPCODEEXEC_HPP
+#ifndef LN_CONSOLE_INSTRUCTION_OPCODEEXEC_HPP
+#define LN_CONSOLE_INSTRUCTION_OPCODEEXEC_HPP
 
 #include "console/cpu.hpp"
 
@@ -166,4 +166,4 @@ struct CPU::OpCodeExec {
 
 } // namespace ln
 
-#endif // LN_CONSOLE_OPCODEEXEC_HPP
+#endif // LN_CONSOLE_INSTRUCTION_OPCODEEXEC_HPP

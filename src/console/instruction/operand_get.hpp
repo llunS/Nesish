@@ -1,5 +1,5 @@
-#ifndef LN_CONSOLE_OPERANDGET_HPP
-#define LN_CONSOLE_OPERANDGET_HPP
+#ifndef LN_CONSOLE_INSTRUCTION_OPERANDGET_HPP
+#define LN_CONSOLE_INSTRUCTION_OPERANDGET_HPP
 
 #include "console/cpu.hpp"
 
@@ -38,4 +38,4 @@ struct CPU::OperandGet {
 
 } // namespace ln
 
-#endif // LN_CONSOLE_OPERANDGET_HPP
+#endif // LN_CONSOLE_INSTRUCTION_OPERANDGET_HPP
