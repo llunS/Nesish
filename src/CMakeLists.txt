@@ -96,4 +96,8 @@ target_include_directories(LightNES PRIVATE .)
 # Dependencies
 # --------------------------------------------
 
-target_link_libraries(LightNES PRIVATE Common)
+find_package(CLI11 CONFIG REQUIRED)
+
+target_link_libraries(LightNES PRIVATE Common
+    CLI11::CLI11
+)

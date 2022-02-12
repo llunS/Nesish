@@ -6,7 +6,7 @@
 namespace ln {
 
 void
-init_logger();
+init_logger(spdlog::level::level_enum i_level);
 
 spdlog::logger *
 get_logger();
