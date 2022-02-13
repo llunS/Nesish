@@ -11,7 +11,7 @@ Instruction::Instruction(OpCode i_op_code, AddressMode i_address_mode)
 }
 
 Instruction
-Instruction::decode(uint8_t i_raw_instruction)
+Instruction::decode(Byte i_raw_instruction)
 {
     return g_instruction_map[i_raw_instruction];
 }

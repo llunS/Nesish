@@ -1,9 +1,8 @@
 #ifndef LN_CONSOLE_INSTRUCTION_INSTRUCTION_HPP
 #define LN_CONSOLE_INSTRUCTION_INSTRUCTION_HPP
 
-#include <cstdint>
-
 #include "common/klass.hpp"
+#include "console/types.hpp"
 
 namespace ln {
 
@@ -108,11 +107,11 @@ enum class AddressMode
     ZPX, // Zero page indexed X
     ZPY, // Zero page indexed Y
     IZX, // Indexed indirect X
-    IZY, // Indexed indirect Y
+    IZY, // Indirect indexed Y
     ABS, // Absolute
     ABX, // Absolute indexed X
     ABY, // Absolute indexed Y
-    IND, // Indirect
+    IND, // Indirect, i.e. JMP indirect
     REL, // Relative
 };
 
@@ -122,7 +121,7 @@ struct Instruction {
     LN_KLZ_DEFAULT_COPY(Instruction);
 
     static Instruction
-    decode(uint8_t i_raw_instruction);
+    decode(Byte i_raw_instruction);
 
     OpCode op_code;
     AddressMode address_mode;

@@ -2,11 +2,11 @@
 
 #include <cassert>
 #include <cstdio>
-#include <cstdint>
 #include <cstring>
 
 #include "cartridge/ines.hpp"
 #include "common/logger.hpp"
+#include "console/types.hpp"
 
 namespace ln {
 
@@ -117,7 +117,7 @@ Error
 CartridgeLoader::pvt_load_ines_header(std::FILE *i_file, INES *io_ines)
 {
 #define INES_HEADER_SIZE 16
-    uint8_t buf[INES_HEADER_SIZE];
+    Byte buf[INES_HEADER_SIZE];
     auto got = std::fread(buf, 1, sizeof buf, i_file);
     if (got < sizeof buf)
     {
@@ -172,7 +172,7 @@ CartridgeLoader::pvt_load_ines_prg_rom(std::FILE *i_file, INES *io_ines)
     auto err = Error::OK;
 
     std::size_t rom_bytes = io_ines->m_header.prg_rom_size * 16 * 1024;
-    io_ines->m_prg_rom = new uint8_t[rom_bytes]();
+    io_ines->m_prg_rom = new Byte[rom_bytes]();
 
     constexpr std::size_t EACH_READ = 1024;
     for (std::size_t byte_idx = 0; byte_idx < rom_bytes; byte_idx += EACH_READ)
@@ -210,7 +210,7 @@ CartridgeLoader::pvt_load_ines_chr_rom(std::FILE *i_file, INES *io_ines)
     auto err = Error::OK;
 
     std::size_t rom_bytes = io_ines->m_header.chr_rom_size * 8 * 1024;
-    io_ines->m_chr_rom = new uint8_t[rom_bytes]();
+    io_ines->m_chr_rom = new Byte[rom_bytes]();
 
     constexpr std::size_t EACH_READ = 1024;
     for (std::size_t byte_idx = 0; byte_idx < rom_bytes; byte_idx += EACH_READ)

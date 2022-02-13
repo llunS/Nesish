@@ -3,8 +3,7 @@
 
 #include "cartridge/cartridge.hpp"
 #include "common/klass.hpp"
-
-#include <cstdint>
+#include "console/types.hpp"
 
 namespace ln {
 
@@ -28,29 +27,29 @@ struct INES : public Cartridge {
   private:
     // https://wiki.nesdev.org/w/index.php/INES
     struct {
-        uint8_t nes_magic[4];
-        uint8_t prg_rom_size; // in 16KB units.
-        uint8_t chr_rom_size; // in 8KB units, 0 implies CHR RAM.
+        Byte nes_magic[4];
+        Byte prg_rom_size; // in 16KB units.
+        Byte chr_rom_size; // in 8KB units, 0 implies CHR RAM.
 
         // flag 6
-        uint8_t mirror : 1; // 0: horizontal, 1: vertical.
-        uint8_t persistent_memory : 1;
-        uint8_t trainer : 1; // ignored, unsupported.
-        uint8_t four_screen_vram : 1;
-        uint8_t mapper_lower : 4;
+        Byte mirror : 1; // 0: horizontal, 1: vertical.
+        Byte persistent_memory : 1;
+        Byte trainer : 1; // ignored, unsupported.
+        Byte four_screen_vram : 1;
+        Byte mapper_lower : 4;
 
         // flag 7
-        uint8_t vs_unisystem : 1;  // ignored, unsupported.
-        uint8_t playchoice_10 : 1; // ignored, unsupported.
-        uint8_t ines2 : 2;         // 2: NES 2.0 format.
-        uint8_t mapper_upper : 4;
+        Byte vs_unisystem : 1;  // ignored, unsupported.
+        Byte playchoice_10 : 1; // ignored, unsupported.
+        Byte ines2 : 2;         // 2: NES 2.0 format.
+        Byte mapper_upper : 4;
 
-        uint8_t prg_ram_size; // in 8KB units, 0 infers 8KB for compatibility.
+        Byte prg_ram_size; // in 8KB units, 0 infers 8KB for compatibility.
     } m_header;
-    uint8_t *m_prg_rom;
-    uint8_t *m_chr_rom;
+    Byte *m_prg_rom;
+    Byte *m_chr_rom;
 
-    uint8_t m_mapper_number;
+    Byte m_mapper_number;
 };
 
 } // namespace ln
