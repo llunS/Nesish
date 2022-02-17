@@ -27,7 +27,7 @@ INES::~INES()
 void
 INES::resolve()
 {
-    m_mapper_number = (m_header.mapper_upper << 4) + m_header.mapper_lower;
+    m_mapper_number = (m_header.mapper_higher << 4) + m_header.mapper_lower;
 }
 
 Error

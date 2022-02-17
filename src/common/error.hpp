@@ -7,6 +7,7 @@ enum class Error
 {
     OK = 0,
 
+    INVALID_ARGUMENT,
     CORRUPTED,     // Invalid or corrupted data.
     UNAVAILABLE,   // Requested resource is unavailable.
     UNIMPLEMENTED, // TODO marker, shouldn't be exposed to production code.

@@ -139,7 +139,7 @@ CartridgeLoader::pvt_load_ines_header(std::FILE *i_file, INES *io_ines)
     header->vs_unisystem = (buf[7] >> 0) & 0x1;
     header->playchoice_10 = (buf[7] >> 1) & 0x1;
     header->ines2 = (buf[7] >> 2) & 0x3;
-    header->mapper_upper = (buf[7] >> 4) & 0xf;
+    header->mapper_higher = (buf[7] >> 4) & 0xf;
 
     header->prg_ram_size = buf[8];
 

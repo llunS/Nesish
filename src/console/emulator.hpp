@@ -2,7 +2,7 @@
 #define LN_CONSOLE_EMULATOR_HPP
 
 #include "common/error.hpp"
-#include "console/cpu.hpp"
+#include "console/cpu/cpu.hpp"
 #include "console/memory.hpp"
 #include "common/klass.hpp"
 

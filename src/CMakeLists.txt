@@ -71,13 +71,13 @@ add_executable(LightNES)
 
 list(APPEND Sources main.cpp)
 
-list(APPEND Sources console/cpu.cpp)
+list(APPEND Sources console/cpu/cpu.cpp)
 list(APPEND Sources console/emulator.cpp)
 list(APPEND Sources console/memory.cpp)
-list(APPEND Sources console/instruction/instruction.cpp)
-list(APPEND Sources console/instruction/opcode_exec.cpp)
-list(APPEND Sources console/instruction/operand_get.cpp)
-list(APPEND Sources console/instruction/instruction_map.cpp)
+list(APPEND Sources console/cpu/opcode_exec.cpp)
+list(APPEND Sources console/cpu/address_mode_parse.cpp)
+list(APPEND Sources console/cpu/instr_map.cpp)
+list(APPEND Sources console/cpu/operand.cpp)
 
 list(APPEND Sources cartridge/cartridge_loader.cpp)
 list(APPEND Sources cartridge/ines.cpp)

@@ -42,7 +42,7 @@ struct INES : public Cartridge {
         Byte vs_unisystem : 1;  // ignored, unsupported.
         Byte playchoice_10 : 1; // ignored, unsupported.
         Byte ines2 : 2;         // 2: NES 2.0 format.
-        Byte mapper_upper : 4;
+        Byte mapper_higher : 4;
 
         Byte prg_ram_size; // in 8KB units, 0 infers 8KB for compatibility.
     } m_header;
