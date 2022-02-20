@@ -19,6 +19,8 @@ struct Emulator {
     insert_cartridge(const std::string &i_rom_path);
     Error
     power_up();
+    Error
+    reset();
 
   private:
     CPU m_cpu;

@@ -17,6 +17,15 @@ struct CPU {
     CPU(Memory *i_memory);
     LN_KLZ_DELETE_COPY_MOVE(CPU);
 
+  public:
+    void
+    power_up();
+    void
+    reset();
+
+    void
+    step();
+
   private:
     typedef void (*ExecFunc)(ln::CPU *i_cpu, ln::Operand i_operand);
     struct OpcodeExec;

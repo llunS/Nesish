@@ -17,6 +17,16 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
 Error
 Emulator::power_up()
 {
+    // @TODO
+    m_cpu.power_up();
+    return Error::OK;
+}
+
+Error
+Emulator::reset()
+{
+    // @TODO
+    m_cpu.reset();
     return Error::OK;
 }
 

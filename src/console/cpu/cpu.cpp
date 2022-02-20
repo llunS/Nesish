@@ -10,6 +10,47 @@ CPU::CPU(Memory *i_memory)
 {
 }
 
+void
+CPU::power_up()
+{
+    // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
+    P = 0x34; // (IRQ disabled)
+    A = X = Y = 0;
+    S = 0xFD;
+
+    m_memory->set_byte(0x4017, 0x00); // (frame irq enabled)
+    m_memory->set_byte(0x4015, 0x00); // (all channels disabled)
+    m_memory->set_range(0x4000, 0x400F, 0x00);
+    m_memory->set_range(0x4010, 0x4013, 0x00);
+
+    // All 15 bits of noise channel LFSR = $0000[5]. The first time the LFSR is
+    // clocked from the all-0s state, it will shift in a 1.
+    // @TODO: noise channel LFSR
+
+    m_memory->set_apu_frame_counter(0x0); // 2A03G
+
+    // consistent RAM startup state
+    m_memory->set_range(0x0000, 0x07FF, 0xFF);
+}
+
+void
+CPU::reset()
+{
+    S -= 3;
+    set_flag(StatusFlag::I); // The I (IRQ disable) flag was set to true
+    m_memory->set_byte(0x4015, 0x00); // APU was silenced
+    // @TODO: APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
+    // first step of its waveform)
+    // @TODO: APU DPCM output ANDed with 1 (upper 6 bits cleared)
+    m_memory->set_apu_frame_counter(0x0);
+}
+
+void
+CPU::step()
+{
+    // @TODO: instruction execution loop.
+}
+
 auto
 CPU::get_opcode_exec(Instruction i_instr) -> ExecFunc
 {
