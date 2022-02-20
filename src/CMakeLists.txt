@@ -102,3 +102,12 @@ find_package(CLI11 CONFIG REQUIRED)
 target_link_libraries(LightNES PRIVATE Common
     CLI11::CLI11
 )
+
+
+# --------------------------------------------
+# Tests
+# --------------------------------------------
+
+if(LN_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
