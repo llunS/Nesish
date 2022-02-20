@@ -54,7 +54,19 @@ CPU::step()
 auto
 CPU::get_opcode_exec(Instruction i_instr) -> ExecFunc
 {
-    return s_instr_map[i_instr].exec_func;
+    auto ret = s_instr_map[i_instr].exec_func;
+    ASSERT_ERROR(!ret, "Config error, empty ExecFunc for instruction: {}",
+                 i_instr);
+    return ret;
+}
+
+auto
+CPU::get_address_parse(Instruction i_instr) -> ParseFunc
+{
+    auto ret = s_address_mode_map[get_address_mode(i_instr)].parse_func;
+    ASSERT_ERROR(!ret, "Config error, empty ParseFunc for instruction: {}",
+                 i_instr);
+    return ret;
 }
 
 Opcode
@@ -186,6 +198,15 @@ CPU::report_exec_error(const std::string &i_msg)
 {
     // @TODO: Current executing instruction.
     ASSERT_ERROR(false, i_msg);
+}
+
+auto
+CPU::get_circle(Cycle i_base, bool i_read_page_crossing, Cycle i_branch_cycles)
+    -> Cycle
+{
+    // if "i_branch_cycles" is not 0 (i.e. it's referring to branch
+    // instruction), then "i_read_page_crossing" should be 0.
+    return i_base + i_read_page_crossing + i_branch_cycles;
 }
 
 } // namespace ln

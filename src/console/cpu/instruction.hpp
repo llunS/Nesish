@@ -95,7 +95,7 @@ enum class Opcode
 
 static_assert((unsigned long long)Opcode::COUNT == 75, "Some opcodes missing.");
 
-enum class AddressMode
+enum AddressMode
 {
     // http://www.oxyron.de/html/opcodes02.html
     IMP, // Implicit
@@ -111,6 +111,8 @@ enum class AddressMode
     ABY, // Absolute indexed Y
     IND, // Indirect, i.e. JMP indirect
     REL, // Relative
+
+    COUNT,
 };
 
 typedef Byte Instruction;

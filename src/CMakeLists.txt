@@ -77,6 +77,7 @@ list(APPEND Sources console/memory.cpp)
 list(APPEND Sources console/cpu/opcode_exec.cpp)
 list(APPEND Sources console/cpu/address_mode_parse.cpp)
 list(APPEND Sources console/cpu/instr_map.cpp)
+list(APPEND Sources console/cpu/address_mode_map.cpp)
 list(APPEND Sources console/cpu/operand.cpp)
 
 list(APPEND Sources cartridge/cartridge_loader.cpp)

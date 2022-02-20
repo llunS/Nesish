@@ -2,6 +2,7 @@
 #define LN_CONSOLE_CPU_CPU_HPP
 
 #include <string>
+#include <cstddef>
 
 #include "console/memory.hpp"
 #include "common/klass.hpp"
@@ -27,18 +28,29 @@ struct CPU {
     step();
 
   private:
-    typedef void (*ExecFunc)(ln::CPU *i_cpu, ln::Operand i_operand);
+    typedef std::size_t Cycle;
+    typedef void (*ExecFunc)(ln::CPU *i_cpu, ln::Operand i_operand,
+                             Cycle &o_branch_cycles);
     struct OpcodeExec;
-    typedef ln::Operand (*ParseFunc)(ln::CPU *i_cpu);
+    typedef ln::Operand (*ParseFunc)(ln::CPU *i_cpu, bool *o_page_crossing);
     struct AddressModeParse;
 
     struct InstructionProperty {
         Opcode op_code;
         AddressMode address_mode;
         ExecFunc exec_func;
+        Cycle cycle_base;
+        bool cycle_page_dependent; // excluding branch crossing, it's considered
+                                   // elsewhere.
     };
 
     static InstructionProperty s_instr_map[256];
+
+    struct AddressModeParseEntry {
+        AddressMode address_mode;
+        ParseFunc parse_func;
+    };
+    static AddressModeParseEntry s_address_mode_map[AddressMode::COUNT];
 
   private:
     static Opcode
@@ -47,6 +59,8 @@ struct CPU {
     get_address_mode(Instruction i_instr);
     static ExecFunc
     get_opcode_exec(Instruction i_instr);
+    static ParseFunc
+    get_address_parse(Instruction i_instr);
 
     // ----- memory operations
 
@@ -104,6 +118,9 @@ struct CPU {
 
     void
     report_exec_error(const std::string &i_msg);
+
+    static Cycle
+    get_circle(Cycle i_base, bool i_read_page_crossing, Cycle i_branch_cycles);
 
   private:
     // ---- Registers
