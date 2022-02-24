@@ -1,10 +1,10 @@
-#ifndef LN_CARTRIDGE_CARTRIDGELOADER_HPP
-#define LN_CARTRIDGE_CARTRIDGELOADER_HPP
+#ifndef LN_CONSOLE_CARTRIDGE_CARTRIDGELOADER_HPP
+#define LN_CONSOLE_CARTRIDGE_CARTRIDGELOADER_HPP
 
 #include "common/error.hpp"
 #include <string>
-#include "cartridge/cartridge.hpp"
-#include "cartridge/cartridge_type.hpp"
+#include "console/cartridge/cartridge.hpp"
+#include "console/cartridge/cartridge_type.hpp"
 
 namespace ln {
 
@@ -32,4 +32,4 @@ struct CartridgeLoader {
 
 } // namespace ln
 
-#endif // LN_CARTRIDGE_CARTRIDGELOADER_HPP
+#endif // LN_CONSOLE_CARTRIDGE_CARTRIDGELOADER_HPP

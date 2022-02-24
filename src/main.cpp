@@ -6,7 +6,7 @@ int
 main(int argc, char **argv)
 {
     // -- cli options
-    spdlog::level::level_enum log_level = spdlog::level::info;
+    spdlog::level::level_enum log_level = LN_DEFAULT_LOG_LEVEL;
     {
         CLI::App app;
 
@@ -21,6 +21,6 @@ main(int argc, char **argv)
     ln::init_logger(log_level);
 
     ln::Emulator emulator;
-    auto err = emulator.power_up();
-    return LN_FAILED(err);
+    emulator.power_up();
+    return 0;
 }

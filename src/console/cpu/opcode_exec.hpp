@@ -171,20 +171,35 @@ struct CPU::OpcodeExec {
     static void
     exec_branch_op(bool i_cond, ln::CPU *i_cpu, ln::Operand i_operand,
                    Cycle &o_branch_cycles);
-    static void
-    exec_plp_op(ln::CPU *i_cpu);
+
     static Byte
-    exec_asl_op(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
-    static Byte
-    exec_rol_op(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
-    static Byte
-    exec_lsr_op(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+    exec_and_op(ln::CPU *i_cpu, Byte i_val);
     static Byte
     exec_ror_op(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+
+    static void
+    exec_plp_full(ln::CPU *i_cpu);
+
     static Byte
-    exec_dec_op(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+    exec_asl_full(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
     static Byte
-    exec_inc_op(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+    exec_rol_full(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+    static Byte
+    exec_lsr_full(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+    static Byte
+    exec_ror_full(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+
+    static Byte
+    exec_dec_full(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+    static Byte
+    exec_inc_full(ln::CPU *i_cpu, ln::Operand i_write_operand, Byte i_val);
+
+    static void
+    exec_ora_full(ln::CPU *i_cpu, Byte i_val);
+    static Byte
+    exec_and_full(ln::CPU *i_cpu, Byte i_val);
+    static void
+    exec_eor_full(ln::CPU *i_cpu, Byte i_val);
 
     static Byte
     exec_cmp_full(ln::CPU *i_cpu, Byte i_byte, ln::Byte i_register);

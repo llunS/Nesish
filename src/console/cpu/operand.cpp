@@ -16,11 +16,11 @@ Operand::from_value(Byte i_byte)
 }
 
 Operand
-Operand::from_address(Address i_address)
+Operand::from_address(Address i_addr)
 {
     Operand inst;
     inst.type = OperandType::ADDRESS;
-    inst.address = i_address;
+    inst.address = i_addr;
     return inst;
 }
 

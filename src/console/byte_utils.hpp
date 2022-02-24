@@ -20,12 +20,21 @@ check_bit(Byte i_byte)
 }
 
 inline bool
-is_signed_overflow(Byte lhs, Byte rhs, Byte carry)
+is_signed_overflow_adc(Byte i_lhs, Byte i_rhs, bool i_carry)
 {
-    // using extra precision.
+    // using extra bits.
     // int is of at least 16 bits, according to standard.
-    int sum = lhs + rhs + carry;
-    return sum > 127 || sum < -128;
+    int result = (SignedByte)i_lhs + (SignedByte)i_rhs + i_carry;
+    return result > 127 || result < -128;
+}
+
+inline bool
+is_signed_overflow_sbc(Byte i_lhs, Byte i_rhs, bool i_borrow)
+{
+    // using extra bits.
+    // int is of at least 16 bits, according to standard.
+    int result = (SignedByte)i_lhs - (SignedByte)i_rhs - i_borrow;
+    return result > 127 || result < -128;
 }
 
 } // namespace ln

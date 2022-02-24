@@ -4,9 +4,10 @@
 #include <cstdio>
 #include <cstring>
 
-#include "cartridge/ines.hpp"
+#include "console/cartridge/ines.hpp"
 #include "common/logger.hpp"
 #include "console/types.hpp"
+#include "common/filesystem.hpp"
 
 namespace ln {
 
@@ -67,7 +68,11 @@ CartridgeLoader::load_ines(const std::string &i_rom_path,
     {
         goto l_cleanup;
     }
-    o_ines->resolve();
+    err = o_ines->resolve();
+    if (LN_FAILED(err))
+    {
+        goto l_cleanup;
+    }
 
 l_cleanup:
     if (file)
@@ -97,6 +102,12 @@ l_cleanup:
 Error
 pvt_open_rom(const std::string &i_rom_path, std::FILE **o_file)
 {
+    if (!file_exists(i_rom_path))
+    {
+        get_logger()->error("File opening failed!");
+        return Error::UNAVAILABLE;
+    }
+
     FILE *fp = std::fopen(i_rom_path.c_str(), "rb");
     if (!fp)
     {
@@ -173,6 +184,7 @@ CartridgeLoader::pvt_load_ines_prg_rom(std::FILE *i_file, INES *io_ines)
 
     std::size_t rom_bytes = io_ines->m_header.prg_rom_size * 16 * 1024;
     io_ines->m_prg_rom = new Byte[rom_bytes]();
+    io_ines->m_prg_rom_size = rom_bytes;
 
     constexpr std::size_t EACH_READ = 1024;
     for (std::size_t byte_idx = 0; byte_idx < rom_bytes; byte_idx += EACH_READ)
@@ -211,6 +223,7 @@ CartridgeLoader::pvt_load_ines_chr_rom(std::FILE *i_file, INES *io_ines)
 
     std::size_t rom_bytes = io_ines->m_header.chr_rom_size * 8 * 1024;
     io_ines->m_chr_rom = new Byte[rom_bytes]();
+    io_ines->m_chr_rom_size = rom_bytes;
 
     constexpr std::size_t EACH_READ = 1024;
     for (std::size_t byte_idx = 0; byte_idx < rom_bytes; byte_idx += EACH_READ)

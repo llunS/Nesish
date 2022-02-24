@@ -3,15 +3,16 @@
 
 namespace ln {
 
-enum class Error
-{
+enum class Error {
     OK = 0,
 
-    INVALID_ARGUMENT,
-    CORRUPTED,     // Invalid or corrupted data.
-    UNAVAILABLE,   // Requested resource is unavailable.
-    UNIMPLEMENTED, // TODO marker, shouldn't be exposed to production code.
-    PROGRAMMING,   // Someone wrote a bug, an unexpected behavior.
+    UNINITIALIZED,    // Uninitialized.
+    SEGFAULT,         // Segmentation fault.
+    INVALID_ARGUMENT, // Invalid arguments.
+    CORRUPTED,        // Invalid or corrupted data.
+    UNAVAILABLE,      // Requested resource is unavailable.
+    UNIMPLEMENTED,    // TODO marker, shouldn't be exposed to production code.
+    PROGRAMMING,      // Someone wrote a bug, an unexpected behavior.
 };
 
 } // namespace ln

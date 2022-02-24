@@ -2,20 +2,22 @@
 #define LN_CONSOLE_CPU_CPU_HPP
 
 #include <string>
-#include <cstddef>
+#include <vector>
 
-#include "console/memory.hpp"
+#include "console/mmu.hpp"
 #include "common/klass.hpp"
 #include "console/types.hpp"
 #include "console/cpu/instruction.hpp"
 #include "console/cpu/operand.hpp"
 #include "common/error.hpp"
+#include "console/clock.hpp"
+#include "console/dllexport.h"
 
 namespace ln {
 
-struct CPU {
+struct LN_CONSOLE_API CPU {
   public:
-    CPU(Memory *i_memory);
+    CPU(MMU *i_mmu);
     LN_KLZ_DELETE_COPY_MOVE(CPU);
 
   public:
@@ -25,18 +27,40 @@ struct CPU {
     reset();
 
     void
+    set_entry(Address i_entry);
+    bool
     step();
 
+    Cycle
+    get_cycle() const;
+
+    Byte
+    get_a() const;
+    Byte
+    get_x() const;
+    Byte
+    get_y() const;
+    Address
+    get_pc() const;
+    Byte
+    get_s() const;
+    Byte
+    get_p() const;
+
+    std::vector<Byte>
+    get_instruction_bytes(Address i_addr) const;
+
   private:
-    typedef std::size_t Cycle;
     typedef void (*ExecFunc)(ln::CPU *i_cpu, ln::Operand i_operand,
                              Cycle &o_branch_cycles);
     struct OpcodeExec;
-    typedef ln::Operand (*ParseFunc)(ln::CPU *i_cpu, bool *o_page_crossing);
+    typedef ln::Operand (*ParseFunc)(const ln::CPU *i_cpu,
+                                     Byte &o_operand_bytes,
+                                     bool *o_page_crossing);
     struct AddressModeParse;
 
-    struct InstructionProperty {
-        Opcode op_code;
+    struct InstructionDesc {
+        OpcodeType op_code;
         AddressMode address_mode;
         ExecFunc exec_func;
         Cycle cycle_base;
@@ -44,7 +68,7 @@ struct CPU {
                                    // elsewhere.
     };
 
-    static InstructionProperty s_instr_map[256];
+    static InstructionDesc s_instr_map[256];
 
     struct AddressModeParseEntry {
         AddressMode address_mode;
@@ -53,25 +77,27 @@ struct CPU {
     static AddressModeParseEntry s_address_mode_map[AddressMode::COUNT];
 
   private:
-    static Opcode
-    get_op_code(Instruction i_instr);
+    static InstructionDesc
+    get_instr_desc(Opcode i_opcode);
+    static OpcodeType
+    get_op_code(Opcode i_opcode);
     static AddressMode
-    get_address_mode(Instruction i_instr);
+    get_address_mode(Opcode i_opcode);
     static ExecFunc
-    get_opcode_exec(Instruction i_instr);
+    get_opcode_exec(Opcode i_opcode);
     static ParseFunc
-    get_address_parse(Instruction i_instr);
+    get_address_parse(Opcode i_opcode);
 
     // ----- memory operations
 
     Byte
-    get_byte(Address i_address) const;
+    get_byte(Address i_addr) const;
     void
-    set_byte(Address i_address, Byte i_byte);
+    set_byte(Address i_addr, Byte i_byte);
+    Byte2
+    get_byte2(Address i_addr) const;
 
     // ----- stack operations
-
-    static constexpr Address STACK_BASE = 0x0100; // stack page: $0100-$01FF
 
     void
     push_byte(Byte i_byte);
@@ -83,8 +109,7 @@ struct CPU {
     pop_byte2();
 
   private:
-    enum StatusFlag : Byte
-    {
+    enum StatusFlag : Byte {
         // http://www.oxyron.de/html/opcodes02.html
         C = 1 << 0, // carry flag (1 on unsigned overflow)
         Z = 1 << 1, // zero flag (1 when all bits of a result are 0)
@@ -119,9 +144,6 @@ struct CPU {
     void
     report_exec_error(const std::string &i_msg);
 
-    static Cycle
-    get_circle(Cycle i_base, bool i_read_page_crossing, Cycle i_branch_cycles);
-
   private:
     // ---- Registers
     // https://wiki.nesdev.org/w/index.php?title=CPU_registers
@@ -134,7 +156,11 @@ struct CPU {
     Byte P; // Status
 
     // ---- External components references
-    Memory *m_memory;
+    MMU *m_mmu;
+
+  private:
+    Cycle m_cycles;
+    bool m_halted;
 };
 
 } // namespace ln

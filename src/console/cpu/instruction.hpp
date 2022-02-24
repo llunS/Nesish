@@ -6,8 +6,7 @@
 
 namespace ln {
 
-enum class Opcode
-{
+enum class OpcodeType {
     // http://www.oxyron.de/html/opcodes02.html
     // ---- Logical and arithmetic commands
     ORA,
@@ -76,7 +75,7 @@ enum class Opcode
     SAX,
     LAX,
     DCP,
-    ISC,
+    ISC, // aka ISB
     ANC,
     ALR,
     ARR,
@@ -90,13 +89,14 @@ enum class Opcode
     KIL,
 
     COUNT,
-    // @TODO: Log invalid opcode encountered in case we miss some.
 };
 
-static_assert((unsigned long long)Opcode::COUNT == 75, "Some opcodes missing.");
+static_assert((unsigned long long)OpcodeType::COUNT == 75,
+              "Some opcodes missing.");
 
-enum AddressMode
-{
+typedef Byte Opcode;
+
+enum AddressMode {
     // http://www.oxyron.de/html/opcodes02.html
     IMP, // Implicit
     ACC, // Implicit accumulator
@@ -114,8 +114,6 @@ enum AddressMode
 
     COUNT,
 };
-
-typedef Byte Instruction;
 
 } // namespace ln
 

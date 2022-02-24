@@ -24,6 +24,11 @@ pvt_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
 void
 init_logger(spdlog::level::level_enum i_level)
 {
+    if (g_logger)
+    {
+        return;
+    }
+
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
     auto logger = new spdlog::logger("LightNES", console_sink);
     logger->set_level(i_level);
@@ -57,6 +62,11 @@ init_logger(spdlog::level::level_enum i_level)
 spdlog::logger *
 get_logger()
 {
+    if (!g_logger)
+    {
+        init_logger();
+    }
+
     return g_logger;
 }
 

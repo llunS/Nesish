@@ -1,3 +1,5 @@
-/[Bb]uild/
+/[Bb]uild*/
 /.vscode/
 .DS_Store
+
+dllexport.h

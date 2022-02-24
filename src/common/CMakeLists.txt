@@ -1,27 +1,30 @@
-set(ModuleName Common)
-add_library(${ModuleName})
+set(module_name Common)
+add_library(${module_name} SHARED)
+
+include(gen_dllexport_header)
+gen_dllexport_header(${module_name})
 
 
 # --------------------------------------------
 # Include directories
 # --------------------------------------------
 
-target_include_directories(${ModuleName} PUBLIC ../)
+target_include_directories(${module_name} PUBLIC ../)
 
 
 # --------------------------------------------
 # Source files
 # --------------------------------------------
 
-list(APPEND Sources logger.cpp)
-list(APPEND Sources "path.cpp")
-list(APPEND Sources filesystem.cpp)
+list(APPEND sources logger.cpp)
+list(APPEND sources "path.cpp")
+list(APPEND sources filesystem.cpp)
 if(LT_TARGET_MACOS)
-    list(APPEND Sources path_macos.mm)
-    list(APPEND Sources filesystem_macos.cpp)
+    list(APPEND sources path_macos.mm)
+    list(APPEND sources filesystem_macos.cpp)
 endif()
 
-target_sources(${ModuleName} PRIVATE ${Sources})
+target_sources(${module_name} PRIVATE ${sources})
 
 
 # --------------------------------------------
@@ -30,4 +33,4 @@ target_sources(${ModuleName} PRIVATE ${Sources})
 
 find_package(spdlog CONFIG REQUIRED)
 
-target_link_libraries(${ModuleName} PUBLIC spdlog::spdlog_header_only)
+target_link_libraries(${module_name} PUBLIC spdlog::spdlog_header_only)

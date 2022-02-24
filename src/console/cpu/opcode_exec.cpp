@@ -16,7 +16,6 @@ CPU::OpcodeExec::exec_nop(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_cpu);
     (void)(i_operand);
     // do nothing.
@@ -27,15 +26,22 @@ CPU::OpcodeExec::exec_brk(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
-    i_cpu->push_byte2(i_cpu->PC);
-    i_cpu->push_byte(i_cpu->P);
-    i_cpu->PC = 0xFFFE;
+    // @QUIRK: Push the return address - 1.
+    i_cpu->push_byte2(i_cpu->PC - 1);
 
-    i_cpu->set_flag(CPU::StatusFlag::B);
+    // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
+    // @QUIRK: Push the status register with the B flag set, to the stack.
+    i_cpu->push_byte(i_cpu->P | CPU::StatusFlag::B);
+
+    // https://wiki.nesdev.org/w/index.php?title=Status_flags#I:_Interrupt_Disable
+    // Signal interrupt‘s happening.
+    // @NOTE: This flag is not included in the stack.
     i_cpu->set_flag(CPU::StatusFlag::I);
+
+    // Jump to interrupt handler.
+    i_cpu->PC = i_cpu->get_byte2(MMU::IRQ_VECTOR_ADDR);
 }
 
 void
@@ -43,10 +49,11 @@ CPU::OpcodeExec::exec_php(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
-    i_cpu->push_byte(i_cpu->P);
+    // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
+    // @QUIRK: Push the status register with the B flag set, to the stack.
+    i_cpu->push_byte(i_cpu->P | CPU::StatusFlag::B);
 }
 
 void
@@ -62,7 +69,6 @@ CPU::OpcodeExec::exec_clc(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->unset_flag(StatusFlag::C);
@@ -73,10 +79,10 @@ CPU::OpcodeExec::exec_jsr(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
-    i_cpu->push_byte2(i_cpu->PC);
+    // @QUIRK: Push the return address - 1.
+    i_cpu->push_byte2(i_cpu->PC - 1);
     ASSERT_ERROR(i_operand.type == OperandType::ADDRESS,
                  "jsr got incorrect operand type.");
     i_cpu->PC = i_operand.address;
@@ -102,10 +108,9 @@ CPU::OpcodeExec::exec_plp(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
-    exec_plp_op(i_cpu);
+    exec_plp_full(i_cpu);
 }
 
 void
@@ -121,7 +126,6 @@ CPU::OpcodeExec::exec_sec(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->set_flag(StatusFlag::C);
@@ -132,10 +136,9 @@ CPU::OpcodeExec::exec_rti(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
-    exec_plp_op(i_cpu);
+    exec_plp_full(i_cpu);
     i_cpu->PC = i_cpu->pop_byte2();
 }
 
@@ -144,7 +147,6 @@ CPU::OpcodeExec::exec_pha(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->push_byte(i_cpu->A);
@@ -174,7 +176,6 @@ CPU::OpcodeExec::exec_cli(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->unset_flag(StatusFlag::I);
@@ -185,10 +186,10 @@ CPU::OpcodeExec::exec_rts(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
-    i_cpu->PC = i_cpu->pop_byte2();
+    // @QUIRK: Corresponding to JSR.
+    i_cpu->PC = i_cpu->pop_byte2() + 1;
 }
 
 void
@@ -196,7 +197,6 @@ CPU::OpcodeExec::exec_pla(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->A = i_cpu->pop_byte();
@@ -218,7 +218,6 @@ CPU::OpcodeExec::exec_sei(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->set_flag(StatusFlag::I);
@@ -242,7 +241,6 @@ CPU::OpcodeExec::exec_dey(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     --i_cpu->Y;
@@ -264,7 +262,6 @@ CPU::OpcodeExec::exec_tya(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->A = i_cpu->Y;
@@ -305,7 +302,6 @@ CPU::OpcodeExec::exec_tay(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->Y = i_cpu->A;
@@ -327,7 +323,6 @@ CPU::OpcodeExec::exec_clv(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->unset_flag(StatusFlag::V);
@@ -348,7 +343,6 @@ CPU::OpcodeExec::exec_iny(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     ++i_cpu->Y;
@@ -370,7 +364,6 @@ CPU::OpcodeExec::exec_cld(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->unset_flag(StatusFlag::D);
@@ -391,7 +384,6 @@ CPU::OpcodeExec::exec_inx(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     ++i_cpu->X;
@@ -413,7 +405,6 @@ CPU::OpcodeExec::exec_sed(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->set_flag(StatusFlag::D);
@@ -426,10 +417,7 @@ CPU::OpcodeExec::exec_ora(ln::CPU *i_cpu, ln::Operand i_operand,
     (void)(o_branch_cycles);
 
     Byte val = i_cpu->get_operand(i_operand);
-    i_cpu->A |= val;
-
-    test_flag_n(i_cpu, i_cpu->A);
-    test_flag_z(i_cpu, i_cpu->A);
+    exec_ora_full(i_cpu, val);
 }
 
 void
@@ -439,10 +427,8 @@ CPU::OpcodeExec::exec_and(ln::CPU *i_cpu, ln::Operand i_operand,
     (void)(o_branch_cycles);
 
     Byte val = i_cpu->get_operand(i_operand);
-    i_cpu->A &= val;
 
-    test_flag_n(i_cpu, i_cpu->A);
-    test_flag_z(i_cpu, i_cpu->A);
+    (void)exec_and_full(i_cpu, val);
 }
 
 void
@@ -452,10 +438,8 @@ CPU::OpcodeExec::exec_eor(ln::CPU *i_cpu, ln::Operand i_operand,
     (void)(o_branch_cycles);
 
     Byte val = i_cpu->get_operand(i_operand);
-    i_cpu->A ^= val;
 
-    test_flag_n(i_cpu, i_cpu->A);
-    test_flag_z(i_cpu, i_cpu->A);
+    exec_eor_full(i_cpu, val);
 }
 
 void
@@ -519,7 +503,6 @@ CPU::OpcodeExec::exec_kil(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->halt();
@@ -533,11 +516,7 @@ CPU::OpcodeExec::exec_asl(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_asl_op(i_cpu, i_operand, val);
-
-    test_flag_n(i_cpu, new_val);
-    test_flag_z(i_cpu, new_val);
-    i_cpu->test_flag(StatusFlag::C, check_bit<7>(val));
+    (void)exec_asl_full(i_cpu, i_operand, val);
 }
 
 void
@@ -548,11 +527,7 @@ CPU::OpcodeExec::exec_rol(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_rol_op(i_cpu, i_operand, val);
-
-    test_flag_n(i_cpu, new_val);
-    test_flag_z(i_cpu, new_val);
-    i_cpu->test_flag(StatusFlag::C, check_bit<7>(val));
+    (void)exec_rol_full(i_cpu, i_operand, val);
 }
 
 void
@@ -563,11 +538,7 @@ CPU::OpcodeExec::exec_lsr(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_lsr_op(i_cpu, i_operand, val);
-
-    test_flag_n(i_cpu, new_val);
-    test_flag_z(i_cpu, new_val);
-    i_cpu->test_flag(StatusFlag::C, check_bit<0>(val));
+    (void)exec_lsr_full(i_cpu, i_operand, val);
 }
 
 void
@@ -578,11 +549,7 @@ CPU::OpcodeExec::exec_ror(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_ror_op(i_cpu, i_operand, val);
-
-    test_flag_n(i_cpu, new_val);
-    test_flag_z(i_cpu, new_val);
-    i_cpu->test_flag(StatusFlag::C, check_bit<0>(val));
+    (void)exec_ror_full(i_cpu, i_operand, val);
 }
 
 void
@@ -603,7 +570,6 @@ CPU::OpcodeExec::exec_txa(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->A = i_cpu->X;
@@ -617,7 +583,6 @@ CPU::OpcodeExec::exec_txs(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->S = i_cpu->X;
@@ -656,7 +621,6 @@ CPU::OpcodeExec::exec_tax(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->X = i_cpu->A;
@@ -671,7 +635,6 @@ CPU::OpcodeExec::exec_tsx(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     i_cpu->X = i_cpu->S;
@@ -689,10 +652,7 @@ CPU::OpcodeExec::exec_dec(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_dec_op(i_cpu, i_operand, val);
-
-    test_flag_n(i_cpu, new_val);
-    test_flag_z(i_cpu, new_val);
+    (void)exec_dec_full(i_cpu, i_operand, val);
 }
 
 void
@@ -700,7 +660,6 @@ CPU::OpcodeExec::exec_dex(ln::CPU *i_cpu, ln::Operand i_operand,
                           Cycle &o_branch_cycles)
 {
     (void)(o_branch_cycles);
-
     (void)(i_operand);
 
     --i_cpu->X;
@@ -717,10 +676,7 @@ CPU::OpcodeExec::exec_inc(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_inc_op(i_cpu, i_operand, val);
-
-    test_flag_n(i_cpu, new_val);
-    test_flag_z(i_cpu, new_val);
+    (void)exec_inc_full(i_cpu, i_operand, val);
 }
 
 void
@@ -731,12 +687,8 @@ CPU::OpcodeExec::exec_slo(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_asl_op(i_cpu, i_operand, val);
-    i_cpu->A |= new_val;
-
-    test_flag_n(i_cpu, i_cpu->A);
-    test_flag_z(i_cpu, i_cpu->A);
-    i_cpu->test_flag(StatusFlag::C, check_bit<7>(val));
+    Byte new_val = exec_asl_full(i_cpu, i_operand, val);
+    exec_ora_full(i_cpu, new_val);
 }
 
 void
@@ -749,7 +701,7 @@ CPU::OpcodeExec::exec_anc(ln::CPU *i_cpu, ln::Operand i_operand,
     // http://www.oxyron.de/html/opcodes02.html
     Byte val = i_cpu->get_operand(i_operand);
 
-    i_cpu->A &= val;
+    (void)exec_and_op(i_cpu, val);
 
     test_flag_n(i_cpu, i_cpu->A);
     test_flag_z(i_cpu, i_cpu->A);
@@ -764,12 +716,8 @@ CPU::OpcodeExec::exec_rla(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_rol_op(i_cpu, i_operand, val);
-    i_cpu->A &= new_val;
-
-    test_flag_n(i_cpu, i_cpu->A);
-    test_flag_z(i_cpu, i_cpu->A);
-    i_cpu->test_flag(StatusFlag::C, check_bit<7>(val));
+    Byte new_val = exec_rol_full(i_cpu, i_operand, val);
+    (void)exec_and_full(i_cpu, new_val);
 }
 
 void
@@ -780,12 +728,8 @@ CPU::OpcodeExec::exec_sre(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_lsr_op(i_cpu, i_operand, val);
-    i_cpu->A ^= new_val;
-
-    test_flag_n(i_cpu, i_cpu->A);
-    test_flag_z(i_cpu, i_cpu->A);
-    i_cpu->test_flag(StatusFlag::C, check_bit<0>(val));
+    Byte new_val = exec_lsr_full(i_cpu, i_operand, val);
+    exec_eor_full(i_cpu, new_val);
 }
 
 void
@@ -797,13 +741,9 @@ CPU::OpcodeExec::exec_alr(ln::CPU *i_cpu, ln::Operand i_operand,
     // http://www.oxyron.de/html/opcodes02.html
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte and_val = i_cpu->A & val;
+    Byte new_val = exec_and_full(i_cpu, val);
     // LSR A
-    exec_lsr_op(i_cpu, Operand::from_acc(), and_val);
-
-    test_flag_n(i_cpu, i_cpu->A);
-    test_flag_z(i_cpu, i_cpu->A);
-    i_cpu->test_flag(StatusFlag::C, check_bit<0>(and_val));
+    (void)exec_lsr_full(i_cpu, Operand::from_acc(), new_val);
 }
 
 void
@@ -814,7 +754,7 @@ CPU::OpcodeExec::exec_rra(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte ror_value = exec_ror_op(i_cpu, i_operand, val);
+    Byte ror_value = exec_ror_full(i_cpu, i_operand, val);
     exec_adc_full(i_cpu, ror_value);
 }
 
@@ -827,12 +767,14 @@ CPU::OpcodeExec::exec_arr(ln::CPU *i_cpu, ln::Operand i_operand,
     // http://www.oxyron.de/html/opcodes02.html
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte and_val = i_cpu->A & val;
+    // @NOTE: ROR depends on C flag, but AND doesn't affect C flag, so we can
+    // perform AND without updating flags.
+    Byte and_val = exec_and_op(i_cpu, val);
     // ROR A
-    exec_ror_op(i_cpu, Operand::from_acc(), and_val);
+    (void)exec_ror_op(i_cpu, Operand::from_acc(), and_val);
 
     test_flag_n(i_cpu, i_cpu->A);
-    i_cpu->test_flag(StatusFlag::V, is_signed_overflow(and_val, val, 0));
+    i_cpu->test_flag(StatusFlag::V, is_signed_overflow_adc(and_val, val, 0));
     test_flag_z(i_cpu, i_cpu->A);
     i_cpu->test_flag(StatusFlag::C, check_bit<7>(and_val));
 }
@@ -929,7 +871,7 @@ CPU::OpcodeExec::exec_dcp(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_dec_op(i_cpu, i_operand, val);
+    Byte new_val = exec_dec_full(i_cpu, i_operand, val);
     exec_cmp_full(i_cpu, new_val, i_cpu->A);
 }
 
@@ -956,7 +898,7 @@ CPU::OpcodeExec::exec_isc(ln::CPU *i_cpu, ln::Operand i_operand,
 
     Byte val = i_cpu->get_operand(i_operand);
 
-    Byte new_val = exec_inc_op(i_cpu, i_operand, val);
+    Byte new_val = exec_inc_full(i_cpu, i_operand, val);
     exec_sbc_full(i_cpu, new_val);
 }
 
@@ -964,7 +906,7 @@ void
 CPU::OpcodeExec::exec_branch_op(bool i_cond, ln::CPU *i_cpu,
                                 ln::Operand i_operand, Cycle &o_branch_cycles)
 {
-    int offset = (int)i_cpu->get_operand(i_operand);
+    SignedByte offset = (SignedByte)i_cpu->get_operand(i_operand);
 
     if (i_cond)
     {
@@ -990,12 +932,20 @@ CPU::OpcodeExec::exec_branch_op(bool i_cond, ln::CPU *i_cpu,
 }
 
 void
-CPU::OpcodeExec::exec_plp_op(ln::CPU *i_cpu)
+CPU::OpcodeExec::exec_plp_full(ln::CPU *i_cpu)
 {
     Byte preserve_mask = (StatusFlag::B | StatusFlag::U);
     // ignore the mask for stack value and preserve the mask in original P.
     i_cpu->P =
         (i_cpu->pop_byte() & ~preserve_mask) | (i_cpu->P & preserve_mask);
+}
+
+Byte
+CPU::OpcodeExec::exec_and_op(ln::CPU *i_cpu, Byte i_val)
+{
+    i_cpu->A &= i_val;
+
+    return i_cpu->A;
 }
 
 void
@@ -1010,7 +960,7 @@ CPU::OpcodeExec::exec_adc_full(ln::CPU *i_cpu, Byte i_val)
     // exists.
     bool unsigned_overflow =
         (i_cpu->A < prev_val || (i_cpu->A == prev_val && carry));
-    bool signed_overflow = is_signed_overflow(prev_val, i_val, carry);
+    bool signed_overflow = is_signed_overflow_adc(prev_val, i_val, carry);
 
     test_flag_n(i_cpu, i_cpu->A);
     i_cpu->test_flag(StatusFlag::V, signed_overflow);
@@ -1024,15 +974,37 @@ CPU::OpcodeExec::exec_sbc_full(ln::CPU *i_cpu, Byte i_val)
     bool borrow = !i_cpu->check_flag(StatusFlag::C);
 
     Byte prev_val = i_cpu->A;
-    i_cpu->A += -i_val - borrow;
+    i_cpu->A -= (i_val + borrow);
 
     bool no_borrow = prev_val >= i_val;
-    bool signed_overflow = is_signed_overflow(prev_val, -i_val, -borrow);
+    bool signed_overflow = is_signed_overflow_sbc(prev_val, i_val, borrow);
 
     test_flag_n(i_cpu, i_cpu->A);
     i_cpu->test_flag(StatusFlag::V, signed_overflow);
     test_flag_z(i_cpu, i_cpu->A);
     i_cpu->test_flag(StatusFlag::C, no_borrow);
+}
+
+Byte
+CPU::OpcodeExec::exec_ror_full(ln::CPU *i_cpu, ln::Operand i_write_operand,
+                               Byte i_val)
+{
+    Byte new_val = exec_ror_op(i_cpu, i_write_operand, i_val);
+
+    test_flag_n(i_cpu, new_val);
+    test_flag_z(i_cpu, new_val);
+    i_cpu->test_flag(StatusFlag::C, check_bit<0>(i_val));
+
+    return new_val;
+}
+
+void
+CPU::OpcodeExec::exec_ora_full(ln::CPU *i_cpu, Byte i_val)
+{
+    i_cpu->A |= i_val;
+
+    test_flag_n(i_cpu, i_cpu->A);
+    test_flag_z(i_cpu, i_cpu->A);
 }
 
 Byte
@@ -1049,8 +1021,28 @@ CPU::OpcodeExec::exec_cmp_full(ln::CPU *i_cpu, Byte i_byte, ln::Byte i_register)
 }
 
 Byte
-CPU::OpcodeExec::exec_asl_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
-                             Byte i_val)
+CPU::OpcodeExec::exec_and_full(ln::CPU *i_cpu, Byte i_val)
+{
+    Byte new_val = exec_and_op(i_cpu, i_val);
+
+    test_flag_n(i_cpu, new_val);
+    test_flag_z(i_cpu, new_val);
+
+    return new_val;
+}
+
+void
+CPU::OpcodeExec::exec_eor_full(ln::CPU *i_cpu, Byte i_val)
+{
+    i_cpu->A ^= i_val;
+
+    test_flag_n(i_cpu, i_cpu->A);
+    test_flag_z(i_cpu, i_cpu->A);
+}
+
+Byte
+CPU::OpcodeExec::exec_asl_full(ln::CPU *i_cpu, ln::Operand i_write_operand,
+                               Byte i_val)
 {
     Byte new_val = i_val << 1;
     auto err = i_cpu->set_operand(i_write_operand, new_val);
@@ -1059,12 +1051,16 @@ CPU::OpcodeExec::exec_asl_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
         ERROR_OPERAND_TYPE(i_cpu, i_write_operand);
     }
 
+    test_flag_n(i_cpu, new_val);
+    test_flag_z(i_cpu, new_val);
+    i_cpu->test_flag(StatusFlag::C, check_bit<7>(i_val));
+
     return new_val;
 }
 
 Byte
-CPU::OpcodeExec::exec_rol_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
-                             Byte i_val)
+CPU::OpcodeExec::exec_rol_full(ln::CPU *i_cpu, ln::Operand i_write_operand,
+                               Byte i_val)
 {
     bool carry = i_cpu->check_flag(StatusFlag::C);
 
@@ -1075,12 +1071,16 @@ CPU::OpcodeExec::exec_rol_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
         ERROR_OPERAND_TYPE(i_cpu, i_write_operand);
     }
 
+    test_flag_n(i_cpu, new_val);
+    test_flag_z(i_cpu, new_val);
+    i_cpu->test_flag(StatusFlag::C, check_bit<7>(i_val));
+
     return new_val;
 }
 
 Byte
-CPU::OpcodeExec::exec_lsr_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
-                             Byte i_val)
+CPU::OpcodeExec::exec_lsr_full(ln::CPU *i_cpu, ln::Operand i_write_operand,
+                               Byte i_val)
 {
     Byte new_val = i_val >> 1;
     auto err = i_cpu->set_operand(i_write_operand, new_val);
@@ -1088,6 +1088,10 @@ CPU::OpcodeExec::exec_lsr_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
     {
         ERROR_OPERAND_TYPE(i_cpu, i_write_operand);
     }
+
+    test_flag_n(i_cpu, new_val);
+    test_flag_z(i_cpu, new_val);
+    i_cpu->test_flag(StatusFlag::C, check_bit<0>(i_val));
 
     return new_val;
 }
@@ -1109,8 +1113,8 @@ CPU::OpcodeExec::exec_ror_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
 }
 
 Byte
-CPU::OpcodeExec::exec_dec_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
-                             Byte i_val)
+CPU::OpcodeExec::exec_dec_full(ln::CPU *i_cpu, ln::Operand i_write_operand,
+                               Byte i_val)
 {
     Byte new_val = i_val - 1;
     auto err = i_cpu->set_operand(i_write_operand, new_val);
@@ -1119,12 +1123,15 @@ CPU::OpcodeExec::exec_dec_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
         ERROR_OPERAND_TYPE(i_cpu, i_write_operand);
     }
 
+    test_flag_n(i_cpu, new_val);
+    test_flag_z(i_cpu, new_val);
+
     return new_val;
 }
 
 Byte
-CPU::OpcodeExec::exec_inc_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
-                             Byte i_val)
+CPU::OpcodeExec::exec_inc_full(ln::CPU *i_cpu, ln::Operand i_write_operand,
+                               Byte i_val)
 {
     Byte new_val = i_val + 1;
     auto err = i_cpu->set_operand(i_write_operand, new_val);
@@ -1132,6 +1139,9 @@ CPU::OpcodeExec::exec_inc_op(ln::CPU *i_cpu, ln::Operand i_write_operand,
     {
         ERROR_OPERAND_TYPE(i_cpu, i_write_operand);
     }
+
+    test_flag_n(i_cpu, new_val);
+    test_flag_z(i_cpu, new_val);
 
     return new_val;
 }

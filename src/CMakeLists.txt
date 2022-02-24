@@ -12,8 +12,7 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# For convenience
-set(BUILD_SHARED_LIBS OFF)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/Modules)
 
 # Warnings as errors
 if (MSVC)
@@ -61,6 +60,7 @@ if(LN_BUILD_TESTS)
 endif()
 
 add_subdirectory(common)
+add_subdirectory(console)
 
 
 # --------------------------------------------
@@ -69,21 +69,9 @@ add_subdirectory(common)
 
 add_executable(LightNES)
 
-list(APPEND Sources main.cpp)
+list(APPEND sources main.cpp)
 
-list(APPEND Sources console/cpu/cpu.cpp)
-list(APPEND Sources console/emulator.cpp)
-list(APPEND Sources console/memory.cpp)
-list(APPEND Sources console/cpu/opcode_exec.cpp)
-list(APPEND Sources console/cpu/address_mode_parse.cpp)
-list(APPEND Sources console/cpu/instr_map.cpp)
-list(APPEND Sources console/cpu/address_mode_map.cpp)
-list(APPEND Sources console/cpu/operand.cpp)
-
-list(APPEND Sources cartridge/cartridge_loader.cpp)
-list(APPEND Sources cartridge/ines.cpp)
-
-target_sources(LightNES PRIVATE ${Sources})
+target_sources(LightNES PRIVATE ${sources})
 
 
 # --------------------------------------------
@@ -99,7 +87,9 @@ target_include_directories(LightNES PRIVATE .)
 
 find_package(CLI11 CONFIG REQUIRED)
 
-target_link_libraries(LightNES PRIVATE Common
+target_link_libraries(LightNES PRIVATE
+    Common
+    Console
     CLI11::CLI11
 )
 

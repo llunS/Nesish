@@ -9,35 +9,48 @@ namespace ln {
 struct CPU::AddressModeParse {
   public:
     static ln::Operand
-    parse_imp(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_imp(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_acc(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_acc(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_imm(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_imm(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_zp0(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_zp0(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_zpx(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_zpx(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_zpy(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_zpy(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_izx(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_izx(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_izy(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_izy(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_abs(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_abs(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_abx(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_abx(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_aby(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_aby(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_ind(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_ind(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
     static ln::Operand
-    parse_rel(ln::CPU *i_cpu, bool *o_page_crossing);
+    parse_rel(const ln::CPU *i_cpu, Byte &o_operand_bytes,
+              bool *o_page_crossing);
 
   private:
     static Byte2
-    get_byte2(ln::CPU *i_cpu, Address i_address);
+    get_byte2(const ln::CPU *i_cpu, Address i_addr);
 
     static bool
     is_page_crossing(Address i_prev, Address i_current);

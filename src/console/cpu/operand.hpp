@@ -5,8 +5,7 @@
 
 namespace ln {
 
-enum class OperandType
-{
+enum class OperandType {
     VALUE,
     ADDRESS,
     ACC, // Accumulator
@@ -17,7 +16,7 @@ struct Operand {
     static Operand
     from_value(Byte i_byte);
     static Operand
-    from_address(Address i_address);
+    from_address(Address i_addr);
     static Operand
     from_acc();
 

@@ -2,11 +2,14 @@
 
 #include "console/byte_utils.hpp"
 #include "console/assert.hpp"
+#include "console/spec.hpp"
 
 namespace ln {
 
-CPU::CPU(Memory *i_memory)
-    : m_memory(i_memory)
+CPU::CPU(MMU *i_mmu)
+    : m_mmu(i_mmu)
+    , m_cycles(0)
+    , m_halted(false)
 {
 }
 
@@ -14,23 +17,32 @@ void
 CPU::power_up()
 {
     // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
-    P = 0x34; // (IRQ disabled)
+    // P = 0x34; // (IRQ disabled)
+    P = 0x24; // according to nestest.log, (IRQ disabled) still
     A = X = Y = 0;
     S = 0xFD;
 
-    m_memory->set_byte(0x4017, 0x00); // (frame irq enabled)
-    m_memory->set_byte(0x4015, 0x00); // (all channels disabled)
-    m_memory->set_range(0x4000, 0x400F, 0x00);
-    m_memory->set_range(0x4010, 0x4013, 0x00);
+    // @TODO NES APU and I/O registers
+    for (Address i = 0x4000; i <= 0x400F; ++i)
+    {
+        (void)m_mmu->set_byte(i, 0x00);
+    }
+    for (Address i = 0x4010; i <= 0x4013; ++i)
+    {
+        (void)m_mmu->set_byte(i, 0x00);
+    }
+    (void)m_mmu->set_byte(0x4015, 0x00); // (all channels disabled)
+    (void)m_mmu->set_byte(0x4017, 0x00); // (frame irq enabled)
 
     // All 15 bits of noise channel LFSR = $0000[5]. The first time the LFSR is
     // clocked from the all-0s state, it will shift in a 1.
     // @TODO: noise channel LFSR
 
-    m_memory->set_apu_frame_counter(0x0); // 2A03G
+    (void)m_mmu->set_byte(LN_APU_FC_ADDRESS, 0x00); // 2A03G
 
     // consistent RAM startup state
-    m_memory->set_range(0x0000, 0x07FF, 0xFF);
+    m_mmu->set_bulk(LN_INTERNAL_RAM_ADDRESS_HEAD, LN_INTERNAL_RAM_ADDRESS_TAIL,
+                    0xFF);
 }
 
 void
@@ -38,73 +50,205 @@ CPU::reset()
 {
     S -= 3;
     set_flag(StatusFlag::I); // The I (IRQ disable) flag was set to true
-    m_memory->set_byte(0x4015, 0x00); // APU was silenced
+    // @TODO NES APU and I/O registers
+    (void)m_mmu->set_byte(0x4015, 0x00); // APU was silenced
     // @TODO: APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
     // first step of its waveform)
     // @TODO: APU DPCM output ANDed with 1 (upper 6 bits cleared)
-    m_memory->set_apu_frame_counter(0x0);
+
+    (void)m_mmu->set_byte(LN_APU_FC_ADDRESS, 0x00);
+
+    m_halted = false;
+    m_cycles = 0;
 }
 
 void
+CPU::set_entry(Address i_entry)
+{
+    PC = i_entry;
+}
+
+bool
 CPU::step()
 {
-    // @TODO: instruction execution loop.
+    if (m_halted)
+    {
+        return false;
+    }
+
+    Byte opcode_byte = get_byte(PC++);
+    Opcode opcode = {opcode_byte};
+    InstructionDesc instr_desc = get_instr_desc(opcode);
+
+    ParseFunc parse = get_address_parse(opcode);
+    bool read_page_crossing = false;
+    Byte operand_bytes;
+    Operand operand =
+        parse(this, operand_bytes,
+              instr_desc.cycle_page_dependent ? &read_page_crossing : nullptr);
+    PC += operand_bytes;
+
+    Cycle extra_branch_cycles = 0;
+    ExecFunc exec = get_opcode_exec(opcode);
+    exec(this, operand, extra_branch_cycles);
+
+    Cycle cycles_spent =
+        instr_desc.cycle_base + read_page_crossing + extra_branch_cycles;
+    m_cycles += cycles_spent;
+
+    return true;
 }
 
-auto
-CPU::get_opcode_exec(Instruction i_instr) -> ExecFunc
+Cycle
+CPU::get_cycle() const
 {
-    auto ret = s_instr_map[i_instr].exec_func;
-    ASSERT_ERROR(!ret, "Config error, empty ExecFunc for instruction: {}",
-                 i_instr);
-    return ret;
-}
-
-auto
-CPU::get_address_parse(Instruction i_instr) -> ParseFunc
-{
-    auto ret = s_address_mode_map[get_address_mode(i_instr)].parse_func;
-    ASSERT_ERROR(!ret, "Config error, empty ParseFunc for instruction: {}",
-                 i_instr);
-    return ret;
-}
-
-Opcode
-CPU::get_op_code(Instruction i_instr)
-{
-    return s_instr_map[i_instr].op_code;
-}
-
-AddressMode
-CPU::get_address_mode(Instruction i_instr)
-{
-    return s_instr_map[i_instr].address_mode;
+    return m_cycles;
 }
 
 Byte
-CPU::get_byte(Address i_address) const
+CPU::get_a() const
 {
-    return m_memory->get_byte(i_address);
+    return A;
+}
+
+Byte
+CPU::get_x() const
+{
+    return X;
+}
+
+Byte
+CPU::get_y() const
+{
+    return Y;
+}
+
+Address
+CPU::get_pc() const
+{
+    return PC;
+}
+
+Byte
+CPU::get_s() const
+{
+    return S;
+}
+
+Byte
+CPU::get_p() const
+{
+    return P;
+}
+
+std::vector<Byte>
+CPU::get_instruction_bytes(Address i_addr) const
+{
+    std::vector<Byte> bytes;
+    bytes.reserve(3);
+
+    Byte opcode_byte = get_byte(i_addr);
+    Opcode opcode = {opcode_byte};
+    bytes.push_back(opcode_byte);
+
+    ParseFunc parse = get_address_parse(opcode);
+    Byte operand_bytes;
+    (void)parse(this, operand_bytes, nullptr);
+    for (Byte i = 0; i < operand_bytes; ++i)
+    {
+        bytes.push_back(get_byte((i_addr + 1) + i));
+    }
+
+    return bytes;
+}
+
+auto
+CPU::get_opcode_exec(Opcode i_opcode) -> ExecFunc
+{
+    auto ret = s_instr_map[i_opcode].exec_func;
+    ASSERT_ERROR(ret, "Config error, empty ExecFunc for instruction: {}",
+                 i_opcode);
+    return ret;
+}
+
+auto
+CPU::get_address_parse(Opcode i_opcode) -> ParseFunc
+{
+    auto ret = s_address_mode_map[get_address_mode(i_opcode)].parse_func;
+    ASSERT_ERROR(ret, "Config error, empty ParseFunc for instruction: {}",
+                 i_opcode);
+    return ret;
+}
+
+auto
+CPU::get_instr_desc(Opcode i_opcode) -> InstructionDesc
+{
+    return s_instr_map[i_opcode];
+}
+
+OpcodeType
+CPU::get_op_code(Opcode i_opcode)
+{
+    return s_instr_map[i_opcode].op_code;
+}
+
+AddressMode
+CPU::get_address_mode(Opcode i_opcode)
+{
+    return s_instr_map[i_opcode].address_mode;
+}
+
+Byte
+CPU::get_byte(Address i_addr) const
+{
+    Byte byte;
+    auto err = m_mmu->get_byte(i_addr, byte);
+    // @TODO: report invalid operation
+    ASSERT_ERROR(!LN_FAILED(err), "Invalid memory read: ${:04X}", i_addr);
+    return byte;
 }
 
 void
-CPU::set_byte(Address i_address, Byte i_byte)
+CPU::set_byte(Address i_addr, Byte i_byte)
 {
-    return m_memory->set_byte(i_address, i_byte);
+    auto err = m_mmu->set_byte(i_addr, i_byte);
+    // @TODO: report invalid operation
+    ASSERT_ERROR(!LN_FAILED(err), "Invalid memory write: ${:04X}", i_addr);
+}
+
+Byte2
+CPU::get_byte2(Address i_addr) const
+{
+    auto lower = get_byte(i_addr);
+    auto higher = get_byte(i_addr + 1);
+    return byte2_from_bytes(higher, lower);
 }
 
 void
 CPU::push_byte(Byte i_byte)
 {
-    set_byte(STACK_BASE + S, i_byte);
+    if (S == 0)
+    {
+        get_logger()->error("Stack overflow! PC: ${:04X}", PC);
+    }
+
+    set_byte(MMU::STACK_PAGE_MASK | S, i_byte);
+    get_logger()->trace("Push byte: {:02X}", i_byte);
     --S;
 }
 
 Byte
 CPU::pop_byte()
 {
+    if (S == (Byte)-1)
+    {
+        get_logger()->error("Stack underflow! PC: ${:04X}", PC);
+    }
+
     ++S;
-    return get_byte(STACK_BASE + S);
+    Byte byte = get_byte(MMU::STACK_PAGE_MASK | S);
+    get_logger()->trace("Pop byte: {:02X}", byte);
+    return byte;
 }
 
 void
@@ -190,23 +334,16 @@ CPU::set_operand(Operand i_operand, Byte i_byte)
 void
 CPU::halt()
 {
-    // @TODO
+    get_logger()->info("Halting...");
+
+    m_halted = true;
 }
 
 void
 CPU::report_exec_error(const std::string &i_msg)
 {
-    // @TODO: Current executing instruction.
+    // @TODO: Current executing instruction?
     ASSERT_ERROR(false, i_msg);
-}
-
-auto
-CPU::get_circle(Cycle i_base, bool i_read_page_crossing, Cycle i_branch_cycles)
-    -> Cycle
-{
-    // if "i_branch_cycles" is not 0 (i.e. it's referring to branch
-    // instruction), then "i_read_page_crossing" should be 0.
-    return i_base + i_read_page_crossing + i_branch_cycles;
 }
 
 } // namespace ln
