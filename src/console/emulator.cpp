@@ -8,7 +8,14 @@ namespace ln {
 
 Emulator::Emulator()
     : m_cpu(&m_mmu)
+    , m_controllers{}
 {
+}
+
+void
+Emulator::plug_controller(ControllerSlot i_slot, Controller *i_controller)
+{
+    m_controllers[i_slot].reset(i_controller);
 }
 
 Error

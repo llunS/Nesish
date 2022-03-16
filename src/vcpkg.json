@@ -5,7 +5,8 @@
     "dependencies": [
         "spdlog",
         "gtest",
-        "cli11"
+        "cli11",
+        "sfml"
     ],
     "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
     "overrides": [
@@ -21,6 +22,10 @@
         {
             "name": "cli11",
             "version": "2.1.1"
+        },
+        {
+            "name":"sfml",
+            "version": "2.5.1"
         }
     ]
 }

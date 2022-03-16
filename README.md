@@ -8,3 +8,4 @@ A NES emulator.
 - fmt (indirectly by spdlog)
 - CLI11
 - gtest
+- SFML

@@ -1,6 +1,10 @@
 #ifndef LN_CONSOLE_SPEC_HPP
 #define LN_CONSOLE_SPEC_HPP
 
+// Resolution
+#define LN_NES_WIDTH 256
+#define LN_NES_HEIGHT 240
+
 #define LN_ADDRESSABLE_SIZE (64 * 1024) // 16bit addressable memory
 
 #define LN_INTERNAL_RAM_SIZE (2 * 1024) // 2KiB

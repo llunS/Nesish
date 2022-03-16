@@ -1,6 +1,6 @@
 #include "CLI/CLI.hpp"
 #include "common/logger.hpp"
-#include "console/emulator.hpp"
+#include "app/sfml/sf_app.hpp"
 
 int
 main(int argc, char **argv)
@@ -20,7 +20,6 @@ main(int argc, char **argv)
 
     ln::init_logger(log_level);
 
-    ln::Emulator emulator;
-    emulator.power_up();
-    return 0;
+    ln::SFApp app;
+    return app.run();
 }

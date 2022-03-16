@@ -6,9 +6,11 @@
 #include "console/mmu.hpp"
 #include "common/klass.hpp"
 #include "console/dllexport.h"
+#include "console/peripheral/controller.hpp"
 
 #include <string>
 #include <cstddef>
+#include <memory>
 
 namespace ln {
 
@@ -16,6 +18,15 @@ struct LN_CONSOLE_API Emulator {
   public:
     Emulator();
     LN_KLZ_DELETE_COPY_MOVE(Emulator);
+
+    enum ControllerSlot {
+        P1,
+        P2,
+        SIZE,
+    };
+
+    void
+    plug_controller(ControllerSlot i_slot, Controller *i_controller);
 
     Error
     insert_cartridge(const std::string &i_rom_path);
@@ -34,6 +45,8 @@ struct LN_CONSOLE_API Emulator {
   private:
     CPU m_cpu;
     MMU m_mmu;
+
+    std::unique_ptr<Controller> m_controllers[ControllerSlot::SIZE];
 };
 
 } // namespace ln

@@ -61,6 +61,7 @@ endif()
 
 add_subdirectory(common)
 add_subdirectory(console)
+add_subdirectory(app/sfml)
 
 
 # --------------------------------------------
@@ -89,7 +90,7 @@ find_package(CLI11 CONFIG REQUIRED)
 
 target_link_libraries(LightNES PRIVATE
     Common
-    Console
+    SFMLApp
     CLI11::CLI11
 )
 
