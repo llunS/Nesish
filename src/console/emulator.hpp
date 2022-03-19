@@ -3,7 +3,7 @@
 
 #include "common/error.hpp"
 #include "console/cpu/cpu.hpp"
-#include "console/mmu.hpp"
+#include "console/memory/memory.hpp"
 #include "common/klass.hpp"
 #include "console/dllexport.h"
 #include "console/peripheral/controller.hpp"
@@ -35,8 +35,9 @@ struct LN_CONSOLE_API Emulator {
     void
     reset();
 
-    typedef void (*TestInitFunc)(ln::MMU *i_mmu, void *i_context);
-    typedef bool (*TestExitFunc)(const ln::CPU *i_cpu, const ln::MMU *i_mmu,
+    typedef void (*TestInitFunc)(ln::Memory *i_memory, void *i_context);
+    typedef bool (*TestExitFunc)(const ln::CPU *i_cpu,
+                                 const ln::Memory *i_memory,
                                  std::size_t i_instr, void *i_context);
     void
     run_test(Address i_entry, TestInitFunc i_init_func,
@@ -44,7 +45,7 @@ struct LN_CONSOLE_API Emulator {
 
   private:
     CPU m_cpu;
-    MMU m_mmu;
+    Memory m_memory;
 
     std::unique_ptr<Controller> m_controllers[ControllerSlot::SIZE];
 };

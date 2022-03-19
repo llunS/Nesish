@@ -16,13 +16,15 @@ target_include_directories(${module_name} PUBLIC ../)
 # Source files
 # --------------------------------------------
 
+list(APPEND sources emulator.cpp)
+
 list(APPEND sources cartridge/cartridge_loader.cpp)
 list(APPEND sources cartridge/ines.cpp)
 list(APPEND sources cartridge/mapper/mapper.cpp)
 list(APPEND sources cartridge/mapper/norm.cpp)
 
-list(APPEND sources emulator.cpp)
-list(APPEND sources mmu.cpp)
+list(APPEND sources memory/memory.cpp)
+list(APPEND sources memory/mapping_entry.cpp)
 
 list(APPEND sources cpu/cpu.cpp)
 list(APPEND sources cpu/opcode_exec.cpp)

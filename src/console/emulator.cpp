@@ -7,7 +7,7 @@
 namespace ln {
 
 Emulator::Emulator()
-    : m_cpu(&m_mmu)
+    : m_cpu(&m_memory)
     , m_controllers{}
 {
 }
@@ -46,7 +46,7 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
 
     // 2. map to address space
     get_logger()->info("Mapping cartridge...");
-    cart->map_memory(&m_mmu);
+    cart->map_memory(&m_memory);
 
 l_cleanup:
     if (LN_FAILED(err))
@@ -79,10 +79,10 @@ Emulator::run_test(Address i_entry, TestInitFunc i_init_func,
     m_cpu.set_entry(i_entry);
 
     if (i_init_func)
-        i_init_func(&m_mmu, i_context);
+        i_init_func(&m_memory, i_context);
 
     std::size_t idx_exec_instrs = 0;
-    while (!i_exit_func(&m_cpu, &m_mmu, idx_exec_instrs, i_context))
+    while (!i_exit_func(&m_cpu, &m_memory, idx_exec_instrs, i_context))
     {
         if (m_cpu.step())
         {

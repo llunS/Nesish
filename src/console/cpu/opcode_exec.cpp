@@ -41,7 +41,7 @@ CPU::OpcodeExec::exec_brk(ln::CPU *i_cpu, ln::Operand i_operand,
     i_cpu->set_flag(CPU::StatusFlag::I);
 
     // Jump to interrupt handler.
-    i_cpu->PC = i_cpu->get_byte2(MMU::IRQ_VECTOR_ADDR);
+    i_cpu->PC = i_cpu->get_byte2(Memory::IRQ_VECTOR_ADDR);
 }
 
 void

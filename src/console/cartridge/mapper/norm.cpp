@@ -28,7 +28,7 @@ NORM::validate() const
 }
 
 void
-NORM::map_memory(MMU *i_mmu)
+NORM::map_memory(Memory *i_memory)
 {
     // PRG ROM
     auto prg_rom_decode = [](const MappingEntry *i_entry,
@@ -51,8 +51,8 @@ NORM::map_memory(MMU *i_mmu)
         Byte *byte_ptr = rom_base + rel_address;
         return byte_ptr;
     };
-    i_mmu->set_mapping(MappingPoint::PRG_ROM,
-                       {0x8000, 0xFFFF, true, prg_rom_decode, (void *)this});
+    i_memory->set_mapping(MemoryMappingPoint::PRG_ROM,
+                          {0x8000, 0xFFFF, true, prg_rom_decode, (void *)this});
 
     // PRG RAM
     auto prg_ram_decode = [](const MappingEntry *i_entry,
@@ -62,17 +62,18 @@ NORM::map_memory(MMU *i_mmu)
         Byte *byte_ptr = this_->m_prg_ram + (i_addr - i_entry->begin);
         return byte_ptr;
     };
-    i_mmu->set_mapping(MappingPoint::PRG_RAM,
-                       {0x6000, 0x7FFF, false, prg_ram_decode, (void *)this});
+    i_memory->set_mapping(
+        MemoryMappingPoint::PRG_RAM,
+        {0x6000, 0x7FFF, false, prg_ram_decode, (void *)this});
 
     // @TODO: CHR
 }
 
 void
-NORM::unmap_memory(MMU *i_mmu) const
+NORM::unmap_memory(Memory *i_memory) const
 {
-    i_mmu->unset_mapping(MappingPoint::PRG_ROM);
-    i_mmu->unset_mapping(MappingPoint::PRG_RAM);
+    i_memory->unset_mapping(MemoryMappingPoint::PRG_ROM);
+    i_memory->unset_mapping(MemoryMappingPoint::PRG_RAM);
 
     // @TODO: CHR
 }

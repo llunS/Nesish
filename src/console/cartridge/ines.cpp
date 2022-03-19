@@ -83,15 +83,15 @@ INES::validate() const
 }
 
 void
-INES::map_memory(MMU *i_mmu) const
+INES::map_memory(Memory *i_memory) const
 {
-    m_mapper->map_memory(i_mmu);
+    m_mapper->map_memory(i_memory);
 }
 
 void
-INES::unmap_memory(MMU *i_mmu) const
+INES::unmap_memory(Memory *i_memory) const
 {
-    m_mapper->unmap_memory(i_mmu);
+    m_mapper->unmap_memory(i_memory);
 }
 
 Mapper *

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "console/mmu.hpp"
+#include "console/memory/memory.hpp"
 #include "common/klass.hpp"
 #include "console/types.hpp"
 #include "console/cpu/instruction.hpp"
@@ -17,7 +17,7 @@ namespace ln {
 
 struct LN_CONSOLE_API CPU {
   public:
-    CPU(MMU *i_mmu);
+    CPU(Memory *i_memory);
     LN_KLZ_DELETE_COPY_MOVE(CPU);
 
   public:
@@ -156,7 +156,7 @@ struct LN_CONSOLE_API CPU {
     Byte P; // Status
 
     // ---- External components references
-    MMU *m_mmu;
+    Memory *m_memory;
 
   private:
     Cycle m_cycles;

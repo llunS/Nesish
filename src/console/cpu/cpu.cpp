@@ -6,8 +6,8 @@
 
 namespace ln {
 
-CPU::CPU(MMU *i_mmu)
-    : m_mmu(i_mmu)
+CPU::CPU(Memory *i_memory)
+    : m_memory(i_memory)
     , m_cycles(0)
     , m_halted(false)
 {
@@ -25,24 +25,24 @@ CPU::power_up()
     // @TODO NES APU and I/O registers
     for (Address i = 0x4000; i <= 0x400F; ++i)
     {
-        (void)m_mmu->set_byte(i, 0x00);
+        (void)m_memory->set_byte(i, 0x00);
     }
     for (Address i = 0x4010; i <= 0x4013; ++i)
     {
-        (void)m_mmu->set_byte(i, 0x00);
+        (void)m_memory->set_byte(i, 0x00);
     }
-    (void)m_mmu->set_byte(0x4015, 0x00); // (all channels disabled)
-    (void)m_mmu->set_byte(0x4017, 0x00); // (frame irq enabled)
+    (void)m_memory->set_byte(0x4015, 0x00); // (all channels disabled)
+    (void)m_memory->set_byte(0x4017, 0x00); // (frame irq enabled)
 
     // All 15 bits of noise channel LFSR = $0000[5]. The first time the LFSR is
     // clocked from the all-0s state, it will shift in a 1.
     // @TODO: noise channel LFSR
 
-    (void)m_mmu->set_byte(LN_APU_FC_ADDRESS, 0x00); // 2A03G
+    (void)m_memory->set_byte(LN_APU_FC_ADDRESS, 0x00); // 2A03G
 
     // consistent RAM startup state
-    m_mmu->set_bulk(LN_INTERNAL_RAM_ADDRESS_HEAD, LN_INTERNAL_RAM_ADDRESS_TAIL,
-                    0xFF);
+    m_memory->set_bulk(LN_INTERNAL_RAM_ADDRESS_HEAD,
+                       LN_INTERNAL_RAM_ADDRESS_TAIL, 0xFF);
 }
 
 void
@@ -51,12 +51,12 @@ CPU::reset()
     S -= 3;
     set_flag(StatusFlag::I); // The I (IRQ disable) flag was set to true
     // @TODO NES APU and I/O registers
-    (void)m_mmu->set_byte(0x4015, 0x00); // APU was silenced
+    (void)m_memory->set_byte(0x4015, 0x00); // APU was silenced
     // @TODO: APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
     // first step of its waveform)
     // @TODO: APU DPCM output ANDed with 1 (upper 6 bits cleared)
 
-    (void)m_mmu->set_byte(LN_APU_FC_ADDRESS, 0x00);
+    (void)m_memory->set_byte(LN_APU_FC_ADDRESS, 0x00);
 
     m_halted = false;
     m_cycles = 0;
@@ -202,7 +202,7 @@ Byte
 CPU::get_byte(Address i_addr) const
 {
     Byte byte;
-    auto err = m_mmu->get_byte(i_addr, byte);
+    auto err = m_memory->get_byte(i_addr, byte);
     // @TODO: report invalid operation
     ASSERT_ERROR(!LN_FAILED(err), "Invalid memory read: ${:04X}", i_addr);
     return byte;
@@ -211,7 +211,7 @@ CPU::get_byte(Address i_addr) const
 void
 CPU::set_byte(Address i_addr, Byte i_byte)
 {
-    auto err = m_mmu->set_byte(i_addr, i_byte);
+    auto err = m_memory->set_byte(i_addr, i_byte);
     // @TODO: report invalid operation
     ASSERT_ERROR(!LN_FAILED(err), "Invalid memory write: ${:04X}", i_addr);
 }
@@ -232,7 +232,7 @@ CPU::push_byte(Byte i_byte)
         get_logger()->error("Stack overflow! PC: ${:04X}", PC);
     }
 
-    set_byte(MMU::STACK_PAGE_MASK | S, i_byte);
+    set_byte(Memory::STACK_PAGE_MASK | S, i_byte);
     get_logger()->trace("Push byte: {:02X}", i_byte);
     --S;
 }
@@ -246,7 +246,7 @@ CPU::pop_byte()
     }
 
     ++S;
-    Byte byte = get_byte(MMU::STACK_PAGE_MASK | S);
+    Byte byte = get_byte(Memory::STACK_PAGE_MASK | S);
     get_logger()->trace("Pop byte: {:02X}", byte);
     return byte;
 }

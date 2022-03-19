@@ -33,14 +33,14 @@ TEST(cpu_test, cpu_test)
         std::unordered_set<ln::Byte> opcode_set;
     } context;
 
-    auto init_func = [](ln::MMU *i_mmu, void *i_context) -> void {
+    auto init_func = [](ln::Memory *i_memory, void *i_context) -> void {
         (void)(i_context);
-        i_mmu->set_byte(0x0002, 0xFF);
-        i_mmu->set_byte(0x0003, 0xFF);
+        i_memory->set_byte(0x0002, 0xFF);
+        i_memory->set_byte(0x0003, 0xFF);
     };
-    auto exit_func = [](const ln::CPU *i_cpu, const ln::MMU *i_mmu,
+    auto exit_func = [](const ln::CPU *i_cpu, const ln::Memory *i_memory,
                         std::size_t i_instr, void *i_context) -> bool {
-        (void)(i_mmu);
+        (void)(i_memory);
 
         auto context = (TestContext *)i_context;
 

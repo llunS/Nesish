@@ -2,7 +2,7 @@
 #define LN_CONSOLE_CARTRIDGE_CARTRIDGE_HPP
 
 #include "common/error.hpp"
-#include "console/mmu.hpp"
+#include "console/memory/memory.hpp"
 
 namespace ln {
 
@@ -14,9 +14,9 @@ struct Cartridge {
     validate() const = 0;
 
     virtual void
-    map_memory(MMU *i_mmu) const = 0;
+    map_memory(Memory *i_memory) const = 0;
     virtual void
-    unmap_memory(MMU *i_mmu) const = 0;
+    unmap_memory(Memory *i_memory) const = 0;
 };
 
 } // namespace ln

@@ -21,9 +21,9 @@ struct INES : public Cartridge {
     validate() const override;
 
     void
-    map_memory(MMU *i_mmu) const override;
+    map_memory(Memory *i_memory) const override;
     void
-    unmap_memory(MMU *i_mmu) const override;
+    unmap_memory(Memory *i_memory) const override;
 
   public:
     struct RomAccessor {

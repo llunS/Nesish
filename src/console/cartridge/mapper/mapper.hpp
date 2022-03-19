@@ -14,9 +14,9 @@ struct Mapper {
     validate() const = 0;
 
     virtual void
-    map_memory(MMU *i_mmu) = 0;
+    map_memory(Memory *i_memory) = 0;
     virtual void
-    unmap_memory(MMU *i_mmu) const = 0;
+    unmap_memory(Memory *i_memory) const = 0;
 
   protected:
     const INES::RomAccessor *m_rom_accessor;

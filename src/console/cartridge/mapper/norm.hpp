@@ -13,9 +13,9 @@ struct NORM : public Mapper {
     validate() const override;
 
     void
-    map_memory(MMU *i_mmu) override;
+    map_memory(Memory *i_memory) override;
     void
-    unmap_memory(MMU *i_mmu) const override;
+    unmap_memory(Memory *i_memory) const override;
 
   private:
     Byte m_prg_ram[8 * 1024]; // Just support it up to 8KB
