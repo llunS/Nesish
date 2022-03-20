@@ -11,27 +11,31 @@ Memory::Memory()
     : m_ram{}
     , m_adhoc{}
 {
-    // Register RAM space mapping
-    auto internal_ram_decode = [](const MappingEntry *i_entry,
-                                  Address i_addr) -> Byte * {
-        Byte *ram = (Byte *)i_entry->opaque;
-        Address addr = i_addr & LN_INTERNAL_RAM_MASK;
-        return ram + addr;
-    };
-    set_mapping(MemoryMappingPoint::INTERNAL_RAM,
-                {LN_RAM_ADDRESS_HEAD, LN_RAM_ADDRESS_TAIL, false,
-                 internal_ram_decode, m_ram});
+    // Internal RAM space mapping
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            Byte *ram = (Byte *)i_entry->opaque;
 
-    // @TMP: Ad-hoc solution
-    auto adhoc_ram_decode = [](const MappingEntry *i_entry,
-                               Address i_addr) -> Byte * {
-        Byte *ram = (Byte *)i_entry->opaque;
+            Address addr = i_addr & LN_INTERNAL_RAM_MASK;
+            return ram + addr;
+        };
+        set_mapping(MemoryMappingPoint::INTERNAL_RAM,
+                    {LN_RAM_ADDR_HEAD, LN_RAM_ADDR_TAIL, false, decode, m_ram});
+    }
 
-        Address addr = i_addr;
-        return ram + (addr - 0x4000);
-    };
-    set_mapping(MemoryMappingPoint::ADHOC,
-                {0x4000, 0x4017, false, adhoc_ram_decode, m_adhoc});
+    // @TMP: Ad-hoc solution until APU is implemented
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            Byte *ram = (Byte *)i_entry->opaque;
+
+            Address addr = i_addr;
+            return ram + (addr - i_entry->begin);
+        };
+        set_mapping(MemoryMappingPoint::ADHOC,
+                    {0x4000, 0x4017, false, decode, m_adhoc});
+    }
 }
 
 Error

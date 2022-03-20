@@ -8,8 +8,50 @@ namespace ln {
 
 Emulator::Emulator()
     : m_cpu(&m_memory)
+    , m_cart(nullptr)
     , m_controllers{}
 {
+    hard_wire();
+}
+
+Emulator::~Emulator()
+{
+    if (m_cart)
+    {
+        m_cart->unmap_memory(&m_memory, &m_ppu_memory);
+        delete m_cart;
+    }
+    m_cart = nullptr;
+}
+
+void
+Emulator::hard_wire()
+{
+    // PPU register memory mapping.
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            PPU *ppu = (PPU *)i_entry->opaque;
+
+            PPU::Register reg = PPU::Register(i_addr - i_entry->begin);
+            return &ppu->get_register(reg);
+        };
+        m_memory.set_mapping(
+            MemoryMappingPoint::PPU_REGISTER,
+            {LN_PPUCTRL_ADDR, LN_PPUDATA_ADDR, false, decode, &m_ppu});
+    }
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            (void)(i_addr);
+            PPU *ppu = (PPU *)i_entry->opaque;
+
+            return &ppu->get_register(PPU::OAMDMA);
+        };
+        m_memory.set_mapping(
+            MemoryMappingPoint::OAMDMA,
+            {LN_OAMDMA_ADDR, LN_OAMDMA_ADDR, false, decode, &m_ppu});
+    }
 }
 
 void
@@ -46,13 +88,22 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
 
     // 2. map to address space
     get_logger()->info("Mapping cartridge...");
-    cart->map_memory(&m_memory);
+    cart->map_memory(&m_memory, &m_ppu_memory);
 
 l_cleanup:
     if (LN_FAILED(err))
     {
         delete cart;
         cart = nullptr;
+    }
+    else
+    {
+        if (m_cart)
+        {
+            m_cart->unmap_memory(&m_memory, &m_ppu_memory);
+            delete m_cart;
+        }
+        m_cart = cart;
     }
 
     return err;
@@ -62,14 +113,14 @@ void
 Emulator::power_up()
 {
     m_cpu.power_up();
-    // @TODO: Other components
+    m_ppu.power_up();
 }
 
 void
 Emulator::reset()
 {
     m_cpu.reset();
-    // @TODO: Other components
+    m_ppu.reset();
 }
 
 void

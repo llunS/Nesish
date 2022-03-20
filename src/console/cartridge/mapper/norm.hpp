@@ -13,13 +13,15 @@ struct NORM : public Mapper {
     validate() const override;
 
     void
-    map_memory(Memory *i_memory) override;
+    map_memory(const INES *i_nes, Memory *i_memory,
+               PPUMemory *i_ppu_memory) override;
     void
-    unmap_memory(Memory *i_memory) const override;
+    unmap_memory(const INES *i_nes, Memory *i_memory,
+                 PPUMemory *i_ppu_memory) const override;
 
   private:
     Byte m_prg_ram[8 * 1024]; // Just support it up to 8KB
-    // @TODO: CHR RAM
+    Byte m_chr_rom[8 * 1024];
 };
 
 } // namespace ln

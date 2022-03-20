@@ -10,11 +10,13 @@
 
 namespace ln {
 
-enum MemoryMappingPoint : unsigned char {
+enum class MemoryMappingPoint : unsigned char {
     INVALID = 0,
     ADHOC, // @TMP
 
     INTERNAL_RAM,
+    PPU_REGISTER,
+    OAMDMA,
     PRG_ROM,
     PRG_RAM,
 };

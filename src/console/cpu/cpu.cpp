@@ -38,11 +38,11 @@ CPU::power_up()
     // clocked from the all-0s state, it will shift in a 1.
     // @TODO: noise channel LFSR
 
-    (void)m_memory->set_byte(LN_APU_FC_ADDRESS, 0x00); // 2A03G
+    (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00); // 2A03G
 
     // consistent RAM startup state
-    m_memory->set_bulk(LN_INTERNAL_RAM_ADDRESS_HEAD,
-                       LN_INTERNAL_RAM_ADDRESS_TAIL, 0xFF);
+    m_memory->set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
+                       0xFF);
 }
 
 void
@@ -56,7 +56,7 @@ CPU::reset()
     // first step of its waveform)
     // @TODO: APU DPCM output ANDed with 1 (upper 6 bits cleared)
 
-    (void)m_memory->set_byte(LN_APU_FC_ADDRESS, 0x00);
+    (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00);
 
     m_halted = false;
     m_cycles = 0;

@@ -3,10 +3,13 @@
 
 #include "console/types.hpp"
 
+#include <functional>
+
 namespace ln {
 
 struct MappingEntry;
-typedef Byte *(*MappingDecodeFunc)(const MappingEntry *i_entry, Address i_addr);
+typedef std::function<Byte *(const MappingEntry *i_entry, Address i_addr)>
+    MappingDecodeFunc;
 struct MappingEntry {
     Address begin;
     Address end; // inclusive

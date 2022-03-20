@@ -83,15 +83,21 @@ INES::validate() const
 }
 
 void
-INES::map_memory(Memory *i_memory) const
+INES::map_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const
 {
-    m_mapper->map_memory(i_memory);
+    m_mapper->map_memory(this, i_memory, i_ppu_memory);
 }
 
 void
-INES::unmap_memory(Memory *i_memory) const
+INES::unmap_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const
 {
-    m_mapper->unmap_memory(i_memory);
+    m_mapper->unmap_memory(this, i_memory, i_ppu_memory);
+}
+
+bool
+INES::h_mirror() const
+{
+    return !m_header.mirror;
 }
 
 Mapper *

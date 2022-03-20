@@ -2,10 +2,13 @@
 #define LN_CONSOLE_EMULATOR_HPP
 
 #include "common/error.hpp"
+#include "console/dllexport.h"
+#include "common/klass.hpp"
 #include "console/cpu/cpu.hpp"
 #include "console/memory/memory.hpp"
-#include "common/klass.hpp"
-#include "console/dllexport.h"
+#include "console/ppu/ppu.hpp"
+#include "console/ppu/ppu_memory.hpp"
+#include "console/cartridge/cartridge.hpp"
 #include "console/peripheral/controller.hpp"
 
 #include <string>
@@ -17,6 +20,7 @@ namespace ln {
 struct LN_CONSOLE_API Emulator {
   public:
     Emulator();
+    ~Emulator();
     LN_KLZ_DELETE_COPY_MOVE(Emulator);
 
     enum ControllerSlot {
@@ -44,8 +48,16 @@ struct LN_CONSOLE_API Emulator {
              TestExitFunc i_exit_func, void *i_context);
 
   private:
+    void
+    hard_wire();
+
+  private:
     CPU m_cpu;
     Memory m_memory;
+    PPU m_ppu;
+    PPUMemory m_ppu_memory;
+
+    Cartridge *m_cart;
 
     std::unique_ptr<Controller> m_controllers[ControllerSlot::SIZE];
 };

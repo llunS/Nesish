@@ -10,6 +10,7 @@ namespace ln {
 NORM::NORM(const INES::RomAccessor *i_accessor)
     : Mapper{i_accessor}
     , m_prg_ram{}
+    , m_chr_rom{}
 {
 }
 
@@ -28,54 +29,72 @@ NORM::validate() const
 }
 
 void
-NORM::map_memory(Memory *i_memory)
+NORM::map_memory(const INES *i_nes, Memory *i_memory, PPUMemory *i_ppu_memory)
 {
     // PRG ROM
-    auto prg_rom_decode = [](const MappingEntry *i_entry,
-                             Address i_addr) -> Byte * {
-        auto this_ = (NORM *)i_entry->opaque;
-        auto accessor = this_->m_rom_accessor;
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            auto thiz = (NORM *)i_entry->opaque;
+            auto accessor = thiz->m_rom_accessor;
 
-        std::size_t rom_size;
-        Byte *rom_base;
-        accessor->get_prg_rom(&rom_base, &rom_size);
+            std::size_t rom_size;
+            Byte *rom_base;
+            accessor->get_prg_rom(&rom_base, &rom_size);
 
-        // address mirroring
-        Address rel_address = (i_addr - i_entry->begin);
-        if (rom_size == LN_NORM_128_PRG_RAM_SIZE)
-        {
-            // 16K mask, to map second 16KB to the first.
-            rel_address &= 0x3FFF;
-        }
+            // address mirroring
+            Address rel_address = (i_addr - i_entry->begin);
+            if (rom_size == LN_NORM_128_PRG_RAM_SIZE)
+            {
+                // 16K mask, to map second 16KB to the first.
+                rel_address &= 0x3FFF;
+            }
 
-        Byte *byte_ptr = rom_base + rel_address;
-        return byte_ptr;
-    };
-    i_memory->set_mapping(MemoryMappingPoint::PRG_ROM,
-                          {0x8000, 0xFFFF, true, prg_rom_decode, (void *)this});
+            return rom_base + rel_address;
+        };
+        i_memory->set_mapping(MemoryMappingPoint::PRG_ROM,
+                              {0x8000, 0xFFFF, true, decode, this});
+    }
 
     // PRG RAM
-    auto prg_ram_decode = [](const MappingEntry *i_entry,
-                             Address i_addr) -> Byte * {
-        auto this_ = (NORM *)i_entry->opaque;
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            auto thiz = (NORM *)i_entry->opaque;
 
-        Byte *byte_ptr = this_->m_prg_ram + (i_addr - i_entry->begin);
-        return byte_ptr;
-    };
-    i_memory->set_mapping(
-        MemoryMappingPoint::PRG_RAM,
-        {0x6000, 0x7FFF, false, prg_ram_decode, (void *)this});
+            return thiz->m_prg_ram + (i_addr - i_entry->begin);
+        };
+        i_memory->set_mapping(MemoryMappingPoint::PRG_RAM,
+                              {0x6000, 0x7FFF, false, decode, this});
+    }
 
-    // @TODO: CHR
+    // CHR ROM
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            auto thiz = (NORM *)i_entry->opaque;
+
+            return thiz->m_chr_rom + (i_addr - i_entry->begin);
+        };
+        i_ppu_memory->set_mapping(
+            PPUMemoryMappingPoint::PATTERN,
+            {LN_PATTERN_ADDR_HEAD, LN_PATTERN_ADDR_TAIL, true, decode, this});
+    }
+    // mirroring
+    i_ppu_memory->configure_mirror(i_nes->h_mirror());
 }
 
 void
-NORM::unmap_memory(Memory *i_memory) const
+NORM::unmap_memory(const INES *i_nes, Memory *i_memory,
+                   PPUMemory *i_ppu_memory) const
 {
+    (void)(i_nes);
+
     i_memory->unset_mapping(MemoryMappingPoint::PRG_ROM);
     i_memory->unset_mapping(MemoryMappingPoint::PRG_RAM);
 
-    // @TODO: CHR
+    i_ppu_memory->unset_mapping(PPUMemoryMappingPoint::PATTERN);
+    i_ppu_memory->unset_mapping(PPUMemoryMappingPoint::NAMETABLE);
 }
 
 } // namespace ln

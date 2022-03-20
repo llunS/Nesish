@@ -28,7 +28,7 @@ struct MappableMemory {
 
   protected:
     Byte *
-    decode_addr(Address i_addr, bool i_write) const;
+    decode_addr(Address i_addr, int i_write) const;
 
   private:
     EMappingPoint m_mapping_registry[AddressableSize];

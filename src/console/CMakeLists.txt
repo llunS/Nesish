@@ -33,6 +33,9 @@ list(APPEND sources cpu/instr_map.cpp)
 list(APPEND sources cpu/address_mode_map.cpp)
 list(APPEND sources cpu/operand.cpp)
 
+list(APPEND sources ppu/ppu.cpp)
+list(APPEND sources ppu/ppu_memory.cpp)
+
 target_sources(${module_name} PRIVATE ${sources})
 
 

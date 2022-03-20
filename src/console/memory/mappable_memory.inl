@@ -12,7 +12,7 @@ template <typename EMappingPoint, std::size_t AddressableSize>
 MappableMemory<EMappingPoint, AddressableSize>::MappableMemory()
     : m_mapping_registry{}
 {
-    static_assert(EMappingPoint::INVALID == 0,
+    static_assert(EMappingPoint::INVALID == EMappingPoint(0),
                   "m_mapping_registry initialization needs other logic if "
                   "invalid value is not 0");
 }
@@ -87,11 +87,11 @@ MappableMemory<EMappingPoint, AddressableSize>::unset_mapping(
 
     MappingEntry entry = m_mapping_entries.at(i_point);
 
-    static_assert(EMappingPoint::INVALID == 0,
+    static_assert(EMappingPoint::INVALID == EMappingPoint(0),
                   "m_mapping_registry initialization needs other logic if "
                   "invalid value is not 0");
     unsigned long address_count = (entry.end - entry.begin + 1);
-    std::memset(m_mapping_registry + entry.begin, EMappingPoint::INVALID,
+    std::memset(m_mapping_registry + entry.begin, 0,
                 address_count * sizeof(EMappingPoint));
 
     m_mapping_entries.erase(i_point);
@@ -100,7 +100,7 @@ MappableMemory<EMappingPoint, AddressableSize>::unset_mapping(
 template <typename EMappingPoint, std::size_t AddressableSize>
 Byte *
 MappableMemory<EMappingPoint, AddressableSize>::decode_addr(Address i_addr,
-                                                            bool i_write) const
+                                                            int i_write) const
 {
     EMappingPoint mp = m_mapping_registry[i_addr];
     if (mp == EMappingPoint::INVALID)
@@ -117,7 +117,7 @@ MappableMemory<EMappingPoint, AddressableSize>::decode_addr(Address i_addr,
     }
 
     MappingEntry entry = it->second;
-    if (i_write && entry.readonly)
+    if (i_write != -1 && i_write && entry.readonly)
     {
         // Can not write to read-only memory.
         return nullptr;

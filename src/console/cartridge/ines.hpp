@@ -21,9 +21,12 @@ struct INES : public Cartridge {
     validate() const override;
 
     void
-    map_memory(Memory *i_memory) const override;
+    map_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const override;
     void
-    unmap_memory(Memory *i_memory) const override;
+    unmap_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const override;
+
+    bool
+    h_mirror() const;
 
   public:
     struct RomAccessor {
