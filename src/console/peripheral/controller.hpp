@@ -2,6 +2,10 @@
 #ifndef LN_CONSOLE_PERIPHERAL_CONTROLLER_HPP
 #define LN_CONSOLE_PERIPHERAL_CONTROLLER_HPP
 
+#include <type_traits>
+
+namespace ln {
+
 enum Key {
     BEGIN = 0,
 
@@ -18,6 +22,7 @@ enum Key {
     SIZE,
     END = SIZE,
 };
+typedef std::underlying_type<ln::Key>::type KeyIt;
 
 struct Controller {
   public:
@@ -28,5 +33,7 @@ struct Controller {
     virtual bool
     report() = 0;
 };
+
+} // namespace ln
 
 #endif // LN_CONSOLE_PERIPHERAL_CONTROLLER_HPP

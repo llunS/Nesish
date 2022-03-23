@@ -1,6 +1,6 @@
 #include "CLI/CLI.hpp"
 #include "common/logger.hpp"
-#include "app/sfml/sf_app.hpp"
+#include "glfw_app/app.hpp"
 
 int
 main(int argc, char **argv)
@@ -20,6 +20,6 @@ main(int argc, char **argv)
 
     ln::init_logger(log_level);
 
-    ln::SFApp app;
+    ln_app::App app;
     return app.run();
 }

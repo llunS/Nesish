@@ -1,0 +1,10 @@
+#ifndef @include_guard_c@
+#define @include_guard_c@
+
+namespace @namespace_c@ {
+
+constexpr char g_@shader_name_c@[] = R"(@shader_src_c@)";
+
+} // namespace @namespace_c@
+
+#endif // @include_guard_c@

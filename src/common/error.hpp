@@ -13,6 +13,8 @@ enum class Error {
     UNAVAILABLE,      // Requested resource is unavailable.
     UNIMPLEMENTED,    // TODO marker, shouldn't be exposed to production code.
     PROGRAMMING,      // Someone wrote a bug, an unexpected behavior.
+
+    RENDERING_API, // Rendering API error.
 };
 
 } // namespace ln

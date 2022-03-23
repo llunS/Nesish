@@ -61,7 +61,7 @@ endif()
 
 add_subdirectory(common)
 add_subdirectory(console)
-add_subdirectory(app/sfml)
+add_subdirectory(glfw_app)
 
 
 # --------------------------------------------
@@ -90,7 +90,7 @@ find_package(CLI11 CONFIG REQUIRED)
 
 target_link_libraries(LightNES PRIVATE
     Common
-    SFMLApp
+    GLFWApp
     CLI11::CLI11
 )
 

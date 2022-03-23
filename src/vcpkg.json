@@ -6,7 +6,14 @@
         "spdlog",
         "gtest",
         "cli11",
-        "sfml"
+        "glfw3",
+        {
+            "name": "imgui",
+            "features": [
+                "glfw-binding",
+                "opengl3-binding"
+            ]
+        }
     ],
     "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
     "overrides": [
@@ -24,8 +31,12 @@
             "version": "2.1.1"
         },
         {
-            "name":"sfml",
-            "version": "2.5.1"
+            "name": "glfw3",
+            "version": "3.3.6"
+        },
+        {
+            "name": "imgui",
+            "version": "1.86"
         }
     ]
 }
