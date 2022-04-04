@@ -43,7 +43,9 @@
 
 #define LN_PALETTE_ADDR_HEAD 0x3F00
 #define LN_PALETTE_ADDR_TAIL 0x3FFF
-#define LN_PALETTE_ADDR_MASK 0x001F // rightmost 5 bits
+#define LN_PALETTE_ADDR_MASK 0x001F       // rightmost 5 bits
+#define LN_PALETTE_ADDR_COLOR_MASK 0x0003 // rightmost 2 bits (modulo 4)
+#define LN_PALETTE_ADDR_BKG_MASK 0xFF0F   // background palette prefix
 
 #define LN_APU_FC_ADDR 0x4017
 

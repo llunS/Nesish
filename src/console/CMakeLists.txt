@@ -36,6 +36,12 @@ list(APPEND sources cpu/operand.cpp)
 list(APPEND sources ppu/ppu.cpp)
 list(APPEND sources ppu/ppu_memory.cpp)
 
+list(APPEND sources rendering/pattern.cpp)
+list(APPEND sources rendering/palette_default.cpp)
+list(APPEND sources rendering/nametable_entry.cpp)
+list(APPEND sources rendering/nametable_attribute.cpp)
+list(APPEND sources rendering/object_attribute.cpp)
+
 target_sources(${module_name} PRIVATE ${sources})
 
 

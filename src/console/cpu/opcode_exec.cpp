@@ -934,8 +934,9 @@ CPU::OpcodeExec::exec_branch_op(bool i_cond, ln::CPU *i_cpu,
 void
 CPU::OpcodeExec::exec_plp_full(ln::CPU *i_cpu)
 {
-    Byte preserve_mask = (StatusFlag::B | StatusFlag::U);
+    // @QUIRK: https://www.nesdev.org/wiki/Status_flags#The_B_flag
     // ignore the mask for stack value and preserve the mask in original P.
+    Byte preserve_mask = (StatusFlag::B | StatusFlag::U);
     i_cpu->P =
         (i_cpu->pop_byte() & ~preserve_mask) | (i_cpu->P & preserve_mask);
 }
