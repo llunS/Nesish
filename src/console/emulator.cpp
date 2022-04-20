@@ -123,23 +123,31 @@ Emulator::reset()
     m_ppu.reset();
 }
 
+const CPU &
+Emulator::get_cpu() const
+{
+    return m_cpu;
+}
+
 void
-Emulator::run_test(Address i_entry, TestInitFunc i_init_func,
-                   TestExitFunc i_exit_func, void *i_context)
+Emulator::run_test(Address i_entry, TestExitFunc i_exit_func, void *i_context)
 {
     m_cpu.set_entry(i_entry);
 
-    if (i_init_func)
-        i_init_func(&m_memory, i_context);
-
     std::size_t idx_exec_instrs = 0;
-    while (!i_exit_func(&m_cpu, &m_memory, idx_exec_instrs, i_context))
+    while (i_exit_func && !i_exit_func(&m_cpu, idx_exec_instrs, i_context))
     {
         if (m_cpu.step())
         {
             ++idx_exec_instrs;
         }
     }
+}
+
+void
+Emulator::tick_cpu_test()
+{
+    m_cpu.tick();
 }
 
 } // namespace ln

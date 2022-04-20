@@ -2,7 +2,7 @@
 
 A NES emulator.
 
-## Third-party Libraries
+## Dependencies
 
 - spdlog
 - fmt (indirectly by spdlog)

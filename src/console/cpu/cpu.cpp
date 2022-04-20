@@ -8,7 +8,8 @@ namespace ln {
 
 CPU::CPU(Memory *i_memory)
     : m_memory(i_memory)
-    , m_cycles(0)
+    , m_cycle(0)
+    , m_next_instr_cycle(0)
     , m_halted(false)
 {
 }
@@ -18,7 +19,7 @@ CPU::power_up()
 {
     // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
     // P = 0x34; // (IRQ disabled)
-    P = 0x24; // according to nestest.log, (IRQ disabled) still
+    P = 0x24; // according to nestest.log (IRQ disabled still)
     A = X = Y = 0;
     S = 0xFD;
 
@@ -59,13 +60,64 @@ CPU::reset()
     (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00);
 
     m_halted = false;
-    m_cycles = 0;
+    m_cycle = 0;
+    m_next_instr_cycle = 0;
 }
 
 void
 CPU::set_entry(Address i_entry)
 {
     PC = i_entry;
+}
+
+bool
+CPU::tick()
+{
+    // @TODO: We don't support cycle-based emulation yet.
+    // So we'll just pretend to be supporting it.
+
+    if (m_halted)
+    {
+        return false;
+    }
+
+    // @TODO: Maybe we should postpone the execution until the last cycle, or
+    // maybe we should support real cycle-level emulation.
+
+    // Exec the instruction on first cycle, then do nothing for the rest of
+    // cycles.
+    if (m_cycle >= m_next_instr_cycle)
+    {
+        if (m_cycle > m_next_instr_cycle)
+        {
+            get_logger()->error("Wrong CPU cycle management: {}, {}", m_cycle,
+                                m_next_instr_cycle);
+        }
+
+        Byte opcode_byte = get_byte(PC++);
+        Opcode opcode = {opcode_byte};
+        InstructionDesc instr_desc = get_instr_desc(opcode);
+
+        ParseFunc parse = get_address_parse(opcode);
+        bool read_page_crossing = false;
+        Byte operand_bytes;
+        Operand operand = parse(
+            this, operand_bytes,
+            instr_desc.cycle_page_dependent ? &read_page_crossing : nullptr);
+        PC += operand_bytes;
+
+        Cycle extra_branch_cycles = 0;
+        ExecFunc exec = get_opcode_exec(opcode);
+        exec(this, operand, extra_branch_cycles);
+
+        Cycle cycles_spent =
+            instr_desc.cycle_base + read_page_crossing + extra_branch_cycles;
+
+        m_next_instr_cycle = m_cycle + cycles_spent;
+    }
+    ++m_cycle;
+
+    return true;
 }
 
 bool
@@ -94,7 +146,7 @@ CPU::step()
 
     Cycle cycles_spent =
         instr_desc.cycle_base + read_page_crossing + extra_branch_cycles;
-    m_cycles += cycles_spent;
+    m_cycle += cycles_spent;
 
     return true;
 }
@@ -102,7 +154,7 @@ CPU::step()
 Cycle
 CPU::get_cycle() const
 {
-    return m_cycles;
+    return m_cycle;
 }
 
 Byte

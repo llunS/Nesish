@@ -16,35 +16,39 @@ pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
 static void
 pvt_close_log(std::ifstream &o_file);
 
+static bool
+pvt_same_cpu_state(const ln::CPU *lhs, const ln::CPU *rhs);
+
 TEST(cpu_test, cpu_test)
 {
     ln::init_logger(spdlog::level::trace);
 
-    ln::Emulator emulator;
+    ln::Emulator step_emulator;
+    ln::Emulator cycle_emulator;
 
     auto rom_path = ln::join_exec_rel_path("nestest.nes");
-    ASSERT_FALSE(LN_FAILED(emulator.insert_cartridge(rom_path)));
+    ASSERT_FALSE(LN_FAILED(step_emulator.insert_cartridge(rom_path)));
+    ASSERT_FALSE(LN_FAILED(cycle_emulator.insert_cartridge(rom_path)));
 
-    emulator.power_up();
+    step_emulator.power_up();
+    cycle_emulator.power_up();
 
     struct TestContext {
-        bool ok = false; // test ok
         std::ifstream *log_file = nullptr;
+        ln::Emulator *cycle_emu = nullptr;
+
+        bool ok = false; // test ok
         std::unordered_set<ln::Byte> opcode_set;
+
+        ln::Cycle prev_cycle = 0;
     } context;
 
-    auto init_func = [](ln::Memory *i_memory, void *i_context) -> void {
-        (void)(i_context);
-        i_memory->set_byte(0x0002, 0xFF);
-        i_memory->set_byte(0x0003, 0xFF);
-    };
-    auto exit_func = [](const ln::CPU *i_cpu, const ln::Memory *i_memory,
-                        std::size_t i_instr, void *i_context) -> bool {
-        (void)(i_memory);
-
+    auto exit_func = [](const ln::CPU *i_cpu, std::size_t i_instr,
+                        void *i_context) -> bool {
         auto context = (TestContext *)i_context;
 
         // successfully executing all instruction without errors
+        // except that the last instruction is not executed but printed only.
         if (i_instr >= 8991)
         {
             context->ok = true;
@@ -72,6 +76,23 @@ TEST(cpu_test, cpu_test)
             return true;
         }
 
+        /* Test cycle emulator by the way */
+        if (i_instr >= 1)
+        {
+            // advance the cycles we spent
+            auto cycle_diff = i_cpu->get_cycle() - context->prev_cycle;
+            for (decltype(cycle_diff) i = 0; i < cycle_diff; ++i)
+            {
+                context->cycle_emu->tick_cpu_test();
+            }
+            // check equality
+            if (!pvt_same_cpu_state(i_cpu, &context->cycle_emu->get_cpu()))
+            {
+                return true;
+            }
+        }
+        context->prev_cycle = i_cpu->get_cycle();
+
         return false;
     };
 
@@ -80,7 +101,11 @@ TEST(cpu_test, cpu_test)
     ASSERT_TRUE(open);
     context.log_file = &log;
 
-    emulator.run_test(0xC000, init_func, exit_func, &context);
+    constexpr ln::Address ENTRY = 0xC000;
+    cycle_emulator.run_test(ENTRY, 0, 0); // set entry function only.
+    context.cycle_emu = &cycle_emulator;
+
+    step_emulator.run_test(ENTRY, exit_func, &context);
     ASSERT_TRUE(context.ok);
 
     ln::get_logger()->info("Opcode count covered: {}",
@@ -164,4 +189,26 @@ void
 pvt_close_log(std::ifstream &o_file)
 {
     o_file.close();
+}
+
+bool
+pvt_same_cpu_state(const ln::CPU *lhs, const ln::CPU *rhs)
+{
+    if (!(lhs->get_a() == rhs->get_a() && lhs->get_x() == rhs->get_x() &&
+          lhs->get_y() == rhs->get_y() && lhs->get_p() == rhs->get_p() &&
+          lhs->get_s() == rhs->get_s()))
+    {
+        return false;
+    }
+    if (lhs->get_pc() != rhs->get_pc())
+    {
+        return false;
+    }
+    else if (lhs->get_instruction_bytes(lhs->get_pc()) !=
+             rhs->get_instruction_bytes(rhs->get_pc()))
+    {
+        return false;
+    }
+
+    return true;
 }

@@ -29,6 +29,8 @@ struct LN_CONSOLE_API CPU {
     void
     set_entry(Address i_entry);
     bool
+    tick();
+    bool
     step();
 
     Cycle
@@ -159,7 +161,8 @@ struct LN_CONSOLE_API CPU {
     Memory *m_memory;
 
   private:
-    Cycle m_cycles;
+    Cycle m_cycle;
+    Cycle m_next_instr_cycle;
     bool m_halted;
 };
 

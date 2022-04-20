@@ -39,13 +39,15 @@ struct LN_CONSOLE_API Emulator {
     void
     reset();
 
-    typedef void (*TestInitFunc)(ln::Memory *i_memory, void *i_context);
-    typedef bool (*TestExitFunc)(const ln::CPU *i_cpu,
-                                 const ln::Memory *i_memory,
-                                 std::size_t i_instr, void *i_context);
+    const CPU &
+    get_cpu() const;
+
+    typedef bool (*TestExitFunc)(const ln::CPU *i_cpu, std::size_t i_instr,
+                                 void *i_context);
     void
-    run_test(Address i_entry, TestInitFunc i_init_func,
-             TestExitFunc i_exit_func, void *i_context);
+    run_test(Address i_entry, TestExitFunc i_exit_func, void *i_context);
+    void
+    tick_cpu_test();
 
   private:
     void
