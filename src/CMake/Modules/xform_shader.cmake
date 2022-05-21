@@ -1,4 +1,4 @@
-function(xform_shader i_shader_relpath i_out_reldir i_include_guard_prefix i_ns)
+function(xform_shader i_shader_relpath i_out_reldir i_ns)
     set(shader_src_path ${CMAKE_CURRENT_SOURCE_DIR}/${i_shader_relpath})
 
     get_filename_component(shader_name ${shader_src_path} NAME)
@@ -15,9 +15,6 @@ function(xform_shader i_shader_relpath i_out_reldir i_include_guard_prefix i_ns)
         shader_src_c
         ${shader_src_c}
     )
-    # include_guard_c
-    string(TOUPPER ${shader_name} shader_name_upper)
-    set(include_guard_c "${i_include_guard_prefix}_SHADER_${shader_name_upper}")
     # namespace_c
     set(namespace_c ${i_ns})
 

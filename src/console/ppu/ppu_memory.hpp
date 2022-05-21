@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_PPU_MEMORY_HPP
-#define LN_CONSOLE_PPU_MEMORY_HPP
+#pragma once
 
 #include "console/memory/mappable_memory.hpp"
 #include "common/klass.hpp"
@@ -35,5 +34,3 @@ struct PPUMemory
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_PPU_MEMORY_HPP

@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CARTRIDGE_CARTRIDGE_HPP
-#define LN_CONSOLE_CARTRIDGE_CARTRIDGE_HPP
+#pragma once
 
 #include "common/error.hpp"
 #include "console/memory/memory.hpp"
@@ -21,5 +20,3 @@ struct Cartridge {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CARTRIDGE_CARTRIDGE_HPP

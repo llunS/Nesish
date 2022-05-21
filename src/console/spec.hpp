@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_SPEC_HPP
-#define LN_CONSOLE_SPEC_HPP
+#pragma once
 
 // Resolution
 #define LN_NES_WIDTH 256
@@ -48,5 +47,3 @@
 #define LN_PALETTE_ADDR_BKG_MASK 0xFF0F   // background palette prefix
 
 #define LN_APU_FC_ADDR 0x4017
-
-#endif // LN_CONSOLE_SPEC_HPP

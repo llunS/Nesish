@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CARTRIDGE_INES_HPP
-#define LN_CONSOLE_CARTRIDGE_INES_HPP
+#pragma once
 
 #include <memory>
 #include <cstddef>
@@ -93,5 +92,3 @@ struct INES : public Cartridge {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CARTRIDGE_INES_HPP

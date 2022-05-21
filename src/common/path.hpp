@@ -1,5 +1,4 @@
-#ifndef LN_COMMON_PATH_HPP
-#define LN_COMMON_PATH_HPP
+#pragma once
 
 #include <string>
 
@@ -26,5 +25,3 @@ std::string
 get_exec_path();
 
 } // namespace ln
-
-#endif // LN_COMMON_PATH_HPP

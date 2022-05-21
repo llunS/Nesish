@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_PPU_PPU_HPP
-#define LN_CONSOLE_PPU_PPU_HPP
+#pragma once
 
 #include "console/types.hpp"
 #include "common/klass.hpp"
@@ -46,5 +45,3 @@ struct PPU {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_PPU_PPU_HPP

@@ -50,5 +50,5 @@ target_compile_definitions(${module_name} PUBLIC -DGLFW_INCLUDE_NONE)
 # --------------------------------------------
 
 include(xform_shader)
-xform_shader(resources/shader_in/triangle.vert resources/shader LN_GLFWAPP ln_app)
-xform_shader(resources/shader_in/triangle.frag resources/shader LN_GLFWAPP ln_app)
+xform_shader(resources/shader_in/triangle.vert resources/shader ln_app)
+xform_shader(resources/shader_in/triangle.frag resources/shader ln_app)

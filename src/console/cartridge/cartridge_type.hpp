@@ -1,7 +1,4 @@
-
-
-#ifndef LN_CONSOLE_CARTRIDGE_CARTRIDGETYPE_HPP
-#define LN_CONSOLE_CARTRIDGE_CARTRIDGETYPE_HPP
+#pragma once
 
 namespace ln {
 
@@ -10,5 +7,3 @@ enum class CartridgeType {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CARTRIDGE_CARTRIDGETYPE_HPP

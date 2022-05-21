@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CARTRIDGE_MAPPER_MAPPER_HPP
-#define LN_CONSOLE_CARTRIDGE_MAPPER_MAPPER_HPP
+#pragma once
 
 #include "common/error.hpp"
 #include "console/cartridge/ines.hpp"
@@ -28,5 +27,3 @@ struct Mapper {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CARTRIDGE_MAPPER_MAPPER_HPP

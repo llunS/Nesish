@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CPU_OPERAND_HPP
-#define LN_CONSOLE_CPU_OPERAND_HPP
+#pragma once
 
 #include "console/types.hpp"
 
@@ -32,5 +31,3 @@ struct Operand {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CPU_OPERAND_HPP

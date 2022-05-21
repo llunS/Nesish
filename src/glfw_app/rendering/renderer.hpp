@@ -1,6 +1,5 @@
 
-#ifndef LN_GLFWAPP_RENDERING_RENDERER_HPP
-#define LN_GLFWAPP_RENDERING_RENDERER_HPP
+#pragma once
 
 #include "common/klass.hpp"
 #include "common/error.hpp"
@@ -43,5 +42,3 @@ struct Renderer {
 };
 
 } // namespace ln_app
-
-#endif // LN_GLFWAPP_RENDERING_RENDERER_HPP

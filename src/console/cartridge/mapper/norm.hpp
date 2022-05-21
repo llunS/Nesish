@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CARTRIDGE_MAPPER_NORM_HPP
-#define LN_CONSOLE_CARTRIDGE_MAPPER_NORM_HPP
+#pragma once
 
 #include "console/cartridge/mapper/mapper.hpp"
 
@@ -25,5 +24,3 @@ struct NORM : public Mapper {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CARTRIDGE_MAPPER_NORM_HPP

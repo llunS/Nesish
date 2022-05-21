@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_EMULATOR_HPP
-#define LN_CONSOLE_EMULATOR_HPP
+#pragma once
 
 #include "common/error.hpp"
 #include "console/dllexport.h"
@@ -65,5 +64,3 @@ struct LN_CONSOLE_API Emulator {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_EMULATOR_HPP

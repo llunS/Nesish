@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_MEMORY_MAPPINGENTRY_HPP
-#define LN_CONSOLE_MEMORY_MAPPINGENTRY_HPP
+#pragma once
 
 #include "console/types.hpp"
 
@@ -24,5 +23,3 @@ struct MappingEntry {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_MEMORY_MAPPINGENTRY_HPP

@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_RENDERING_PALETTEDEFAULT_HPP
-#define LN_CONSOLE_RENDERING_PALETTEDEFAULT_HPP
+#pragma once
 
 #include "console/rendering/palette.hpp"
 #include "common/klass.hpp"
@@ -16,5 +15,3 @@ struct PaletteDefault : public Palette {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_RENDERING_PALETTEDEFAULT_HPP

@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CPU_CPU_HPP
-#define LN_CONSOLE_CPU_CPU_HPP
+#pragma once
 
 #include <string>
 #include <vector>
@@ -169,5 +168,3 @@ struct LN_CONSOLE_API CPU {
 } // namespace ln
 
 // #include "cpu.inl"
-
-#endif // LN_CONSOLE_CPU_CPU_HPP

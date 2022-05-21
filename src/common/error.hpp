@@ -1,5 +1,4 @@
-#ifndef LN_COMMON_ERROR_HPP
-#define LN_COMMON_ERROR_HPP
+#pragma once
 
 namespace ln {
 
@@ -20,5 +19,3 @@ enum class Error {
 } // namespace ln
 
 #define LN_FAILED(i_err) ((i_err) != ln::Error::OK)
-
-#endif // LN_COMMON_ERROR_HPP

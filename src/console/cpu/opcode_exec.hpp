@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CPU_OPCODEEXEC_HPP
-#define LN_CONSOLE_CPU_OPCODEEXEC_HPP
+#pragma once
 
 #include "console/cpu/cpu.hpp"
 
@@ -210,5 +209,3 @@ struct CPU::OpcodeExec {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CPU_OPCODEEXEC_HPP

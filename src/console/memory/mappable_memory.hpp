@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_MEMORY_MAPPABLEMEMORY_HPP
-#define LN_CONSOLE_MEMORY_MAPPABLEMEMORY_HPP
+#pragma once
 
 #include <cstddef>
 #include <unordered_map>
@@ -38,5 +37,3 @@ struct MappableMemory {
 } // namespace ln
 
 #include "mappable_memory.inl"
-
-#endif // LN_CONSOLE_MEMORY_MAPPABLEMEMORY_HPP

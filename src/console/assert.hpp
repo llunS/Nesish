@@ -1,6 +1,4 @@
-
-#ifndef LN_CONSOLE_ASSERT_HPP
-#define LN_CONSOLE_ASSERT_HPP
+#pragma once
 
 #include <cassert>
 #include "common/logger.hpp"
@@ -11,5 +9,3 @@
         ln::get_logger()->error(__VA_ARGS__);                                  \
         assert(false);                                                         \
     }
-
-#endif // LN_CONSOLE_ASSERT_HPP

@@ -1,6 +1,5 @@
 
-#ifndef LN_CONSOLE_PERIPHERAL_CONTROLLER_HPP
-#define LN_CONSOLE_PERIPHERAL_CONTROLLER_HPP
+#pragma once
 
 #include <type_traits>
 
@@ -35,5 +34,3 @@ struct Controller {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_PERIPHERAL_CONTROLLER_HPP

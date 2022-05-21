@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_RENDERING_NAMETABLEATTRIBUTE_HPP
-#define LN_CONSOLE_RENDERING_NAMETABLEATTRIBUTE_HPP
+#pragma once
 
 #include "console/dllexport.h"
 #include "console/types.hpp"
@@ -37,5 +36,3 @@ struct LN_CONSOLE_API NametableAttribute {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_RENDERING_NAMETABLEATTRIBUTE_HPP

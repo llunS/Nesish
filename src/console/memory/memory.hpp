@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_MEMORY_MEMORY_HPP
-#define LN_CONSOLE_MEMORY_MEMORY_HPP
+#pragma once
 
 #include "console/memory/mappable_memory.hpp"
 #include "console/spec.hpp"
@@ -47,5 +46,3 @@ struct LN_CONSOLE_API Memory
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_MEMORY_MEMORY_HPP

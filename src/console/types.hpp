@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_TYPES_HPP
-#define LN_CONSOLE_TYPES_HPP
+#pragma once
 
 #include <cstdint>
 
@@ -12,5 +11,3 @@ typedef Byte2 Address;
 typedef std::int8_t SignedByte;
 
 } // namespace ln
-
-#endif // LN_CONSOLE_TYPES_HPP

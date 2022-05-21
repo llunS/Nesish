@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CPU_ADDRESSMODEPARSE_HPP
-#define LN_CONSOLE_CPU_ADDRESSMODEPARSE_HPP
+#pragma once
 
 #include "console/cpu/cpu.hpp"
 #include "console/types.hpp"
@@ -57,5 +56,3 @@ struct CPU::AddressModeParse {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CPU_ADDRESSMODEPARSE_HPP

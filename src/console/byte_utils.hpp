@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_BYTEUTILS_HPP
-#define LN_CONSOLE_BYTEUTILS_HPP
+#pragma once
 
 #include "console/types.hpp"
 
@@ -38,5 +37,3 @@ is_signed_overflow_sbc(Byte i_lhs, Byte i_rhs, bool i_borrow)
 }
 
 } // namespace ln
-
-#endif // LN_CONSOLE_BYTEUTILS_HPP

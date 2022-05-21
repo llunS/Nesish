@@ -1,6 +1,5 @@
 
-#ifndef LN_GLFWAPP_APP_HPP
-#define LN_GLFWAPP_APP_HPP
+#pragma once
 
 #include "glfw_app/dllexport.h"
 
@@ -12,5 +11,3 @@ struct LN_APP_API App {
 };
 
 } // namespace ln_app
-
-#endif // LN_GLFWAPP_APP_HPP

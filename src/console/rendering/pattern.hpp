@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_RENDERING_PATTERN_HPP
-#define LN_CONSOLE_RENDERING_PATTERN_HPP
+#pragma once
 
 #include "console/dllexport.h"
 #include "common/klass.hpp"
@@ -36,5 +35,3 @@ struct LN_CONSOLE_API Pattern {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_RENDERING_PATTERN_HPP

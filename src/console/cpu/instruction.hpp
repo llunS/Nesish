@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_CPU_INSTRUCTION_HPP
-#define LN_CONSOLE_CPU_INSTRUCTION_HPP
+#pragma once
 
 #include "common/klass.hpp"
 #include "console/types.hpp"
@@ -116,5 +115,3 @@ enum AddressMode {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_CPU_INSTRUCTION_HPP

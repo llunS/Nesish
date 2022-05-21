@@ -1,6 +1,5 @@
 
-#ifndef LN_GLFWAPP_CONTROLLER_HPP
-#define LN_GLFWAPP_CONTROLLER_HPP
+#pragma once
 
 #include "console/peripheral/controller.hpp"
 
@@ -25,5 +24,3 @@ struct Controller : public ln::Controller {
 };
 
 } // namespace ln_app
-
-#endif // LN_GLFWAPP_CONTROLLER_HPP

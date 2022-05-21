@@ -1,5 +1,4 @@
-#ifndef LN_CONSOLE_RENDERING_PALETTECOLOR_HPP
-#define LN_CONSOLE_RENDERING_PALETTECOLOR_HPP
+#pragma once
 
 #include "console/types.hpp"
 #include "common/klass.hpp"
@@ -26,5 +25,3 @@ struct PaletteColor {
 };
 
 } // namespace ln
-
-#endif // LN_CONSOLE_RENDERING_PALETTECOLOR_HPP

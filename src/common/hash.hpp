@@ -1,6 +1,4 @@
-
-#ifndef LT_COMMON_HASH_HPP
-#define LT_COMMON_HASH_HPP
+#pragma once
 
 #include <cstddef>
 
@@ -16,5 +14,3 @@ struct EnumHash {
 };
 
 } // namespace ln
-
-#endif // LT_COMMON_HASH_HPP

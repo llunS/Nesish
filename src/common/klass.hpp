@@ -1,5 +1,4 @@
-#ifndef LT_COMMON_KLASS_HPP
-#define LT_COMMON_KLASS_HPP
+#pragma once
 
 #define LN_KLZ_DELETE_COPY_MOVE(i_klz_name)                                    \
     LN_KLZ_DELETE_COPY(i_klz_name);                                            \
@@ -24,5 +23,3 @@
 #define LN_KLZ_DEFAULT_MOVE(i_klz_name)                                        \
     i_klz_name(i_klz_name &&) = default;                                       \
     i_klz_name &operator=(i_klz_name &&) = default
-
-#endif // LT_COMMON_KLASS_HPP

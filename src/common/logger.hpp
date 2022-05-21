@@ -1,5 +1,4 @@
-#ifndef LN_COMMON_LOGGER_HPP
-#define LN_COMMON_LOGGER_HPP
+#pragma once
 
 #include "spdlog/spdlog.h"
 
@@ -18,5 +17,3 @@ spdlog::logger *
 get_logger();
 
 } // namespace ln
-
-#endif // LN_COMMON_LOGGER_HPP
