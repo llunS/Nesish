@@ -955,7 +955,7 @@ CPU::OpcodeExec::exec_adc_full(ln::CPU *i_cpu, Byte i_val)
     bool carry = i_cpu->check_flag(StatusFlag::C);
 
     Byte prev_val = i_cpu->A;
-    i_cpu->A += i_val + carry;
+    i_cpu->A += i_val + (Byte)carry;
 
     // either new value < previous value, or the are the same even if carry
     // exists.
@@ -975,7 +975,7 @@ CPU::OpcodeExec::exec_sbc_full(ln::CPU *i_cpu, Byte i_val)
     bool borrow = !i_cpu->check_flag(StatusFlag::C);
 
     Byte prev_val = i_cpu->A;
-    i_cpu->A -= (i_val + borrow);
+    i_cpu->A -= (i_val + (Byte)borrow);
 
     bool no_borrow = prev_val >= i_val;
     bool signed_overflow = is_signed_overflow_sbc(prev_val, i_val, borrow);

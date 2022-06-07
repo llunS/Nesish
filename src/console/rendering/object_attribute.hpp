@@ -1,6 +1,5 @@
 #pragma once
 
-#include "console/dllexport.h"
 #include "console/types.hpp"
 #include "common/klass.hpp"
 
@@ -9,7 +8,7 @@ namespace ln {
 /**
  * @brief Attribute of each sprite
  */
-struct LN_CONSOLE_API ObjectAttribute {
+struct ObjectAttribute {
   public:
     static constexpr int BYTES = 4;
 

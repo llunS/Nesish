@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <unordered_set>
+#include <memory>
 
 #include "common/path.hpp"
 #include "console/emulator.hpp"
@@ -23,15 +24,15 @@ TEST(cpu_test, cpu_test)
 {
     ln::init_logger(spdlog::level::trace);
 
-    ln::Emulator step_emulator;
-    ln::Emulator cycle_emulator;
+    auto step_emulator = std::unique_ptr<ln::Emulator>(new ln::Emulator());
+    auto cycle_emulator = std::unique_ptr<ln::Emulator>(new ln::Emulator());
 
     auto rom_path = ln::join_exec_rel_path("nestest.nes");
-    ASSERT_FALSE(LN_FAILED(step_emulator.insert_cartridge(rom_path)));
-    ASSERT_FALSE(LN_FAILED(cycle_emulator.insert_cartridge(rom_path)));
+    ASSERT_FALSE(LN_FAILED(step_emulator->insert_cartridge(rom_path)));
+    ASSERT_FALSE(LN_FAILED(cycle_emulator->insert_cartridge(rom_path)));
 
-    step_emulator.power_up();
-    cycle_emulator.power_up();
+    step_emulator->power_up();
+    cycle_emulator->power_up();
 
     struct TestContext {
         std::ifstream *log_file = nullptr;
@@ -102,10 +103,10 @@ TEST(cpu_test, cpu_test)
     context.log_file = &log;
 
     constexpr ln::Address ENTRY = 0xC000;
-    cycle_emulator.run_test(ENTRY, 0, 0); // set entry function only.
-    context.cycle_emu = &cycle_emulator;
+    cycle_emulator->run_test(ENTRY, 0, 0); // set entry function only.
+    context.cycle_emu = cycle_emulator.get();
 
-    step_emulator.run_test(ENTRY, exit_func, &context);
+    step_emulator->run_test(ENTRY, exit_func, &context);
     ASSERT_TRUE(context.ok);
 
     ln::get_logger()->info("Opcode count covered: {}",

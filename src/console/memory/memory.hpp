@@ -5,7 +5,6 @@
 #include "common/klass.hpp"
 #include "console/types.hpp"
 #include "common/error.hpp"
-#include "console/dllexport.h"
 
 namespace ln {
 
@@ -20,8 +19,7 @@ enum class MemoryMappingPoint : unsigned char {
     PRG_RAM,
 };
 
-struct LN_CONSOLE_API Memory
-    : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
+struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
   public:
     Memory();
     LN_KLZ_DELETE_COPY_MOVE(Memory);

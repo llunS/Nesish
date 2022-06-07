@@ -14,3 +14,10 @@ target_include_directories(${module_name} PUBLIC ./)
 # --------------------------------------------
 
 target_sources(${module_name} PRIVATE glad.c)
+
+
+# --------------------------------------------
+# Definitions
+# --------------------------------------------
+
+target_compile_definitions(${module_name} PUBLIC -DGLAD_GLAPI_EXPORT PRIVATE -DGLAD_GLAPI_EXPORT_BUILD)

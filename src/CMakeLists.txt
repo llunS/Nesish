@@ -31,6 +31,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Ap
     add_compile_options(-Wno-unused-private-field)
 endif()
 
+# Put binary outputs to top-lvel directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+
 
 # --------------------------------------------
 # Target platform
@@ -38,7 +43,9 @@ endif()
 
 # Default to CMake target platform.
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(LT_TARGET_MACOS ON)
+    set(LN_TARGET_MACOS ON)
+elseif(WIN32)
+    set(LN_TARGET_WINDOWS ON)
 else()
     message(FATAL_ERROR "Add platform support please!")
 endif()

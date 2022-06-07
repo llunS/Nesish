@@ -14,7 +14,7 @@
 
 namespace ln {
 
-struct LN_CONSOLE_API CPU {
+struct CPU {
   public:
     CPU(Memory *i_memory);
     LN_KLZ_DELETE_COPY_MOVE(CPU);
@@ -32,23 +32,23 @@ struct LN_CONSOLE_API CPU {
     bool
     step();
 
-    Cycle
+    LN_CONSOLE_API Cycle
     get_cycle() const;
 
-    Byte
+    LN_CONSOLE_API Byte
     get_a() const;
-    Byte
+    LN_CONSOLE_API Byte
     get_x() const;
-    Byte
+    LN_CONSOLE_API Byte
     get_y() const;
-    Address
+    LN_CONSOLE_API Address
     get_pc() const;
-    Byte
+    LN_CONSOLE_API Byte
     get_s() const;
-    Byte
+    LN_CONSOLE_API Byte
     get_p() const;
 
-    std::vector<Byte>
+    LN_CONSOLE_API std::vector<Byte>
     get_instruction_bytes(Address i_addr) const;
 
   private:

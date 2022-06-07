@@ -110,8 +110,8 @@ CPU::tick()
         ExecFunc exec = get_opcode_exec(opcode);
         exec(this, operand, extra_branch_cycles);
 
-        Cycle cycles_spent =
-            instr_desc.cycle_base + read_page_crossing + extra_branch_cycles;
+        Cycle cycles_spent = instr_desc.cycle_base + (Cycle)read_page_crossing +
+                             extra_branch_cycles;
 
         m_next_instr_cycle = m_cycle + cycles_spent;
     }
@@ -145,7 +145,7 @@ CPU::step()
     exec(this, operand, extra_branch_cycles);
 
     Cycle cycles_spent =
-        instr_desc.cycle_base + read_page_crossing + extra_branch_cycles;
+        instr_desc.cycle_base + (Cycle)read_page_crossing + extra_branch_cycles;
     m_cycle += cycles_spent;
 
     return true;
@@ -356,11 +356,11 @@ CPU::get_operand(Operand i_operand) const
             return get_byte(i_operand.address);
             break;
         case OperandType::ACC:
-            return A;
+            return this->A;
             break;
         default:
             ASSERT_ERROR(false, "Unsupported operand type: {}", i_operand.type);
-            return -1;
+            return (Byte)-1;
             break;
     }
 }

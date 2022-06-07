@@ -10,13 +10,14 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
-#define LOG_FILE_REL_EXEC_PATH "logs/log.txt"
 #define MAX_LOGS 5
 
 namespace ln {
 
 static spdlog::logger *g_logger;
 
+static std::string
+pvt_log_file_rel_exec_path();
 static std::string
 pvt_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
                          spdlog::logger *i_logger);
@@ -33,8 +34,8 @@ init_logger(spdlog::level::level_enum i_level)
     auto logger = new spdlog::logger("LightNES", console_sink);
     logger->set_level(i_level);
 
-    auto log_filepath =
-        pvt_backup_previous_logs(LOG_FILE_REL_EXEC_PATH, MAX_LOGS, logger);
+    auto log_filepath = pvt_backup_previous_logs(pvt_log_file_rel_exec_path(),
+                                                 MAX_LOGS, logger);
     if (!log_filepath.empty())
     {
         try
@@ -47,13 +48,14 @@ init_logger(spdlog::level::level_enum i_level)
         }
         catch (const spdlog::spdlog_ex &e)
         {
-            logger->error("Failed to create log file: {}", log_filepath);
+            logger->error("Failed to create log file: {}, {}", log_filepath,
+                          e.what());
         }
     }
     else
     {
         logger->error("Failed to create log file: {}",
-                      std::string("./") + LOG_FILE_REL_EXEC_PATH);
+                      std::string("./") + pvt_log_file_rel_exec_path());
     }
 
     g_logger = logger;
@@ -68,6 +70,12 @@ get_logger()
     }
 
     return g_logger;
+}
+
+std::string
+pvt_log_file_rel_exec_path()
+{
+    return path_join("logs", "log.txt");
 }
 
 std::string
@@ -125,7 +133,7 @@ pvt_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
 
         auto next_basename = i_log_exec_rel_path + "." + std::to_string(i + 1);
         auto next_file_abs_path = join_exec_rel_path(next_basename);
-        if (!file_rename(cur_abs_path, next_file_abs_path))
+        if (!file_rename(cur_abs_path, next_file_abs_path, true))
         {
             // if we failed to rename, then this file may be overwritten.
             // this is undesirable for all previously log files except the one

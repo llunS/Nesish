@@ -1,5 +1,7 @@
 #include "path.hpp"
 
+#include "common/path_private.hpp"
+
 namespace ln {
 
 std::string
@@ -9,17 +11,31 @@ dirname(const std::string &i_path)
     {
         return "";
     }
-    auto last_slash_pos = i_path.rfind(LN_PATH_DELIMITER);
-    if (last_slash_pos == std::string::npos)
+
+    for (decltype(i_path.size()) i = 0; i < i_path.size(); ++i)
     {
-        return "";
+        auto idx = i_path.size() - 1 - i;
+
+        if (i_path[idx] == '/' || i_path[idx] == '\\')
+        {
+            // the root
+            if (idx == 0)
+            {
+                return std::string(1, i_path[idx]);
+            }
+            else
+            {
+                return i_path.substr(0, idx);
+            }
+        }
     }
-    // the root
-    if (last_slash_pos == 0)
-    {
-        return LN_PATH_DELIMITER;
-    }
-    return i_path.substr(0, last_slash_pos);
+    return "";
+}
+
+std::string
+path_join(const std::string &lhs, const std::string &rhs)
+{
+    return lhs + path_delimiter() + rhs;
 }
 
 std::string
@@ -30,12 +46,14 @@ join_exec_rel_path(const std::string &i_rel_path)
     {
         return "";
     }
+
     auto exec_dir = dirname(exec_path);
     if (exec_dir.empty())
     {
         return "";
     }
-    return exec_dir + LN_PATH_DELIMITER + i_rel_path;
+
+    return path_join(exec_dir, i_rel_path);
 }
 
 } // namespace ln

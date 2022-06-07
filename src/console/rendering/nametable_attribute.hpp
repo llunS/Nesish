@@ -1,12 +1,11 @@
 #pragma once
 
-#include "console/dllexport.h"
 #include "console/types.hpp"
 #include "common/klass.hpp"
 
 namespace ln {
 
-struct LN_CONSOLE_API NametableAttribute {
+struct NametableAttribute {
   public:
     NametableAttribute(Byte i_byte);
     LN_KLZ_DEFAULT_COPY(NametableAttribute);

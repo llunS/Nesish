@@ -12,7 +12,7 @@ checkGLError()
     GLenum errorCode;
     if ((errorCode = glGetError()) != GL_NO_ERROR)
     {
-        std::fprintf(stderr, "GL Error: %d\n", errorCode);
+        std::fprintf(stderr, "GL Error: %u\n", errorCode);
         return true;
     }
     return false;

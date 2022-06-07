@@ -16,6 +16,7 @@
 
 #include <cstdio>
 #include <cstdint>
+#include <memory>
 
 namespace ln_app {
 
@@ -82,10 +83,10 @@ App::run()
         }
 
         /* Setup emulator */
-        ln::Emulator emulator;
-        emulator.plug_controller(ln::Emulator::P1,
-                                 new ln_app::Controller(window));
-        emulator.power_up();
+        auto emulator = std::unique_ptr<ln::Emulator>(new ln::Emulator());
+        emulator->plug_controller(ln::Emulator::P1,
+                                  new ln_app::Controller(window));
+        emulator->power_up();
 
         /* imgui setup */
         {

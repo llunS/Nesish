@@ -1,15 +1,18 @@
-#import "path.hpp"
+#include "path.hpp"
+
+#include <stdlib.h>
 
 #include <mach-o/dyld.h>
-#include <stdlib.h>
 #include <sys/syslimits.h>
+
+#include "common/path_private.hpp"
 
 namespace ln {
 
-std::string
-path_native(const std::string &i_path)
+char
+path_delimiter()
 {
-    return i_path;
+    return '/';
 }
 
 std::string

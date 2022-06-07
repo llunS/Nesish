@@ -8,6 +8,7 @@
 #include "common/logger.hpp"
 #include "console/types.hpp"
 #include "common/filesystem.hpp"
+#include "common/vc_intrinsics.hpp"
 
 namespace ln {
 
@@ -108,7 +109,10 @@ pvt_open_rom(const std::string &i_rom_path, std::FILE **o_file)
         return Error::UNAVAILABLE;
     }
 
+    LN_VC_WARNING_PUSH
+    LN_VC_WARNING_DISABLE(4996)
     FILE *fp = std::fopen(i_rom_path.c_str(), "rb");
+    LN_VC_WARNING_POP
     if (!fp)
     {
         get_logger()->error("File opening failed!");
@@ -182,15 +186,19 @@ CartridgeLoader::pvt_load_ines_prg_rom(std::FILE *i_file, INES *io_ines)
 
     auto err = Error::OK;
 
-    std::size_t rom_bytes = io_ines->m_header.prg_rom_size * 16 * 1024;
+    constexpr int KiB = 1024;
+    std::size_t rom_bytes = io_ines->m_header.prg_rom_size * 16 * KiB;
     io_ines->m_prg_rom = new Byte[rom_bytes]();
     io_ines->m_prg_rom_size = rom_bytes;
 
-    constexpr std::size_t EACH_READ = 1024;
+    constexpr std::size_t EACH_READ = KiB;
     for (std::size_t byte_idx = 0; byte_idx < rom_bytes; byte_idx += EACH_READ)
     {
+        LN_VC_WARNING_PUSH
+        LN_VC_WARNING_DISABLE(6386) // false positive
         auto got =
             std::fread(io_ines->m_prg_rom + byte_idx, 1, EACH_READ, i_file);
+        LN_VC_WARNING_POP
         if (got < EACH_READ)
         {
             get_logger()->error("iNES PRG ROM incomplete, got {} bytes.",
@@ -221,15 +229,19 @@ CartridgeLoader::pvt_load_ines_chr_rom(std::FILE *i_file, INES *io_ines)
 
     auto err = Error::OK;
 
-    std::size_t rom_bytes = io_ines->m_header.chr_rom_size * 8 * 1024;
+    constexpr int KiB = 1024;
+    std::size_t rom_bytes = io_ines->m_header.chr_rom_size * 8 * KiB;
     io_ines->m_chr_rom = new Byte[rom_bytes]();
     io_ines->m_chr_rom_size = rom_bytes;
 
-    constexpr std::size_t EACH_READ = 1024;
+    constexpr std::size_t EACH_READ = KiB;
     for (std::size_t byte_idx = 0; byte_idx < rom_bytes; byte_idx += EACH_READ)
     {
+        LN_VC_WARNING_PUSH
+        LN_VC_WARNING_DISABLE(6386) // false positive
         auto got =
             std::fread(io_ines->m_chr_rom + byte_idx, 1, EACH_READ, i_file);
+        LN_VC_WARNING_POP
         if (got < EACH_READ)
         {
             get_logger()->error("iNES CHR ROM incomplete, got {} bytes.",

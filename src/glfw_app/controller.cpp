@@ -38,8 +38,7 @@ Controller::report()
 {
     if (m_strobe_idx < ln::Key::END)
     {
-        return m_key_state[m_strobe_idx];
-        ++m_strobe_idx;
+        return m_key_state[m_strobe_idx++];
     }
     else
     {

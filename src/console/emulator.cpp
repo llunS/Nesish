@@ -1,5 +1,7 @@
 #include "emulator.hpp"
 
+#include <type_traits>
+
 #include "common/filesystem.hpp"
 #include "common/logger.hpp"
 #include "console/cartridge/cartridge_loader.hpp"
@@ -16,6 +18,13 @@ Emulator::Emulator()
 
 Emulator::~Emulator()
 {
+    for (std::underlying_type<ControllerSlot>::type i = 0;
+         i < ControllerSlot::SIZE; ++i)
+    {
+        delete m_controllers[i];
+        m_controllers[i] = nullptr;
+    }
+
     if (m_cart)
     {
         m_cart->unmap_memory(&m_memory, &m_ppu_memory);
@@ -57,7 +66,7 @@ Emulator::hard_wire()
 void
 Emulator::plug_controller(ControllerSlot i_slot, Controller *i_controller)
 {
-    m_controllers[i_slot].reset(i_controller);
+    m_controllers[i_slot] = i_controller;
 }
 
 Error

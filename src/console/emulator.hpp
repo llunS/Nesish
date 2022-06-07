@@ -12,14 +12,14 @@
 
 #include <string>
 #include <cstddef>
-#include <memory>
 
 namespace ln {
 
-struct LN_CONSOLE_API Emulator {
+struct Emulator {
   public:
+    LN_CONSOLE_API
     Emulator();
-    ~Emulator();
+    LN_CONSOLE_API ~Emulator();
     LN_KLZ_DELETE_COPY_MOVE(Emulator);
 
     enum ControllerSlot {
@@ -28,24 +28,24 @@ struct LN_CONSOLE_API Emulator {
         SIZE,
     };
 
-    void
+    LN_CONSOLE_API void
     plug_controller(ControllerSlot i_slot, Controller *i_controller);
 
-    Error
+    LN_CONSOLE_API Error
     insert_cartridge(const std::string &i_rom_path);
-    void
+    LN_CONSOLE_API void
     power_up();
-    void
+    LN_CONSOLE_API void
     reset();
 
-    const CPU &
+    LN_CONSOLE_API const CPU &
     get_cpu() const;
 
     typedef bool (*TestExitFunc)(const ln::CPU *i_cpu, std::size_t i_instr,
                                  void *i_context);
-    void
+    void LN_CONSOLE_API
     run_test(Address i_entry, TestExitFunc i_exit_func, void *i_context);
-    void
+    void LN_CONSOLE_API
     tick_cpu_test();
 
   private:
@@ -60,7 +60,7 @@ struct LN_CONSOLE_API Emulator {
 
     Cartridge *m_cart;
 
-    std::unique_ptr<Controller> m_controllers[ControllerSlot::SIZE];
+    Controller *m_controllers[ControllerSlot::SIZE];
 };
 
 } // namespace ln
