@@ -3,7 +3,7 @@
 namespace ln {
 
 Color
-PaletteDefault::get_color(PaletteColor i_color) const
+PaletteDefault::to_rgb(PaletteColor i_color) const
 {
     static constexpr Color table[PaletteColor::size()] = {
         /* clang-format off */

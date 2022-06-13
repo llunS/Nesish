@@ -24,6 +24,8 @@ if (MSVC)
 else()
     # lots of warnings and all warnings as errors
     add_compile_options(-Wall -Wextra -pedantic -Werror)
+    # suppress some warnings
+    add_compile_options(-Wno-reorder-ctor)
 endif()
 
 # Suppress some warnings.

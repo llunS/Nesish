@@ -3,9 +3,13 @@
 
 #include "common/klass.hpp"
 #include "common/error.hpp"
-#include "glfw_app/rendering/shader.hpp"
 
+#include "glfw_app/rendering/shader.hpp"
 #include "glfw_app/glad/glad.h"
+
+namespace ln {
+struct FrameBuffer;
+} // namespace ln
 
 namespace ln_app {
 
@@ -24,7 +28,7 @@ struct Renderer {
     get_height();
 
     void
-    draw();
+    render(const ln::FrameBuffer &i_frame_buf);
 
     GLuint
     texture() const;
@@ -36,9 +40,11 @@ struct Renderer {
   private:
     GLuint m_vbo;
     GLuint m_vao;
+    GLuint m_tex;
     Shader m_shader;
+
     GLuint m_fbo;
-    GLuint m_texture;
+    GLuint m_fb_tex;
 };
 
 } // namespace ln_app

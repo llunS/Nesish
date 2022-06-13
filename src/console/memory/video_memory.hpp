@@ -7,7 +7,8 @@
 
 namespace ln {
 
-enum class PPUMemoryMappingPoint : unsigned char {
+/* @IMPL: Valid enumerators must be unique and can be used as array index */
+enum class VideoMemoryMappingPoint : unsigned char {
     INVALID = 0,
 
     // https://www.nesdev.org/wiki/PPU_memory_map
@@ -15,13 +16,17 @@ enum class PPUMemoryMappingPoint : unsigned char {
     NAMETABLE,
     NAMETABLE_MIRROR,
     PALETTE,
+
+    INVALID_REST,
+
+    SIZE,
 };
 
-struct PPUMemory
-    : public MappableMemory<PPUMemoryMappingPoint, LN_PPU_ADDRESSABLE_SIZE> {
+struct VideoMemory
+    : public MappableMemory<VideoMemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
   public:
-    PPUMemory();
-    LN_KLZ_DELETE_COPY_MOVE(PPUMemory);
+    VideoMemory();
+    LN_KLZ_DELETE_COPY_MOVE(VideoMemory);
 
     void
     configure_mirror(bool i_horizontal);

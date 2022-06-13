@@ -9,41 +9,52 @@ namespace ln {
 CPU::CPU(Memory *i_memory)
     : m_memory(i_memory)
     , m_cycle(0)
-    , m_next_instr_cycle(0)
     , m_halted(false)
+    , m_nmi(false)
+    , m_next_stage(Stage::DECODE)
+    , m_next_stage_cycle(0)
 {
+    m_oam_dma_ctx.ongoing = false;
 }
 
 void
 CPU::power_up()
 {
-    // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
-    // P = 0x34; // (IRQ disabled)
-    P = 0x24; // according to nestest.log (IRQ disabled still)
-    A = X = Y = 0;
-    S = 0xFD;
-
-    // @TODO NES APU and I/O registers
-    for (Address i = 0x4000; i <= 0x400F; ++i)
+    /* Init some states */
     {
-        (void)m_memory->set_byte(i, 0x00);
+        // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
+        // P = 0x34; // (IRQ disabled)
+        P = 0x24; // according to nestest.log (IRQ disabled still)
+        A = X = Y = 0;
+        S = 0xFD;
+
+        // @TODO NES APU and I/O registers
+        for (Address i = 0x4000; i <= 0x400F; ++i)
+        {
+            (void)m_memory->set_byte(i, 0x00);
+        }
+        for (Address i = 0x4010; i <= 0x4013; ++i)
+        {
+            (void)m_memory->set_byte(i, 0x00);
+        }
+        (void)m_memory->set_byte(0x4015, 0x00); // (all channels disabled)
+        (void)m_memory->set_byte(0x4017, 0x00); // (frame irq enabled)
+
+        // All 15 bits of noise channel LFSR = $0000[5]. The first time the LFSR
+        // is clocked from the all-0s state, it will shift in a 1.
+        // @TODO: noise channel LFSR
+
+        (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00); // 2A03G
+
+        // consistent RAM startup state
+        m_memory->set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
+                           0xFF);
     }
-    for (Address i = 0x4010; i <= 0x4013; ++i)
+
+    /* set program entry point */
     {
-        (void)m_memory->set_byte(i, 0x00);
+        this->PC = this->get_byte2(Memory::RESET_VECTOR_ADDR);
     }
-    (void)m_memory->set_byte(0x4015, 0x00); // (all channels disabled)
-    (void)m_memory->set_byte(0x4017, 0x00); // (frame irq enabled)
-
-    // All 15 bits of noise channel LFSR = $0000[5]. The first time the LFSR is
-    // clocked from the all-0s state, it will shift in a 1.
-    // @TODO: noise channel LFSR
-
-    (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00); // 2A03G
-
-    // consistent RAM startup state
-    m_memory->set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
-                       0xFF);
 }
 
 void
@@ -59,69 +70,177 @@ CPU::reset()
 
     (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00);
 
-    m_halted = false;
     m_cycle = 0;
-    m_next_instr_cycle = 0;
+    m_halted = false;
+
+    m_nmi = false;
+
+    m_next_stage = Stage::DECODE;
+    m_next_stage_cycle = 0;
+
+    m_oam_dma_ctx.ongoing = false;
 }
 
 void
-CPU::set_entry(Address i_entry)
+CPU::set_entry_test(Address i_entry)
 {
     PC = i_entry;
 }
 
-bool
+Cycle
 CPU::tick()
 {
-    // @TODO: We don't support cycle-based emulation yet.
-    // So we'll just pretend to be supporting it.
+    // @TODO: Support real cycle-level emulation?
 
     if (m_halted)
     {
-        return false;
+        return 1;
     }
 
-    // @TODO: Maybe we should postpone the execution until the last cycle, or
-    // maybe we should support real cycle-level emulation.
-
-    // Exec the instruction on first cycle, then do nothing for the rest of
-    // cycles.
-    if (m_cycle >= m_next_instr_cycle)
+    Cycle instr_cycles = 0;
+    Cycle curr_cycle = m_cycle;
+    /* OAM DMA transfer */
+    if (m_oam_dma_ctx.ongoing)
     {
-        if (m_cycle > m_next_instr_cycle)
+        if (m_oam_dma_ctx.counter == 0)
         {
-            get_logger()->error("Wrong CPU cycle management: {}, {}", m_cycle,
-                                m_next_instr_cycle);
+            m_oam_dma_ctx.start_counter = curr_cycle % 2 == 0 ? 1 : 2;
         }
+        if (m_oam_dma_ctx.counter >= m_oam_dma_ctx.start_counter)
+        {
+            auto dma_counter =
+                (m_oam_dma_ctx.counter - m_oam_dma_ctx.start_counter);
+            if (dma_counter > 256 * 2 - 1)
+            {
+                LN_ASSERT_FATAL(
+                    "Invalid numeric value, programming error: {}, {}",
+                    m_oam_dma_ctx.counter, m_oam_dma_ctx.start_counter);
+                return 1;
+            }
+            Byte byte_idx = Byte(dma_counter / 2);
+            // Address addr = (m_oam_dma_ctx.upper << 8) | byte_idx;
 
-        Byte opcode_byte = get_byte(PC++);
-        Opcode opcode = {opcode_byte};
-        InstructionDesc instr_desc = get_instr_desc(opcode);
+            /* read */
+            if (dma_counter % 2 == 0)
+            {
+                // @TODO: dma transfer to PPU
+                // m_oam_dma_ctx.tmp = this->get_byte(addr);
+            }
+            else
+            {
+                // @TODO: dma transfer to PPU
+                //(void)(m_oam_dma_ctx.tmp);
 
-        ParseFunc parse = get_address_parse(opcode);
-        bool read_page_crossing = false;
-        Byte operand_bytes;
-        Operand operand = parse(
-            this, operand_bytes,
-            instr_desc.cycle_page_dependent ? &read_page_crossing : nullptr);
-        PC += operand_bytes;
+                /* end of the transfer process */
+                if (byte_idx >= 256 - 1)
+                {
+                    m_oam_dma_ctx.ongoing = false;
+                }
+            }
+        }
+        ++m_oam_dma_ctx.counter;
 
-        Cycle extra_branch_cycles = 0;
-        ExecFunc exec = get_opcode_exec(opcode);
-        exec(this, operand, extra_branch_cycles);
+        instr_cycles = 1;
+        ++m_next_stage_cycle;
+    }
+    /* Normal execution flow */
+    else
+    {
+        if (curr_cycle >= m_next_stage_cycle)
+        {
+            if (curr_cycle > m_next_stage_cycle)
+            {
+                LN_ASSERT_FATAL("Wrong CPU cycle management: {}, {}",
+                                curr_cycle, m_next_stage_cycle);
+                return 1;
+            }
 
-        Cycle cycles_spent = instr_desc.cycle_base + (Cycle)read_page_crossing +
-                             extra_branch_cycles;
+            switch (m_next_stage)
+            {
+                case Stage::DECODE:
+                {
+                    Byte opcode_byte = get_byte(PC++);
+                    Opcode opcode = {opcode_byte};
+                    InstructionDesc instr_desc = get_instr_desc(opcode);
 
-        m_next_instr_cycle = m_cycle + cycles_spent;
+                    m_stage_ctx.opcode = opcode;
+                    m_stage_ctx.instr_desc = instr_desc;
+                    if (instr_desc.cycle_base <= 1)
+                    {
+                        LN_ASSERT_FATAL("Invalid cycle base for {}",
+                                        opcode_byte);
+                        return 1;
+                    }
+                    m_stage_ctx.instr_cycles = instr_desc.cycle_base;
+
+                    m_next_stage = Stage::FETCH_EXEC;
+                    // postpone the rest of the work at the last cycle.
+                    m_next_stage_cycle += instr_desc.cycle_base - 1;
+                }
+                break;
+
+                case Stage::FETCH_EXEC:
+                {
+                    const auto &opcode = m_stage_ctx.opcode;
+                    const auto &instr_desc = m_stage_ctx.instr_desc;
+
+                    ParseFunc parse = get_address_parse(opcode);
+                    bool read_page_crossing = false;
+                    Byte operand_bytes;
+                    Operand operand = parse(this, operand_bytes,
+                                            instr_desc.cycle_page_dependent
+                                                ? &read_page_crossing
+                                                : nullptr);
+                    PC += operand_bytes;
+
+                    Cycle extra_branch_cycles = 0;
+                    ExecFunc exec = get_opcode_exec(opcode);
+                    exec(this, operand, extra_branch_cycles);
+
+                    Cycle extra_cycles =
+                        (Cycle)read_page_crossing + extra_branch_cycles;
+                    m_stage_ctx.instr_cycles += extra_cycles;
+
+                    if (!extra_cycles)
+                    {
+                        instr_cycles = m_stage_ctx.instr_cycles;
+
+                        m_next_stage = Stage::DECODE;
+                        m_next_stage_cycle += 1;
+                    }
+                    else
+                    {
+                        m_next_stage = Stage::LAST_CYCLE;
+                        m_next_stage_cycle += extra_cycles;
+                    }
+                }
+                break;
+
+                case Stage::LAST_CYCLE:
+                {
+                    instr_cycles = m_stage_ctx.instr_cycles;
+
+                    m_next_stage = Stage::DECODE;
+                    m_next_stage_cycle += 1;
+                }
+                break;
+
+                default:
+                {
+                    LN_ASSERT_FATAL("Undefined CPU stage: {}", m_next_stage);
+                    return 1;
+                }
+                break;
+            }
+        }
     }
     ++m_cycle;
 
-    return true;
+    return instr_cycles;
 }
 
 bool
-CPU::step()
+CPU::step_test()
 {
     if (m_halted)
     {
@@ -194,7 +313,7 @@ CPU::get_p() const
 }
 
 std::vector<Byte>
-CPU::get_instruction_bytes(Address i_addr) const
+CPU::get_instr_bytes(Address i_addr) const
 {
     std::vector<Byte> bytes;
     bytes.reserve(3);
@@ -214,12 +333,32 @@ CPU::get_instruction_bytes(Address i_addr) const
     return bytes;
 }
 
+void
+CPU::init_oam_dma(Byte i_val)
+{
+    if (m_oam_dma_ctx.ongoing)
+    {
+        LN_ASSERT_FATAL(
+            "Initialize a OAMDMA transfer while one is already going on.");
+        return;
+    }
+    m_oam_dma_ctx.ongoing = true;
+    m_oam_dma_ctx.upper = i_val;
+    m_oam_dma_ctx.counter = 0;
+}
+
+void
+CPU::set_nmi(bool i_flag)
+{
+    m_nmi = i_flag;
+}
+
 auto
 CPU::get_opcode_exec(Opcode i_opcode) -> ExecFunc
 {
     auto ret = s_instr_map[i_opcode].exec_func;
-    ASSERT_ERROR(ret, "Config error, empty ExecFunc for instruction: {}",
-                 i_opcode);
+    LN_ASSERT_FATAL_COND(
+        ret, "Config error, empty ExecFunc for instruction: {}", i_opcode);
     return ret;
 }
 
@@ -227,8 +366,8 @@ auto
 CPU::get_address_parse(Opcode i_opcode) -> ParseFunc
 {
     auto ret = s_address_mode_map[get_address_mode(i_opcode)].parse_func;
-    ASSERT_ERROR(ret, "Config error, empty ParseFunc for instruction: {}",
-                 i_opcode);
+    LN_ASSERT_FATAL_COND(
+        ret, "Config error, empty ParseFunc for instruction: {}", i_opcode);
     return ret;
 }
 
@@ -255,8 +394,8 @@ CPU::get_byte(Address i_addr) const
 {
     Byte byte;
     auto err = m_memory->get_byte(i_addr, byte);
-    // @TODO: report invalid operation
-    ASSERT_ERROR(!LN_FAILED(err), "Invalid memory read: ${:04X}", i_addr);
+    LN_ASSERT_ERROR_COND(!LN_FAILED(err), "Invalid memory read: ${:04X}, {}",
+                         i_addr, err);
     return byte;
 }
 
@@ -264,8 +403,8 @@ void
 CPU::set_byte(Address i_addr, Byte i_byte)
 {
     auto err = m_memory->set_byte(i_addr, i_byte);
-    // @TODO: report invalid operation
-    ASSERT_ERROR(!LN_FAILED(err), "Invalid memory write: ${:04X}", i_addr);
+    LN_ASSERT_ERROR_COND(!LN_FAILED(err), "Invalid memory write: ${:04X}, {}",
+                         i_addr, err);
 }
 
 Byte2
@@ -281,11 +420,11 @@ CPU::push_byte(Byte i_byte)
 {
     if (S == 0)
     {
-        get_logger()->error("Stack overflow! PC: ${:04X}", PC);
+        LN_ASSERT_ERROR("Stack overflow! PC: ${:04X}", PC);
     }
 
     set_byte(Memory::STACK_PAGE_MASK | S, i_byte);
-    get_logger()->trace("Push byte: {:02X}", i_byte);
+    LN_LOG_TRACE(ln::get_logger(), "Push byte: {:02X}", i_byte);
     --S;
 }
 
@@ -294,12 +433,12 @@ CPU::pop_byte()
 {
     if (S == (Byte)-1)
     {
-        get_logger()->error("Stack underflow! PC: ${:04X}", PC);
+        LN_ASSERT_ERROR("Stack underflow! PC: ${:04X}", PC);
     }
 
     ++S;
     Byte byte = get_byte(Memory::STACK_PAGE_MASK | S);
-    get_logger()->trace("Pop byte: {:02X}", byte);
+    LN_LOG_TRACE(ln::get_logger(), "Pop byte: {:02X}", byte);
     return byte;
 }
 
@@ -359,7 +498,7 @@ CPU::get_operand(Operand i_operand) const
             return this->A;
             break;
         default:
-            ASSERT_ERROR(false, "Unsupported operand type: {}", i_operand.type);
+            LN_ASSERT_ERROR("Unsupported operand type: {}", i_operand.type);
             return (Byte)-1;
             break;
     }
@@ -386,16 +525,37 @@ CPU::set_operand(Operand i_operand, Byte i_byte)
 void
 CPU::halt()
 {
-    get_logger()->info("Halting...");
+    LN_LOG_INFO(ln::get_logger(), "Halting...");
 
     m_halted = true;
+}
+
+void
+CPU::poll_interrupt()
+{
+    if (m_nmi)
+    {
+        this->push_byte2(this->PC);
+
+        // @QUIRK: https://www.nesdev.org/wiki/Status_flags#The_B_flag
+        this->push_byte((this->P & ~CPU::StatusFlag::B) | StatusFlag::U);
+
+        // https://www.nesdev.org/wiki/Status_flags#The_B_flag
+        this->set_flag(CPU::StatusFlag::I);
+
+        // Jump to interrupt handler.
+        this->PC = this->get_byte2(Memory::NMI_VECTOR_ADDR);
+
+        // Clear the flag
+        m_nmi = false;
+    }
 }
 
 void
 CPU::report_exec_error(const std::string &i_msg)
 {
     // @TODO: Current executing instruction?
-    ASSERT_ERROR(false, i_msg);
+    LN_ASSERT_ERROR(i_msg);
 }
 
 } // namespace ln

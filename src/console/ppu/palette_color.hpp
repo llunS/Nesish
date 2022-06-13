@@ -14,6 +14,9 @@ struct PaletteColor {
         : value(i_index){};
     LN_KLZ_DEFAULT_COPY(PaletteColor);
 
+    /**
+     * @brief The number of representable colors.
+     */
     static constexpr int
     size()
     {

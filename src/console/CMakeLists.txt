@@ -18,13 +18,16 @@ target_include_directories(${module_name} PUBLIC ../)
 
 list(APPEND sources emulator.cpp)
 
+list(APPEND sources clock.cpp)
+
 list(APPEND sources cartridge/cartridge_loader.cpp)
 list(APPEND sources cartridge/ines.cpp)
 list(APPEND sources cartridge/mapper/mapper.cpp)
 list(APPEND sources cartridge/mapper/norm.cpp)
 
-list(APPEND sources memory/memory.cpp)
 list(APPEND sources memory/mapping_entry.cpp)
+list(APPEND sources memory/memory.cpp)
+list(APPEND sources memory/video_memory.cpp)
 
 list(APPEND sources cpu/cpu.cpp)
 list(APPEND sources cpu/opcode_exec.cpp)
@@ -34,12 +37,22 @@ list(APPEND sources cpu/address_mode_map.cpp)
 list(APPEND sources cpu/operand.cpp)
 
 list(APPEND sources ppu/ppu.cpp)
-list(APPEND sources ppu/ppu_memory.cpp)
+list(APPEND sources ppu/pipeline_accessor.cpp)
+list(APPEND sources ppu/frame_buffer.cpp)
+list(APPEND sources ppu/palette_default.cpp)
+list(APPEND sources ppu/nametable_entry.cpp)
+list(APPEND sources ppu/nametable_attribute.cpp)
+list(APPEND sources ppu/object_attribute.cpp)
 
-list(APPEND sources rendering/palette_default.cpp)
-list(APPEND sources rendering/nametable_entry.cpp)
-list(APPEND sources rendering/nametable_attribute.cpp)
-list(APPEND sources rendering/object_attribute.cpp)
+list(APPEND sources ppu/pipeline/ticker.cpp)
+list(APPEND sources ppu/pipeline/lambda_ticker.cpp)
+list(APPEND sources ppu/pipeline/idle_ticker.cpp)
+
+list(APPEND sources ppu/pipeline/pipeline.cpp)
+list(APPEND sources ppu/pipeline/pre_render_scanline.cpp)
+list(APPEND sources ppu/pipeline/visible_scanline.cpp)
+list(APPEND sources ppu/pipeline/vblank_scanline.cpp)
+list(APPEND sources ppu/pipeline/bg_fetch_render.cpp)
 
 target_sources(${module_name} PRIVATE ${sources})
 

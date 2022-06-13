@@ -9,6 +9,7 @@
 #include "console/types.hpp"
 #include "common/filesystem.hpp"
 #include "common/vc_intrinsics.hpp"
+#include "console/assert.hpp"
 
 namespace ln {
 
@@ -92,7 +93,7 @@ l_cleanup:
         }
         else
         {
-            assert(false);
+            LN_ASSERT(false);
             err = Error::PROGRAMMING;
         }
     }
@@ -105,7 +106,7 @@ pvt_open_rom(const std::string &i_rom_path, std::FILE **o_file)
 {
     if (!file_exists(i_rom_path))
     {
-        get_logger()->error("File opening failed!");
+        LN_LOG_ERROR(ln::get_logger(), "File opening failed!");
         return Error::UNAVAILABLE;
     }
 
@@ -115,7 +116,7 @@ pvt_open_rom(const std::string &i_rom_path, std::FILE **o_file)
     LN_VC_WARNING_POP
     if (!fp)
     {
-        get_logger()->error("File opening failed!");
+        LN_LOG_ERROR(ln::get_logger(), "File opening failed!");
         return Error::UNAVAILABLE;
     }
     *o_file = fp;
@@ -136,7 +137,8 @@ CartridgeLoader::pvt_load_ines_header(std::FILE *i_file, INES *io_ines)
     auto got = std::fread(buf, 1, sizeof buf, i_file);
     if (got < sizeof buf)
     {
-        get_logger()->error("iNES header incomplete, got {} bytes.", got);
+        LN_LOG_ERROR(ln::get_logger(), "iNES header incomplete, got {} bytes.",
+                     got);
         return Error::CORRUPTED;
     }
 
@@ -168,7 +170,7 @@ CartridgeLoader::pvt_load_ines_trainer(std::FILE *i_file, INES *io_ines)
     {
         if (std::fseek(i_file, 512, SEEK_CUR))
         {
-            get_logger()->error("Failed to skip over iNES trainer.");
+            LN_LOG_ERROR(ln::get_logger(), "Failed to skip over iNES trainer.");
             return Error::CORRUPTED;
         }
     }
@@ -180,7 +182,7 @@ CartridgeLoader::pvt_load_ines_prg_rom(std::FILE *i_file, INES *io_ines)
 {
     if (!io_ines->m_header.prg_rom_size)
     {
-        get_logger()->error("iNES PRG ROM header field is zero.");
+        LN_LOG_ERROR(ln::get_logger(), "iNES PRG ROM header field is zero.");
         return Error::CORRUPTED;
     }
 
@@ -201,8 +203,9 @@ CartridgeLoader::pvt_load_ines_prg_rom(std::FILE *i_file, INES *io_ines)
         LN_VC_WARNING_POP
         if (got < EACH_READ)
         {
-            get_logger()->error("iNES PRG ROM incomplete, got {} bytes.",
-                                byte_idx + got);
+            LN_LOG_ERROR(ln::get_logger(),
+                         "iNES PRG ROM incomplete, got {} bytes.",
+                         byte_idx + got);
             err = Error::CORRUPTED;
             goto l_cleanup;
         }
@@ -244,8 +247,9 @@ CartridgeLoader::pvt_load_ines_chr_rom(std::FILE *i_file, INES *io_ines)
         LN_VC_WARNING_POP
         if (got < EACH_READ)
         {
-            get_logger()->error("iNES CHR ROM incomplete, got {} bytes.",
-                                byte_idx + got);
+            LN_LOG_ERROR(ln::get_logger(),
+                         "iNES CHR ROM incomplete, got {} bytes.",
+                         byte_idx + got);
             err = Error::CORRUPTED;
             goto l_cleanup;
         }

@@ -1,5 +1,9 @@
 #pragma once
 
+/* Disable logging on debug build */
+#ifndef NDEBUG
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF
+#endif
 #include "spdlog/spdlog.h"
 
 #include "common/dllexport.h"
@@ -17,3 +21,28 @@ spdlog::logger *
 get_logger();
 
 } // namespace ln
+
+template <typename... Args>
+void
+LN_LOG_ARGS_UNUSED(Args &&...)
+{
+}
+
+#define LN_LOG_TRACE(i_logger, ...)                                            \
+    LN_LOG_ARGS_UNUSED(i_logger, __VA_ARGS__);                                 \
+    SPDLOG_LOGGER_TRACE(i_logger, __VA_ARGS__)
+#define LN_LOG_DEBUG(i_logger, ...)                                            \
+    LN_LOG_ARGS_UNUSED(i_logger, __VA_ARGS__);                                 \
+    SPDLOG_LOGGER_DEBUG(i_logger, __VA_ARGS__)
+#define LN_LOG_INFO(i_logger, ...)                                             \
+    LN_LOG_ARGS_UNUSED(i_logger, __VA_ARGS__);                                 \
+    SPDLOG_LOGGER_INFO(i_logger, __VA_ARGS__)
+#define LN_LOG_WARN(i_logger, ...)                                             \
+    LN_LOG_ARGS_UNUSED(i_logger, __VA_ARGS__);                                 \
+    SPDLOG_LOGGER_WARN(i_logger, __VA_ARGS__)
+#define LN_LOG_ERROR(i_logger, ...)                                            \
+    LN_LOG_ARGS_UNUSED(i_logger, __VA_ARGS__);                                 \
+    SPDLOG_LOGGER_ERROR(i_logger, __VA_ARGS__)
+#define LN_LOG_FATAL(i_logger, ...)                                            \
+    LN_LOG_ARGS_UNUSED(i_logger, __VA_ARGS__);                                 \
+    SPDLOG_LOGGER_CRITICAL(i_logger, __VA_ARGS__)

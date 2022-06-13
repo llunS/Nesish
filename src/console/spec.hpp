@@ -4,6 +4,8 @@
 #define LN_NES_WIDTH 256
 #define LN_NES_HEIGHT 240
 
+#define LN_CPU_HZ 1789773
+
 #define LN_ADDRESSABLE_SIZE (64 * 1024) // 16bit addressable memory
 
 #define LN_INTERNAL_RAM_SIZE (2 * 1024) // 2KiB
@@ -16,6 +18,7 @@
 #define LN_RAM_MASK 0x1FFF // leftmost 3 bits zero
 
 #define LN_PPU_ADDRESSABLE_SIZE (16 * 1024) // 14bit addressable memory
+#define LN_PPU_ADDR_MASK 0x3FFF
 #define LN_PPU_INTERNAL_RAM_SIZE (2 * 1024) // 2KiB
 #define LN_OAM_SIZE 256                     // 256 bytes
 #define LN_PALETTE_SIZE 32
@@ -42,8 +45,15 @@
 
 #define LN_PALETTE_ADDR_HEAD 0x3F00
 #define LN_PALETTE_ADDR_TAIL 0x3FFF
-#define LN_PALETTE_ADDR_MASK 0x001F       // rightmost 5 bits
-#define LN_PALETTE_ADDR_COLOR_MASK 0x0003 // rightmost 2 bits (modulo 4)
-#define LN_PALETTE_ADDR_BKG_MASK 0xFF0F   // background palette prefix
+#define LN_PALETTE_ADDR_MASK 0x001F          // rightmost 5 bits
+#define LN_PALETTE_ADDR_BACKDROP_MASK 0x0003 // rightmost 2 bits (modulo 4)
+#define LN_PALETTE_ADDR_BKG_MASK 0xFF0F      // background palette prefix
+#define LN_PALETTE_ADDR_BKG_OR_MASK 0x3F00   // used to get bkg palette color
+
+#define LN_PPU_INVALID_ADDR_HEAD 0x4000
+#define LN_PPU_INVALID_ADDR_TAIL 0xFFFF
+#define LN_PPU_INVALID_ADDR_MASK 0x3FFF
+
+#define LN_SCANLINE_CYCLES 341
 
 #define LN_APU_FC_ADDR 0x4017

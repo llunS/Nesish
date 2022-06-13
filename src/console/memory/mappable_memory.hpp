@@ -1,10 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include <unordered_map>
+#include <type_traits>
 
 #include "common/error.hpp"
-#include "common/hash.hpp"
 #include "console/types.hpp"
 #include "console/memory/mapping_entry.hpp"
 
@@ -16,9 +15,9 @@ struct MappableMemory {
     MappableMemory();
 
     Error
-    get_byte(Address i_addr, Byte &o_byte) const;
+    get_byte(Address i_addr, Byte &o_val) const;
     Error
-    set_byte(Address i_addr, Byte i_byte);
+    set_byte(Address i_addr, Byte i_val);
 
     void
     set_mapping(EMappingPoint i_point, MappingEntry i_entry);
@@ -27,11 +26,39 @@ struct MappableMemory {
 
   protected:
     Byte *
-    decode_addr(Address i_addr, int i_write) const;
+    decode_addr_raw(Address i_addr) const;
+
+  private:
+    struct EntryKeyValue {
+      public:
+        EntryKeyValue(EMappingPoint i_k, const MappingEntry *i_v)
+            : k(i_k)
+            , v(i_v)
+        {
+        }
+
+        const MappingEntry *v;
+        EMappingPoint k;
+    };
+    EntryKeyValue
+    get_entry_kv(Address i_addr) const;
+    Byte *
+    decode_addr_raw_impl(const EntryKeyValue &i_entry_kv, Address i_addr) const;
 
   private:
     EMappingPoint m_mapping_registry[AddressableSize];
-    std::unordered_map<EMappingPoint, MappingEntry, EnumHash> m_mapping_entries;
+    struct EntryElement {
+        EntryElement()
+            : entry(Uninitialized_t())
+            , valid(false)
+        {
+        }
+        MappingEntry entry;
+        bool valid;
+    };
+    typedef
+        typename std::underlying_type<EMappingPoint>::type MappingPointIndex_t;
+    EntryElement m_mapping_entries[MappingPointIndex_t(EMappingPoint::SIZE)];
 };
 
 } // namespace ln

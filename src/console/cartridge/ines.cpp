@@ -40,7 +40,8 @@ INES::resolve()
     auto mapper = pvt_get_mapper(m_mapper_number, &m_rom_accessor);
     if (!mapper)
     {
-        get_logger()->error("iNES unsupported mapper {}", m_mapper_number);
+        LN_LOG_ERROR(ln::get_logger(), "iNES unsupported mapper {}",
+                     m_mapper_number);
         return Error::UNIMPLEMENTED;
     }
     m_mapper.reset(mapper);
@@ -56,42 +57,42 @@ INES::validate() const
     if (!(m_header.nes_magic[0] == 0x4e && m_header.nes_magic[1] == 0x45 &&
           m_header.nes_magic[2] == 0x53 && m_header.nes_magic[3] == 0x1a))
     {
-        get_logger()->error("iNES invalid magic number.");
+        LN_LOG_ERROR(ln::get_logger(), "iNES invalid magic number.");
         return Error::CORRUPTED;
     }
     if (!m_prg_rom)
     {
-        get_logger()->error("iNES empty PRG ROM.");
+        LN_LOG_ERROR(ln::get_logger(), "iNES empty PRG ROM.");
         return Error::CORRUPTED;
     }
     if (m_header.ines2 != 0)
     {
-        get_logger()->error("iNES invalid version.");
+        LN_LOG_ERROR(ln::get_logger(), "iNES invalid version.");
         return Error::CORRUPTED;
     }
 
     // 2. runtime state check
     if (!m_mapper)
     {
-        get_logger()->error("iNES mapper uninitialized.");
+        LN_LOG_ERROR(ln::get_logger(), "iNES mapper uninitialized.");
         return Error::UNINITIALIZED;
     }
 
-    get_logger()->info("iNES mapper {}.", m_mapper_number);
+    LN_LOG_INFO(ln::get_logger(), "iNES mapper {}.", m_mapper_number);
 
     return Error::OK;
 }
 
 void
-INES::map_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const
+INES::map_memory(Memory *i_memory, VideoMemory *i_video_memory) const
 {
-    m_mapper->map_memory(this, i_memory, i_ppu_memory);
+    m_mapper->map_memory(this, i_memory, i_video_memory);
 }
 
 void
-INES::unmap_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const
+INES::unmap_memory(Memory *i_memory, VideoMemory *i_video_memory) const
 {
-    m_mapper->unmap_memory(this, i_memory, i_ppu_memory);
+    m_mapper->unmap_memory(this, i_memory, i_video_memory);
 }
 
 bool

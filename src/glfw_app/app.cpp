@@ -1,7 +1,12 @@
 #include "app.hpp"
 
+#include <cstdio>
+#include <cstdint>
+#include <memory>
+
+// @FIXME: spdlog will include windows header files, we need to include them
+// before "glfw3.h"
 #include "console/emulator.hpp"
-#include "console/spec.hpp"
 
 #include "glfw_app/controller.hpp"
 #include "glfw_app/rendering/renderer.hpp"
@@ -14,79 +19,94 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include <cstdio>
-#include <cstdint>
-#include <memory>
+#include "common/time.hpp"
+
+#include "console/spec.hpp"
+#include "console/ppu/frame_buffer.hpp"
 
 namespace ln_app {
+
+static constexpr double FRAME_TIME = 1.0 / 60.0;
 
 static void
 error_callback(int error, const char *description);
 
 int
-App::run()
+App::run(const std::string &i_rom_path)
 {
-    /* App and OpenGL setup */
-    //{
-    glfwSetErrorCallback(error_callback);
-
-    if (!glfwInit())
-    {
-        return 1;
-    }
-
-    // OpenGL 3.3
-    const char *glsl_version = "#version 330";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-#if defined(__APPLE__)
-    glfwWindowHint(GLFW_OPENGL_PROFILE,
-                   GLFW_OPENGL_CORE_PROFILE);            // 3.2+ only
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on Mac
-#endif
-    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-    if (!monitor)
-    {
-        return 1;
-    }
-
     int err = 0;
 
-    // fullscreen
-    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-    GLFWwindow *window =
-        glfwCreateWindow(mode->width, mode->height, "LightNES", NULL, NULL);
-    if (!window)
+    /* Insert cartridge */
+    auto emulator = std::unique_ptr<ln::Emulator>(new ln::Emulator());
+    auto ln_err = emulator->insert_cartridge(i_rom_path);
+    if (LN_FAILED(ln_err))
     {
-        err = 1;
-        goto l_cleanup;
+        LN_LOG_INFO(ln::get_logger(), "Failed to load cartridge: {}", ln_err);
+        return 1;
     }
-    glfwMakeContextCurrent(window);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    // we want to do the timing ourselves.
-    glfwSwapInterval(0);
-    //}
-
-    /* App logic */
+    /* App and OpenGL setup */
+    GLFWwindow *window = NULL;
+    const char *glsl_version = "#version 330";
     {
+        glfwSetErrorCallback(error_callback);
+
+        if (!glfwInit())
+        {
+            return 1;
+        }
+
+        // OpenGL 3.3
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+#if defined(__APPLE__)
+        glfwWindowHint(GLFW_OPENGL_PROFILE,
+                       GLFW_OPENGL_CORE_PROFILE);            // 3.2+ only
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on Mac
+#endif
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        if (!monitor)
+        {
+            return 1;
+        }
+
+        // fullscreen
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+        window =
+            glfwCreateWindow(mode->width, mode->height, "LightNES", NULL, NULL);
+        if (!window)
+        {
+            err = 1;
+            goto l_cleanup_glfw;
+        }
+        glfwMakeContextCurrent(window);
+        gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+        // we want to do the timing ourselves.
+        glfwSwapInterval(0);
+    }
+
+    /* Main loop */
+    {
+        /* Setup app state */
+        ln::FrameBuffer front_buffer;
+
+        /* Setup emulator */
+        emulator->plug_controller(ln::Emulator::P1,
+                                  new ln_app::Controller(window));
+        emulator->power_up();
+
         /* Setup renderer */
         Renderer renderer;
         if (LN_FAILED(renderer.setup()))
         {
             err = 1;
-            goto l_cleanup;
+            goto l_cleanup_glfw;
         }
-
-        /* Setup emulator */
-        auto emulator = std::unique_ptr<ln::Emulator>(new ln::Emulator());
-        emulator->plug_controller(ln::Emulator::P1,
-                                  new ln_app::Controller(window));
-        emulator->power_up();
 
         /* imgui setup */
         {
@@ -99,12 +119,27 @@ App::run()
         }
 
         /* Event Loop */
+        constexpr double S_TO_MS = 1000.0;
+        constexpr double S_TO_US = S_TO_MS * S_TO_MS;
+        constexpr double US_TO_MS = 1.0 / 1000.0;
+        constexpr double FRAME_TIME_US = FRAME_TIME * S_TO_US;
+
+        double currTimeUS = ln::get_now_micro();
+        double prevSimTimeUS = currTimeUS;
+        double nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
         while (!glfwWindowShouldClose(window))
         {
             // Dispatch events
             glfwPollEvents();
 
-            // Render
+            /* Simulate */
+            currTimeUS = ln::get_now_micro();
+            auto deltaTimeMS = (currTimeUS - prevSimTimeUS) * US_TO_MS;
+            emulator->advance(deltaTimeMS);
+            prevSimTimeUS = currTimeUS;
+
+            /* Render, at most at fixed rate */
+            if (currTimeUS >= nextRenderTimeUS)
             {
                 int width, height;
                 glfwGetFramebufferSize(window, &width, &height);
@@ -127,18 +162,26 @@ App::run()
                     }
                     ImGui::End();
 
+                    /* Render emulator output */
                     if (ImGui::Begin("Emulator", NULL,
                                      ImGuiWindowFlags_NoResize |
                                          ImGuiWindowFlags_AlwaysAutoResize))
                     {
-                        // Draw our content.
-                        renderer.draw();
+                        auto frame_buf = emulator->frame_dirty();
+                        if (frame_buf)
+                        {
+                            /* swap */
+                            frame_buf->swap(front_buffer);
 
-                        ImGui::Image(
-                            (ImTextureID)(std::intptr_t)renderer.texture(),
-                            {float(renderer.get_width()),
-                             float(renderer.get_height())},
-                            {0, 1}, {1, 0}, {1, 1, 1, 1}, {1, 1, 1, 1});
+                            // Draw emulator ouput.
+                            renderer.render(front_buffer);
+
+                            ImGui::Image(
+                                (ImTextureID)(std::intptr_t)renderer.texture(),
+                                {float(renderer.get_width()),
+                                 float(renderer.get_height())},
+                                {0, 1}, {1, 0}, {1, 1, 1, 1}, {1, 1, 1, 1});
+                        }
                     }
                     ImGui::End();
                 }
@@ -148,17 +191,20 @@ App::run()
                 ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
                 glfwSwapBuffers(window);
+
+                nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
             }
         }
     }
 
-l_cleanup:
-    if (true) // for format only
+    /* l_cleanup_imgui: */
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
     }
+l_cleanup_glfw:
+    /* l_cleanup_glfw: */
     {
         if (window)
             glfwDestroyWindow(window);

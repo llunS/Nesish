@@ -32,12 +32,11 @@ CPU::OpcodeExec::exec_brk(ln::CPU *i_cpu, ln::Operand i_operand,
     i_cpu->push_byte2(i_cpu->PC - 1);
 
     // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
-    // @QUIRK: Push the status register with the B flag set, to the stack.
-    i_cpu->push_byte(i_cpu->P | CPU::StatusFlag::B);
+    // @QUIRK: Push the status register with the B and U flag set, to the stack.
+    i_cpu->push_byte(i_cpu->P | CPU::StatusFlag::B | StatusFlag::U);
 
     // https://wiki.nesdev.org/w/index.php?title=Status_flags#I:_Interrupt_Disable
-    // Signal interrupt‘s happening.
-    // @NOTE: This flag is not included in the stack.
+    // Signal interrupt is happening.
     i_cpu->set_flag(CPU::StatusFlag::I);
 
     // Jump to interrupt handler.
@@ -52,8 +51,8 @@ CPU::OpcodeExec::exec_php(ln::CPU *i_cpu, ln::Operand i_operand,
     (void)(i_operand);
 
     // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
-    // @QUIRK: Push the status register with the B flag set, to the stack.
-    i_cpu->push_byte(i_cpu->P | CPU::StatusFlag::B);
+    // @QUIRK: Push the status register with the B and U flag set, to the stack.
+    i_cpu->push_byte(i_cpu->P | CPU::StatusFlag::B | StatusFlag::U);
 }
 
 void
@@ -83,8 +82,8 @@ CPU::OpcodeExec::exec_jsr(ln::CPU *i_cpu, ln::Operand i_operand,
 
     // @QUIRK: Push the return address - 1.
     i_cpu->push_byte2(i_cpu->PC - 1);
-    ASSERT_ERROR(i_operand.type == OperandType::ADDRESS,
-                 "jsr got incorrect operand type.");
+    LN_ASSERT_ERROR_COND(i_operand.type == OperandType::ADDRESS,
+                         "jsr got incorrect operand type.");
     i_cpu->PC = i_operand.address;
 }
 
@@ -94,8 +93,8 @@ CPU::OpcodeExec::exec_bit(ln::CPU *i_cpu, ln::Operand i_operand,
 {
     (void)(o_branch_cycles);
 
-    ASSERT_ERROR(i_operand.type == OperandType::ADDRESS,
-                 "bit got incorrect operand type.");
+    LN_ASSERT_ERROR_COND(i_operand.type == OperandType::ADDRESS,
+                         "bit got incorrect operand type.");
     Byte val = i_cpu->get_operand(i_operand);
 
     test_flag_n(i_cpu, val);
@@ -158,8 +157,8 @@ CPU::OpcodeExec::exec_jmp(ln::CPU *i_cpu, ln::Operand i_operand,
 {
     (void)(o_branch_cycles);
 
-    ASSERT_ERROR(i_operand.type == OperandType::ADDRESS,
-                 "jmp got incorrect operand type.");
+    LN_ASSERT_ERROR_COND(i_operand.type == OperandType::ADDRESS,
+                         "jmp got incorrect operand type.");
     i_cpu->PC = i_operand.address;
 }
 
@@ -278,8 +277,8 @@ CPU::OpcodeExec::exec_shy(ln::CPU *i_cpu, ln::Operand i_operand,
 
     // @UNCERTAIN
     // https://github.com/ltriant/nes/blob/master/doc/undocumented_opcodes.txt
-    ASSERT_ERROR(i_operand.type == OperandType::ADDRESS,
-                 "shy got incorrect operand type.");
+    LN_ASSERT_ERROR_COND(i_operand.type == OperandType::ADDRESS,
+                         "shy got incorrect operand type.");
     Byte val = i_cpu->Y & ((i_operand.address >> 8) + 1);
     i_cpu->set_byte(i_operand.address, val);
 }
@@ -596,8 +595,8 @@ CPU::OpcodeExec::exec_shx(ln::CPU *i_cpu, ln::Operand i_operand,
 
     // @UNCERTAIN
     // https://github.com/ltriant/nes/blob/master/doc/undocumented_opcodes.txt
-    ASSERT_ERROR(i_operand.type == OperandType::ADDRESS,
-                 "shy got incorrect operand type.");
+    LN_ASSERT_ERROR_COND(i_operand.type == OperandType::ADDRESS,
+                         "shx got incorrect operand type.");
     Byte val = i_cpu->X & ((i_operand.address >> 8) + 1);
     i_cpu->set_byte(i_operand.address, val);
 }
@@ -811,8 +810,8 @@ CPU::OpcodeExec::exec_ahx(ln::CPU *i_cpu, ln::Operand i_operand,
     // @UNCERTAIN
     // http://www.oxyron.de/html/opcodes02.html
     // https://www.nesdev.com/extra_instructions.txt
-    ASSERT_ERROR(i_operand.type == OperandType::ADDRESS,
-                 "shy got incorrect operand type.");
+    LN_ASSERT_ERROR_COND(i_operand.type == OperandType::ADDRESS,
+                         "ahx got incorrect operand type.");
     Byte val = i_cpu->A & i_cpu->X & ((i_operand.address >> 8) + 1);
     i_cpu->set_byte(i_operand.address, val);
 }
@@ -926,7 +925,7 @@ CPU::OpcodeExec::exec_branch_op(bool i_cond, ln::CPU *i_cpu,
         // detect infinite loop.
         if (offset == -2)
         {
-            ln::get_logger()->critical("Infinite loop detected.");
+            LN_LOG_FATAL(ln::get_logger(), "Infinite loop detected.");
         }
     }
 }

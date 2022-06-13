@@ -58,17 +58,19 @@ TEST(cpu_test, cpu_test)
 
         constexpr ln::Cycle CYC_BASE = 7;
         // log the process
-        auto bytes = i_cpu->get_instruction_bytes(i_cpu->get_pc());
-        ln::get_logger()->trace(
-            "Instruction {:>4}: ${:04X} {:02X} {} {}", i_instr + 1,
-            i_cpu->get_pc(), bytes[0],
+        auto bytes = i_cpu->get_instr_bytes(i_cpu->get_pc());
+        LN_LOG_TRACE(
+            ln::get_logger(), "Instruction {:>4}: ${:04X} {:02X} {} {}",
+            i_instr + 1, i_cpu->get_pc(), bytes[0],
             bytes.size() >= 2 ? fmt::format("{:02X}", bytes[1]) : "  ",
             bytes.size() >= 3 ? fmt::format("{:02X}", bytes[2]) : "  ");
-        ln::get_logger()->trace("A:{:02X} X:{:02X} Y:{:02X} "
-                                "P:{:02X} SP:{:02X}",
-                                i_cpu->get_a(), i_cpu->get_x(), i_cpu->get_y(),
-                                i_cpu->get_p(), i_cpu->get_s());
-        ln::get_logger()->trace("CYC: {}", CYC_BASE + i_cpu->get_cycle());
+        LN_LOG_TRACE(ln::get_logger(),
+                     "A:{:02X} X:{:02X} Y:{:02X} "
+                     "P:{:02X} SP:{:02X}",
+                     i_cpu->get_a(), i_cpu->get_x(), i_cpu->get_y(),
+                     i_cpu->get_p(), i_cpu->get_s());
+        LN_LOG_TRACE(ln::get_logger(), "CYC: {}",
+                     CYC_BASE + i_cpu->get_cycle());
         // log opcode coverage
         context->opcode_set.insert(bytes[0]);
 
@@ -82,9 +84,27 @@ TEST(cpu_test, cpu_test)
         {
             // advance the cycles we spent
             auto cycle_diff = i_cpu->get_cycle() - context->prev_cycle;
+            if (!cycle_diff)
+            {
+                return true;
+            }
             for (decltype(cycle_diff) i = 0; i < cycle_diff; ++i)
             {
-                context->cycle_emu->tick_cpu_test();
+                auto cycles = context->cycle_emu->tick_cpu_test();
+                if (i + 1 != cycle_diff)
+                {
+                    if (cycles)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (cycles != cycle_diff)
+                    {
+                        return true;
+                    }
+                }
             }
             // check equality
             if (!pvt_same_cpu_state(i_cpu, &context->cycle_emu->get_cpu()))
@@ -109,8 +129,8 @@ TEST(cpu_test, cpu_test)
     step_emulator->run_test(ENTRY, exit_func, &context);
     ASSERT_TRUE(context.ok);
 
-    ln::get_logger()->info("Opcode count covered: {}",
-                           context.opcode_set.size());
+    LN_LOG_INFO(ln::get_logger(), "Opcode kinds covered: {}",
+                context.opcode_set.size());
 
     pvt_close_log(log);
 }
@@ -131,13 +151,13 @@ pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
     std::getline(*io_file, line);
     if (line.empty())
     {
-        ln::get_logger()->error("Empty log line.");
+        LN_LOG_ERROR(ln::get_logger(), "Empty log line.");
         return false;
     }
 
     // instruction bytes
     {
-        auto bytes = i_cpu->get_instruction_bytes(i_cpu->get_pc());
+        auto bytes = i_cpu->get_instr_bytes(i_cpu->get_pc());
         std::string actual = fmt::format(
             "{:04X}  {:02X} {} {}", i_cpu->get_pc(), bytes[0],
             bytes.size() >= 2 ? fmt::format("{:02X}", bytes[1]) : "  ",
@@ -147,8 +167,9 @@ pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
 
         if (actual != expected)
         {
-            ln::get_logger()->error("Diff failed at Instruction {}: [{}]",
-                                    i_instr + 1, actual);
+            LN_LOG_ERROR(ln::get_logger(),
+                         "Diff failed at Instruction {}: [{}]", i_instr + 1,
+                         actual);
             return false;
         }
     }
@@ -164,8 +185,9 @@ pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
 
         if (actual != expected)
         {
-            ln::get_logger()->error("Diff failed at Instruction {}: [{}]",
-                                    i_instr + 1, actual);
+            LN_LOG_ERROR(ln::get_logger(),
+                         "Diff failed at Instruction {}: [{}]", i_instr + 1,
+                         actual);
             return false;
         }
     }
@@ -176,9 +198,9 @@ pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
         expected.pop_back(); // '\r'
         if (actual != expected)
         {
-            ln::get_logger()->error(
-                "Diff failed at Instruction {}: [{}] cycles", i_instr + 1,
-                expected);
+            LN_LOG_ERROR(ln::get_logger(),
+                         "Diff failed at Instruction {}: [{}] cycles",
+                         i_instr + 1, expected);
             return false;
         }
     }
@@ -205,8 +227,8 @@ pvt_same_cpu_state(const ln::CPU *lhs, const ln::CPU *rhs)
     {
         return false;
     }
-    else if (lhs->get_instruction_bytes(lhs->get_pc()) !=
-             rhs->get_instruction_bytes(rhs->get_pc()))
+    else if (lhs->get_instr_bytes(lhs->get_pc()) !=
+             rhs->get_instr_bytes(rhs->get_pc()))
     {
         return false;
     }

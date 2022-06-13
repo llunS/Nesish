@@ -26,6 +26,7 @@ elseif(LN_TARGET_WINDOWS)
     list(APPEND sources path_windows.cpp)
     list(APPEND sources filesystem_windows.cpp)
 endif()
+list(APPEND sources time.cpp)
 
 target_sources(${module_name} PRIVATE ${sources})
 

@@ -3,7 +3,7 @@
 #include "common/error.hpp"
 #include "console/cartridge/ines.hpp"
 #include "console/memory/memory.hpp"
-#include "console/ppu/ppu_memory.hpp"
+#include "console/memory/video_memory.hpp"
 
 namespace ln {
 
@@ -17,10 +17,10 @@ struct Mapper {
 
     virtual void
     map_memory(const INES *i_nes, Memory *i_memory,
-               PPUMemory *i_ppu_memory) = 0;
+               VideoMemory *i_video_memory) = 0;
     virtual void
     unmap_memory(const INES *i_nes, Memory *i_memory,
-                 PPUMemory *i_ppu_memory) const = 0;
+                 VideoMemory *i_video_memory) const = 0;
 
   protected:
     const INES::RomAccessor *m_rom_accessor;

@@ -20,9 +20,9 @@ struct INES : public Cartridge {
     validate() const override;
 
     void
-    map_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const override;
+    map_memory(Memory *i_memory, VideoMemory *i_video_memory) const override;
     void
-    unmap_memory(Memory *i_memory, PPUMemory *i_ppu_memory) const override;
+    unmap_memory(Memory *i_memory, VideoMemory *i_video_memory) const override;
 
     bool
     h_mirror() const;
@@ -30,7 +30,7 @@ struct INES : public Cartridge {
   public:
     struct RomAccessor {
       public:
-        friend struct INES;
+        LN_KLZ_DELETE_COPY_MOVE(RomAccessor);
 
       public:
         void
@@ -40,13 +40,14 @@ struct INES : public Cartridge {
 
       private:
         RomAccessor(const INES *i_nes);
+        friend struct INES; // allow constructor access
 
       private:
         const INES *m_ines;
     };
+    friend struct RomAccessor;
 
   public:
-    friend struct INESAccessor;
     friend struct CartridgeLoader;
 
   private:

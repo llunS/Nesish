@@ -25,12 +25,10 @@ struct CPU {
     void
     reset();
 
-    void
-    set_entry(Address i_entry);
-    bool
+    Cycle
     tick();
-    bool
-    step();
+
+    /* Query */
 
     LN_CONSOLE_API Cycle
     get_cycle() const;
@@ -49,7 +47,29 @@ struct CPU {
     get_p() const;
 
     LN_CONSOLE_API std::vector<Byte>
-    get_instruction_bytes(Address i_addr) const;
+    get_instr_bytes(Address i_addr) const;
+
+    /* For test only */
+
+    void
+    set_entry_test(Address i_entry);
+    bool
+    step_test();
+
+  private:
+    /* allow access from other internal components */
+
+    friend struct Emulator;
+    void
+    poll_interrupt();
+
+    friend struct Emulator;
+    void
+    init_oam_dma(Byte i_val);
+
+    friend struct PPU;
+    void
+    set_nmi(bool i_flag);
 
   private:
     typedef void (*ExecFunc)(ln::CPU *i_cpu, ln::Operand i_operand,
@@ -110,10 +130,14 @@ struct CPU {
     pop_byte2();
 
   private:
+    // @NOTE: Same underlying type as "this->P", so the enumerators can be
+    // directly used in bitwise operations.
     enum StatusFlag : Byte {
         // http://www.oxyron.de/html/opcodes02.html
         C = 1 << 0, // carry flag (1 on unsigned overflow)
         Z = 1 << 1, // zero flag (1 when all bits of a result are 0)
+        // @TODO: If the /IRQ line is low (IRQ pending) when this flag is
+        // cleared, an interrupt will immediately be triggered.
         I = 1 << 2, // IRQ flag (when 1, no interupts will occur (exceptions are
                     // IRQs forced by BRK and NMIs))
         D = 1 << 3, // decimal flag (1 when CPU in BCD mode)
@@ -161,8 +185,34 @@ struct CPU {
 
   private:
     Cycle m_cycle;
-    Cycle m_next_instr_cycle;
     bool m_halted;
+
+    // ---- interrupt lines
+    bool m_nmi;
+
+  private:
+    struct OAMDMAContext {
+        bool ongoing;
+        Byte upper;
+        Cycle counter;
+        Cycle start_counter;
+        bool write;
+        Byte tmp;
+    } m_oam_dma_ctx;
+
+  private:
+    enum class Stage {
+        DECODE,
+        FETCH_EXEC,
+        LAST_CYCLE,
+    } m_next_stage;
+    Cycle m_next_stage_cycle;
+
+    struct StageContext {
+        Opcode opcode;
+        InstructionDesc instr_desc;
+        Cycle instr_cycles;
+    } m_stage_ctx;
 };
 
 } // namespace ln

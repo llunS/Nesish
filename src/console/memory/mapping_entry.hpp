@@ -1,6 +1,7 @@
 #pragma once
 
 #include "console/types.hpp"
+#include "common/error.hpp"
 
 #include <functional>
 
@@ -9,17 +10,48 @@ namespace ln {
 struct MappingEntry;
 typedef std::function<Byte *(const MappingEntry *i_entry, Address i_addr)>
     MappingDecodeFunc;
+typedef std::function<ln::Error(const MappingEntry *i_entry, Address i_addr,
+                                Byte &o_val)>
+    MappingGetByteFunc;
+typedef std::function<ln::Error(const MappingEntry *i_entry, Address i_addr,
+                                Byte i_val)>
+    MappingSetByteFunc;
+
 struct MappingEntry {
+  public:
+    MappingEntry(Uninitialized_t)
+    {
+    }
+    MappingEntry(Address i_begin, Address i_end, bool i_readonly,
+                 MappingDecodeFunc i_decode, void *i_opaque);
+    MappingEntry(Address i_begin, Address i_end, bool i_readonly,
+                 MappingGetByteFunc i_get_byte, MappingSetByteFunc i_set_byte,
+                 void *i_opaque);
+
+    MappingEntry(const MappingEntry &) = default; // trivially copyable
+
+  private:
+    MappingEntry(Address i_begin, Address i_end, bool i_readonly,
+                 MappingDecodeFunc i_decode, MappingGetByteFunc i_get_byte,
+                 MappingSetByteFunc i_set_byte, void *i_opaque);
+
+  public:
     Address begin;
     Address end; // inclusive
+
+    void *opaque;
+
+  public:
+    template <typename EMappingPoint, std::size_t AddressableSize>
+    friend struct MappableMemory;
+
+  private:
     bool readonly;
 
     MappingDecodeFunc decode;
-    void *opaque;
 
-    MappingEntry(Address i_begin, Address i_end, bool i_readonly,
-                 MappingDecodeFunc i_decode, void *i_opaque);
-    MappingEntry(const MappingEntry &) = default; // trivially copyable
+    MappingGetByteFunc get_byte;
+    MappingSetByteFunc set_byte;
 };
 
 } // namespace ln

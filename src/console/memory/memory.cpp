@@ -5,6 +5,9 @@
 namespace ln {
 
 constexpr Address Memory::STACK_PAGE_MASK;
+
+constexpr Address Memory::NMI_VECTOR_ADDR;
+constexpr Address Memory::RESET_VECTOR_ADDR;
 constexpr Address Memory::IRQ_VECTOR_ADDR;
 
 Memory::Memory()

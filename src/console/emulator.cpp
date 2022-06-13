@@ -5,13 +5,16 @@
 #include "common/filesystem.hpp"
 #include "common/logger.hpp"
 #include "console/cartridge/cartridge_loader.hpp"
+#include "console/spec.hpp"
 
 namespace ln {
 
 Emulator::Emulator()
     : m_cpu(&m_memory)
+    , m_ppu(&m_video_memory, &m_cpu)
     , m_cart(nullptr)
     , m_controllers{}
+    , m_cpu_clock(LN_CPU_HZ)
 {
     hard_wire();
 }
@@ -27,7 +30,7 @@ Emulator::~Emulator()
 
     if (m_cart)
     {
-        m_cart->unmap_memory(&m_memory, &m_ppu_memory);
+        m_cart->unmap_memory(&m_memory, &m_video_memory);
         delete m_cart;
     }
     m_cart = nullptr;
@@ -36,30 +39,52 @@ Emulator::~Emulator()
 void
 Emulator::hard_wire()
 {
-    // PPU register memory mapping.
+    // PPU registers memory mapping.
     {
-        auto decode = [](const MappingEntry *i_entry,
-                         Address i_addr) -> Byte * {
+        auto get = [](const MappingEntry *i_entry, Address i_addr,
+                      Byte &o_val) -> Error {
             PPU *ppu = (PPU *)i_entry->opaque;
 
             PPU::Register reg = PPU::Register(i_addr - i_entry->begin);
-            return &ppu->get_register(reg);
+            o_val = ppu->read_register(reg);
+            return Error::OK;
+        };
+        auto set = [](const MappingEntry *i_entry, Address i_addr,
+                      Byte i_val) -> Error {
+            PPU *ppu = (PPU *)i_entry->opaque;
+
+            PPU::Register reg = PPU::Register(i_addr - i_entry->begin);
+            ppu->write_register(reg, i_val);
+            return Error::OK;
         };
         m_memory.set_mapping(
             MemoryMappingPoint::PPU_REGISTER,
-            {LN_PPUCTRL_ADDR, LN_PPUDATA_ADDR, false, decode, &m_ppu});
+            {LN_PPUCTRL_ADDR, LN_PPUDATA_ADDR, false, get, set, &m_ppu});
     }
     {
-        auto decode = [](const MappingEntry *i_entry,
-                         Address i_addr) -> Byte * {
+        auto get = [](const MappingEntry *i_entry, Address i_addr,
+                      Byte &o_val) -> Error {
             (void)(i_addr);
-            PPU *ppu = (PPU *)i_entry->opaque;
+            Emulator *thiz = (Emulator *)i_entry->opaque;
+            PPU *ppu = (PPU *)&thiz->m_ppu;
 
-            return &ppu->get_register(PPU::OAMDMA);
+            o_val = ppu->read_register(PPU::OAMDMA);
+            return Error::OK;
+        };
+        auto set = [](const MappingEntry *i_entry, Address i_addr,
+                      Byte i_val) -> Error {
+            (void)(i_addr);
+            Emulator *thiz = (Emulator *)i_entry->opaque;
+            PPU *ppu = (PPU *)&thiz->m_ppu;
+            CPU *cpu = (CPU *)&thiz->m_cpu;
+
+            ppu->write_register(PPU::OAMDMA, i_val);
+            cpu->init_oam_dma(i_val);
+            return Error::OK;
         };
         m_memory.set_mapping(
             MemoryMappingPoint::OAMDMA,
-            {LN_OAMDMA_ADDR, LN_OAMDMA_ADDR, false, decode, &m_ppu});
+            {LN_OAMDMA_ADDR, LN_OAMDMA_ADDR, false, get, set, this});
     }
 }
 
@@ -74,14 +99,15 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
 {
     if (!file_exists(i_rom_path))
     {
-        get_logger()->error("Invalid cartridge path: {}", i_rom_path);
+        LN_LOG_ERROR(ln::get_logger(), "Invalid cartridge path: \"{}\"",
+                     i_rom_path);
         return Error::INVALID_ARGUMENT;
     }
 
     Error err = Error::OK;
 
     // 1. load cartridge
-    get_logger()->info("Loading cartridge...");
+    LN_LOG_INFO(ln::get_logger(), "Loading cartridge...");
     Cartridge *cart = nullptr;
     err =
         CartridgeLoader::load_cartridge(i_rom_path, CartridgeType::INES, &cart);
@@ -96,8 +122,8 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
     }
 
     // 2. map to address space
-    get_logger()->info("Mapping cartridge...");
-    cart->map_memory(&m_memory, &m_ppu_memory);
+    LN_LOG_INFO(ln::get_logger(), "Mapping cartridge...");
+    cart->map_memory(&m_memory, &m_video_memory);
 
 l_cleanup:
     if (LN_FAILED(err))
@@ -109,7 +135,7 @@ l_cleanup:
     {
         if (m_cart)
         {
-            m_cart->unmap_memory(&m_memory, &m_ppu_memory);
+            m_cart->unmap_memory(&m_memory, &m_video_memory);
             delete m_cart;
         }
         m_cart = cart;
@@ -121,6 +147,12 @@ l_cleanup:
 void
 Emulator::power_up()
 {
+    if (!m_cart)
+    {
+        LN_LOG_ERROR(ln::get_logger(), "Power up without cartridge inserted");
+        return;
+    }
+
     m_cpu.power_up();
     m_ppu.power_up();
 }
@@ -132,6 +164,38 @@ Emulator::reset()
     m_ppu.reset();
 }
 
+void
+Emulator::advance(Time_t i_ms)
+{
+    Cycle cpu_cycles = m_cpu_clock.advance(i_ms);
+    for (decltype(cpu_cycles) i = 0; i < cpu_cycles; ++i)
+    {
+        auto instr_cycles = m_cpu.tick();
+        // one instruction is complete or we just need to let other components
+        // move forward.
+        if (instr_cycles)
+        {
+            constexpr int TICK_CPU_TO_PPU = 3; // NTSC version
+            for (decltype(TICK_CPU_TO_PPU * instr_cycles) j = 0;
+                 j < TICK_CPU_TO_PPU * instr_cycles; ++j)
+            {
+                m_ppu.tick();
+            }
+
+            /* Check interrupts at the end of each instruction */
+            // @IMPL: Do this after we are done emulating other components, at
+            // least include PPU because it can generate NMI interrupt.
+            m_cpu.poll_interrupt();
+        }
+    }
+}
+
+FrameBuffer *
+Emulator::frame_dirty()
+{
+    return m_ppu.frame_dirty();
+}
+
 const CPU &
 Emulator::get_cpu() const
 {
@@ -141,22 +205,22 @@ Emulator::get_cpu() const
 void
 Emulator::run_test(Address i_entry, TestExitFunc i_exit_func, void *i_context)
 {
-    m_cpu.set_entry(i_entry);
+    m_cpu.set_entry_test(i_entry);
 
     std::size_t idx_exec_instrs = 0;
     while (i_exit_func && !i_exit_func(&m_cpu, idx_exec_instrs, i_context))
     {
-        if (m_cpu.step())
+        if (m_cpu.step_test())
         {
             ++idx_exec_instrs;
         }
     }
 }
 
-void
+Cycle
 Emulator::tick_cpu_test()
 {
-    m_cpu.tick();
+    return m_cpu.tick();
 }
 
 } // namespace ln

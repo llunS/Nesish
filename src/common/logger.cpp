@@ -44,18 +44,18 @@ init_logger(spdlog::level::level_enum i_level)
                 std::make_shared<spdlog::sinks::basic_file_sink_st>(
                     log_filepath, true);
             logger->sinks().push_back(std::move(file_sink));
-            logger->info("Log file is located: {}", log_filepath);
+            LN_LOG_INFO(logger, "Log file at: {}", log_filepath);
         }
         catch (const spdlog::spdlog_ex &e)
         {
-            logger->error("Failed to create log file: {}, {}", log_filepath,
-                          e.what());
+            LN_LOG_ERROR(logger, "Failed to create log file: {}, {}",
+                         log_filepath, e.what());
         }
     }
     else
     {
-        logger->error("Failed to create log file: {}",
-                      std::string("./") + pvt_log_file_rel_exec_path());
+        LN_LOG_ERROR(logger, "Failed to create log file: {}",
+                     std::string("./") + pvt_log_file_rel_exec_path());
     }
 
     g_logger = logger;
@@ -141,13 +141,14 @@ pvt_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
 
             // this is certainly an error, but we don't want to abort the whole
             // process because of it, so we‘d just log the error and proceed.
-            i_logger->warn("Previous log file may be overwritten: {}",
-                           cur_abs_path);
+            LN_LOG_WARN(i_logger, "Previous log file may be overwritten: {}",
+                        cur_abs_path);
         }
         else
         {
-            i_logger->trace("Previous log file has been moved forward: {}",
-                            cur_abs_path);
+            LN_LOG_TRACE(i_logger,
+                         "Previous log file has been moved forward: {}",
+                         cur_abs_path);
         }
     }
 

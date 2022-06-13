@@ -25,7 +25,7 @@ typedef std::underlying_type<ln::Key>::type KeyIt;
 
 struct Controller {
   public:
-    virtual ~Controller(){};
+    virtual ~Controller() = default;
 
     virtual void
     strobe(bool i_on) = 0;

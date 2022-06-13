@@ -8,6 +8,7 @@
 
 namespace ln {
 
+/* @IMPL: Valid enumerators must be unique and can be used as array index */
 enum class MemoryMappingPoint : unsigned char {
     INVALID = 0,
     ADHOC, // @TMP
@@ -17,6 +18,8 @@ enum class MemoryMappingPoint : unsigned char {
     OAMDMA,
     PRG_ROM,
     PRG_RAM,
+
+    SIZE,
 };
 
 struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
@@ -27,6 +30,9 @@ struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
   public:
     static constexpr Address STACK_PAGE_MASK =
         0x0100; // stack page: $0100-$01FF
+
+    static constexpr Address NMI_VECTOR_ADDR = 0xFFFA;
+    static constexpr Address RESET_VECTOR_ADDR = 0xFFFC;
     static constexpr Address IRQ_VECTOR_ADDR = 0xFFFE; // IRQ/BRK vector
 
     Error

@@ -6,9 +6,11 @@
 #include "console/cpu/cpu.hpp"
 #include "console/memory/memory.hpp"
 #include "console/ppu/ppu.hpp"
-#include "console/ppu/ppu_memory.hpp"
+#include "console/memory/video_memory.hpp"
 #include "console/cartridge/cartridge.hpp"
 #include "console/peripheral/controller.hpp"
+#include "console/clock.hpp"
+#include "console/ppu/frame_buffer.hpp"
 
 #include <string>
 #include <cstddef>
@@ -38,14 +40,24 @@ struct Emulator {
     LN_CONSOLE_API void
     reset();
 
+    LN_CONSOLE_API void
+    advance(Time_t i_ms);
+
+    LN_CONSOLE_API FrameBuffer *
+    frame_dirty();
+
+    /* query */
+
     LN_CONSOLE_API const CPU &
     get_cpu() const;
 
+    /* test */
+
     typedef bool (*TestExitFunc)(const ln::CPU *i_cpu, std::size_t i_instr,
                                  void *i_context);
-    void LN_CONSOLE_API
+    LN_CONSOLE_API void
     run_test(Address i_entry, TestExitFunc i_exit_func, void *i_context);
-    void LN_CONSOLE_API
+    LN_CONSOLE_API Cycle
     tick_cpu_test();
 
   private:
@@ -56,11 +68,13 @@ struct Emulator {
     CPU m_cpu;
     Memory m_memory;
     PPU m_ppu;
-    PPUMemory m_ppu_memory;
+    VideoMemory m_video_memory;
 
     Cartridge *m_cart;
 
     Controller *m_controllers[ControllerSlot::SIZE];
+
+    Clock m_cpu_clock;
 };
 
 } // namespace ln

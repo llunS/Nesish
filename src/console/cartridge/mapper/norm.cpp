@@ -10,7 +10,6 @@ namespace ln {
 NORM::NORM(const INES::RomAccessor *i_accessor)
     : Mapper{i_accessor}
     , m_prg_ram{}
-    , m_chr_rom{}
 {
 }
 
@@ -29,7 +28,8 @@ NORM::validate() const
 }
 
 void
-NORM::map_memory(const INES *i_nes, Memory *i_memory, PPUMemory *i_ppu_memory)
+NORM::map_memory(const INES *i_nes, Memory *i_memory,
+                 VideoMemory *i_video_memory)
 {
     // PRG ROM
     {
@@ -73,28 +73,32 @@ NORM::map_memory(const INES *i_nes, Memory *i_memory, PPUMemory *i_ppu_memory)
         auto decode = [](const MappingEntry *i_entry,
                          Address i_addr) -> Byte * {
             auto thiz = (NORM *)i_entry->opaque;
+            auto accessor = thiz->m_rom_accessor;
 
-            return thiz->m_chr_rom + (i_addr - i_entry->begin);
+            Byte *rom_base;
+            accessor->get_chr_rom(&rom_base, nullptr);
+
+            return rom_base + (i_addr - i_entry->begin);
         };
-        i_ppu_memory->set_mapping(
-            PPUMemoryMappingPoint::PATTERN,
+        i_video_memory->set_mapping(
+            VideoMemoryMappingPoint::PATTERN,
             {LN_PATTERN_ADDR_HEAD, LN_PATTERN_ADDR_TAIL, true, decode, this});
     }
     // mirroring
-    i_ppu_memory->configure_mirror(i_nes->h_mirror());
+    i_video_memory->configure_mirror(i_nes->h_mirror());
 }
 
 void
 NORM::unmap_memory(const INES *i_nes, Memory *i_memory,
-                   PPUMemory *i_ppu_memory) const
+                   VideoMemory *i_video_memory) const
 {
     (void)(i_nes);
 
     i_memory->unset_mapping(MemoryMappingPoint::PRG_ROM);
     i_memory->unset_mapping(MemoryMappingPoint::PRG_RAM);
 
-    i_ppu_memory->unset_mapping(PPUMemoryMappingPoint::PATTERN);
-    i_ppu_memory->unset_mapping(PPUMemoryMappingPoint::NAMETABLE);
+    i_video_memory->unset_mapping(VideoMemoryMappingPoint::PATTERN);
+    i_video_memory->unset_mapping(VideoMemoryMappingPoint::NAMETABLE);
 }
 
 } // namespace ln

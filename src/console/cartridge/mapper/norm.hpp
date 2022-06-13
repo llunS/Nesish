@@ -13,14 +13,13 @@ struct NORM : public Mapper {
 
     void
     map_memory(const INES *i_nes, Memory *i_memory,
-               PPUMemory *i_ppu_memory) override;
+               VideoMemory *i_video_memory) override;
     void
     unmap_memory(const INES *i_nes, Memory *i_memory,
-                 PPUMemory *i_ppu_memory) const override;
+                 VideoMemory *i_video_memory) const override;
 
   private:
     Byte m_prg_ram[8 * 1024]; // Just support it up to 8KB
-    Byte m_chr_rom[8 * 1024];
 };
 
 } // namespace ln
