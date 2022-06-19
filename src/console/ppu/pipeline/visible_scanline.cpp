@@ -8,7 +8,9 @@ namespace ln {
 VisibleScanline::VisibleScanline(PipelineAccessor *io_accessor)
     : Ticker(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
-    , m_bg(io_accessor, true)
+    , m_render(io_accessor)
+    , m_bg(io_accessor)
+    , m_sp(io_accessor, false)
 {
 }
 
@@ -17,13 +19,22 @@ VisibleScanline::reset()
 {
     Ticker::reset();
 
+    m_render.reset();
     m_bg.reset();
+    m_sp.reset();
 }
 
 Cycle
 VisibleScanline::on_tick(Cycle i_curr, Cycle i_total)
 {
     (void)(i_total);
+
+    auto tick_logic = [](VisibleScanline *thiz) -> void {
+        /* @IMPL: rendering happens before other data priming workload */
+        thiz->m_render.tick();
+        thiz->m_bg.tick();
+        thiz->m_sp.tick();
+    };
 
     Cycle steps = 1;
 
@@ -36,15 +47,12 @@ VisibleScanline::on_tick(Cycle i_curr, Cycle i_total)
                     m_accessor->rendering_enabled();
         if (skip)
         {
-            ++i_curr;
-            ++steps;
-
-            m_bg.tick();
+            tick_logic(this);
         }
     }
 
     {
-        m_bg.tick();
+        tick_logic(this);
     }
 
     return steps;

@@ -23,6 +23,11 @@ struct PipelineAccessor {
     Byte &
     get_x();
 
+    Byte
+    get_oam(Byte i_addr);
+    Byte *
+    get_oam_addr(Byte i_addr);
+
     VideoMemory *
     get_memory();
 
@@ -34,7 +39,7 @@ struct PipelineAccessor {
     bool
     bg_enabled();
     bool
-    sprite_enabled();
+    sp_enabled();
     bool
     rendering_enabled();
 

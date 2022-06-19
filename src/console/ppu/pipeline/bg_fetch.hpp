@@ -8,10 +8,10 @@ namespace ln {
 
 struct PipelineAccessor;
 
-struct BgFetchRender : public Ticker {
+struct BgFetch : public Ticker {
   public:
-    BgFetchRender(PipelineAccessor *io_accessor, bool i_render_enabled);
-    LN_KLZ_DELETE_COPY_MOVE(BgFetchRender);
+    BgFetch(PipelineAccessor *io_accessor);
+    LN_KLZ_DELETE_COPY_MOVE(BgFetch);
 
     void
     reset() override;
@@ -20,7 +20,6 @@ struct BgFetchRender : public Ticker {
 
   private:
     PipelineAccessor *m_accessor;
-    const bool m_render_enabled;
 
     LambdaTicker m_bg_tile_fetch;
 };

@@ -2,7 +2,8 @@
 
 #include "console/ppu/pipeline/ticker.hpp"
 #include "common/klass.hpp"
-#include "console/ppu/pipeline/bg_fetch_render.hpp"
+#include "console/ppu/pipeline/bg_fetch.hpp"
+#include "console/ppu/pipeline/sp_eval_fetch.hpp"
 
 namespace ln {
 
@@ -21,7 +22,8 @@ struct PreRenderScanline : public Ticker {
   private:
     PipelineAccessor *m_accessor;
 
-    BgFetchRender m_bg;
+    BgFetch m_bg;
+    SpEvalFetch m_sp;
 };
 
 } // namespace ln

@@ -20,13 +20,19 @@
 #define LN_PPU_ADDRESSABLE_SIZE (16 * 1024) // 14bit addressable memory
 #define LN_PPU_ADDR_MASK 0x3FFF
 #define LN_PPU_INTERNAL_RAM_SIZE (2 * 1024) // 2KiB
-#define LN_OAM_SIZE 256                     // 256 bytes
-#define LN_PALETTE_SIZE 32
+
+#define LN_OAM_SP_SIZE 4
+#define LN_MAX_SP_NUM 64
+#define LN_OAM_SIZE (LN_MAX_SP_NUM * LN_OAM_SP_SIZE)
+#define LN_MAX_VISIBLE_SP_NUM 8
+#define LN_SEC_OAM_SIZE (LN_MAX_VISIBLE_SP_NUM * LN_OAM_SP_SIZE)
 
 #define LN_PPUCTRL_ADDR 0x2000
 #define LN_PPUDATA_ADDR 0x2007
 #define LN_OAMDMA_ADDR 0x4014
 
+#define LN_PATTERN_TILE_WIDTH 8 // pixels
+#define LN_PATTERN_TILE_HEIGHT 8
 #define LN_PATTERN_0_ADDR_HEAD 0x0000
 #define LN_PATTERN_ADDR_HEAD LN_PATTERN_0_ADDR_HEAD
 #define LN_PATTERN_ADDR_TAIL 0x1FFF
@@ -43,12 +49,14 @@
 #define LN_NT_MIRROR_ADDR_TAIL 0x3EFF
 #define LN_NT_MIRROR_ADDR_MASK 0xEFFF
 
+#define LN_PALETTE_SIZE 32
 #define LN_PALETTE_ADDR_HEAD 0x3F00
 #define LN_PALETTE_ADDR_TAIL 0x3FFF
 #define LN_PALETTE_ADDR_MASK 0x001F          // rightmost 5 bits
 #define LN_PALETTE_ADDR_BACKDROP_MASK 0x0003 // rightmost 2 bits (modulo 4)
 #define LN_PALETTE_ADDR_BKG_MASK 0xFF0F      // background palette prefix
 #define LN_PALETTE_ADDR_BKG_OR_MASK 0x3F00   // used to get bkg palette color
+#define LN_PALETTE_ADDR_SP_OR_MASK 0x3F10    // used to get sp palette color
 
 #define LN_PPU_INVALID_ADDR_HEAD 0x4000
 #define LN_PPU_INVALID_ADDR_TAIL 0xFFFF

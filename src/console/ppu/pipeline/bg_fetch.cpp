@@ -1,4 +1,4 @@
-#include "bg_fetch_render.hpp"
+#include "bg_fetch.hpp"
 
 #include <functional>
 
@@ -15,17 +15,13 @@ static Cycle
 pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor);
 
 static void
-pvt_render(PipelineAccessor *io_accessor);
-static void
 pvt_shift_regs_shift(PipelineAccessor *io_accessor);
 static void
 pvt_shift_regs_reload(PipelineAccessor *io_accessor);
 
-BgFetchRender::BgFetchRender(PipelineAccessor *io_accessor,
-                             bool i_render_enabled)
+BgFetch::BgFetch(PipelineAccessor *io_accessor)
     : Ticker(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
-    , m_render_enabled(i_render_enabled)
     , m_bg_tile_fetch(8, std::bind(pvt_tile_fetch, std::placeholders::_1,
                                    std::placeholders::_2, io_accessor))
 {
@@ -33,7 +29,7 @@ BgFetchRender::BgFetchRender(PipelineAccessor *io_accessor,
 }
 
 void
-BgFetchRender::reset()
+BgFetch::reset()
 {
     Ticker::reset();
 
@@ -41,72 +37,15 @@ BgFetchRender::reset()
 }
 
 Cycle
-BgFetchRender::on_tick(Cycle i_curr, Cycle i_total)
+BgFetch::on_tick(Cycle i_curr, Cycle i_total)
 {
     (void)(i_total);
 
     /* @IMPL: shift registers shift should happen before shift registers reload
      */
-    if (2 <= i_curr && i_curr <= 257)
+    if ((2 <= i_curr && i_curr <= 257) || (322 <= i_curr && i_curr <= 337))
     {
-        /* @IMPL: render should happen before shift */
-        // Render only for visible scanlines, but shift and reload happen even
-        // for pre-render scanlines, because it prepares for data for the first
-        // visible scanline.
-        if (m_render_enabled)
-        {
-            // reset pixel coordinate
-            if (2 == i_curr)
-            {
-                if (0 == m_accessor->get_context().scanline_no)
-                {
-                    m_accessor->get_context().pixel_row = 0;
-                }
-                m_accessor->get_context().pixel_col = 0;
-            }
-            // @TODO: backdrop color 0
-            // https://www.nesdev.org/wiki/PPU_palettes#Backdrop_color_(palette_index_0)_uses
-            // @TODO: left 8 pixels clipped off
-            if (m_accessor->bg_enabled())
-            {
-                pvt_render(m_accessor);
-            }
-            if (i_curr == 257)
-            {
-                /* @IMPL: Mark dirty after rendering to the last dot */
-                m_accessor->finish_frame();
-            }
-
-            // pixel coordinate advance
-            if (m_accessor->get_context().pixel_col + 1 >= LN_NES_WIDTH)
-            {
-                ++m_accessor->get_context().pixel_col = 0;
-                if (m_accessor->get_context().pixel_row + 1 >= LN_NES_HEIGHT)
-                {
-                    if (m_accessor->get_context().pixel_row + 1 > LN_NES_HEIGHT)
-                    {
-                        LN_ASSERT_FATAL("Pixel render row out of bound {}",
-                                        m_accessor->get_context().pixel_row);
-                    }
-
-                    m_accessor->get_context().pixel_row = 0;
-                }
-                else
-                {
-                    ++m_accessor->get_context().pixel_row;
-                }
-            }
-            else
-            {
-                ++m_accessor->get_context().pixel_col;
-            }
-        }
-
         /* shift */
-        pvt_shift_regs_shift(m_accessor);
-    }
-    else if (322 <= i_curr && i_curr <= 337)
-    {
         pvt_shift_regs_shift(m_accessor);
     }
 
@@ -422,81 +361,28 @@ pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
 }
 
 void
-pvt_render(PipelineAccessor *io_accessor)
-{
-    /* 1. Bit selection mask by finx X scroll */
-    if (io_accessor->get_x() > 7)
-    {
-        LN_ASSERT_FATAL("Invalid X value: {}", io_accessor->get_x());
-    }
-    Byte2 bit_shift_and_mask = 0x8000 >> io_accessor->get_x();
-
-    /* 2. Get palette idx */
-    auto &ctx = io_accessor->get_context();
-    bool palette_idx_lower_bit =
-        ctx.shift_palette_idx_lower & bit_shift_and_mask;
-    bool palette_idx_upper_bit =
-        ctx.shift_palette_idx_upper & bit_shift_and_mask;
-    // 2-bit
-    Byte palette_idx =
-        (Byte(palette_idx_upper_bit) << 1) | Byte(palette_idx_lower_bit);
-
-    /* 3. Get pattern data (i.e. index into palette) */
-    bool pattern_data_lower_bit = ctx.shift_pattern_lower & bit_shift_and_mask;
-    bool pattern_data_upper_bit = ctx.shift_pattern_upper & bit_shift_and_mask;
-    // 2-bit
-    Byte pattern_data =
-        (Byte(pattern_data_upper_bit) << 1) | Byte(pattern_data_lower_bit);
-
-    /* 4. get palette index color */
-    Address idx_color_addr =
-        LN_PALETTE_ADDR_BKG_OR_MASK | (palette_idx << 2) | pattern_data;
-    Byte idx_color_byte;
-    auto error =
-        io_accessor->get_memory()->get_byte(idx_color_addr, idx_color_byte);
-    if (LN_FAILED(error))
-    {
-        LN_ASSERT_FATAL("Failed to fetch palette color byte for bg: {}",
-                        idx_color_addr);
-        idx_color_byte = 0x30; // set it to white to be apparent.
-    }
-
-    /* 5. conversion from index color to RGB color */
-    Color pixel = io_accessor->get_palette().to_rgb(idx_color_byte);
-
-    /* 6. ouput the pixel */
-    // @IMPL: Actually pixel ouput is delayed by 2 cycles, but since we trigger
-    // the callback on per-frame basis, write to frame buffer immediately will
-    // be functionally the same.
-    // https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256
-    io_accessor->get_frame_buf().write(io_accessor->get_context().pixel_row,
-                                       io_accessor->get_context().pixel_col,
-                                       pixel);
-}
-
-void
 pvt_shift_regs_shift(PipelineAccessor *io_accessor)
 {
     auto &ctx = io_accessor->get_context();
-    ctx.shift_pattern_lower <<= 1;
-    ctx.shift_pattern_upper <<= 1;
-    ctx.shift_palette_idx_lower <<= 1;
-    ctx.shift_palette_idx_upper <<= 1;
+    ctx.sf_bg_pattern_lower <<= 1;
+    ctx.sf_bg_pattern_upper <<= 1;
+    ctx.sf_bg_palette_idx_lower <<= 1;
+    ctx.sf_bg_palette_idx_upper <<= 1;
 }
 
 void
 pvt_shift_regs_reload(PipelineAccessor *io_accessor)
 {
     auto &ctx = io_accessor->get_context();
-    ctx.shift_pattern_lower =
-        (ctx.shift_pattern_lower & 0xFF00) | ctx.bg_lower_sliver;
-    ctx.shift_pattern_upper =
-        (ctx.shift_pattern_upper & 0xFF00) | ctx.bg_upper_sliver;
-    ctx.shift_palette_idx_lower =
-        (ctx.shift_palette_idx_lower & 0xFF00) |
+    ctx.sf_bg_pattern_lower =
+        (ctx.sf_bg_pattern_lower & 0xFF00) | ctx.bg_lower_sliver;
+    ctx.sf_bg_pattern_upper =
+        (ctx.sf_bg_pattern_upper & 0xFF00) | ctx.bg_upper_sliver;
+    ctx.sf_bg_palette_idx_lower =
+        (ctx.sf_bg_palette_idx_lower & 0xFF00) |
         (ctx.bg_attr_palette_idx & 0x01 ? 0xFF : 0x00);
-    ctx.shift_palette_idx_upper =
-        (ctx.shift_palette_idx_upper & 0xFF00) |
+    ctx.sf_bg_palette_idx_upper =
+        (ctx.sf_bg_palette_idx_upper & 0xFF00) |
         (ctx.bg_attr_palette_idx & 0x02 ? 0xFF : 0x00);
 }
 

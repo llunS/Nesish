@@ -19,6 +19,7 @@ target_include_directories(${module_name} PUBLIC ../)
 list(APPEND sources emulator.cpp)
 
 list(APPEND sources clock.cpp)
+list(APPEND sources types.cpp)
 
 list(APPEND sources cartridge/cartridge_loader.cpp)
 list(APPEND sources cartridge/ines.cpp)
@@ -40,9 +41,6 @@ list(APPEND sources ppu/ppu.cpp)
 list(APPEND sources ppu/pipeline_accessor.cpp)
 list(APPEND sources ppu/frame_buffer.cpp)
 list(APPEND sources ppu/palette_default.cpp)
-list(APPEND sources ppu/nametable_entry.cpp)
-list(APPEND sources ppu/nametable_attribute.cpp)
-list(APPEND sources ppu/object_attribute.cpp)
 
 list(APPEND sources ppu/pipeline/ticker.cpp)
 list(APPEND sources ppu/pipeline/lambda_ticker.cpp)
@@ -52,7 +50,9 @@ list(APPEND sources ppu/pipeline/pipeline.cpp)
 list(APPEND sources ppu/pipeline/pre_render_scanline.cpp)
 list(APPEND sources ppu/pipeline/visible_scanline.cpp)
 list(APPEND sources ppu/pipeline/vblank_scanline.cpp)
-list(APPEND sources ppu/pipeline/bg_fetch_render.cpp)
+list(APPEND sources ppu/pipeline/bg_fetch.cpp)
+list(APPEND sources ppu/pipeline/sp_eval_fetch.cpp)
+list(APPEND sources ppu/pipeline/render.cpp)
 
 target_sources(${module_name} PRIVATE ${sources})
 

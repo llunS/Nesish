@@ -71,6 +71,13 @@ PPU::tick()
 Byte
 PPU::read_register(Register i_reg)
 {
+    if (reg_wrtie_only(i_reg))
+    {
+        // @NOTE: We should return what's left in the bus, but we didn't emulate
+        // that, so forget about it.
+        return 0xFF;
+    }
+
     auto val = m_regs[i_reg];
 
     switch (i_reg)
@@ -83,6 +90,13 @@ PPU::read_register(Register i_reg)
             // https://www.nesdev.org/wiki/PPU_frame_timing#VBL_Flag_Timing
         }
         break;
+
+        case OAMDATA:
+        {
+            val = m_oam[m_regs[OAMADDR]];
+        }
+        break;
+
         case PPUDATA:
         {
             Address vram_addr = this->v & LN_PPU_ADDR_MASK;
@@ -133,6 +147,11 @@ PPU::read_register(Register i_reg)
 void
 PPU::write_register(Register i_reg, Byte i_val)
 {
+    if (reg_read_only(i_reg))
+    {
+        return;
+    }
+
     m_regs[i_reg] = i_val;
 
     switch (i_reg)
@@ -144,6 +163,34 @@ PPU::write_register(Register i_reg, Byte i_val)
             check_gen_nmi();
         }
         break;
+
+        case OAMDATA:
+        {
+            m_oam[m_regs[OAMADDR]] = i_val;
+            ++m_regs[OAMADDR];
+
+            // @QUIRK: glitchy OAMADDR update
+            // We don't emulate this.
+            // https://www.nesdev.org/wiki/PPU_registers#OAM_data_($2004)_%3C%3E_read/write
+            // Writes to OAMDATA during rendering (on the pre-render line and
+            // the visible lines 0-239, provided either sprite or background
+            // rendering is enabled) do not modify values in OAM, but do perform
+            // a glitchy increment of OAMADDR, bumping only the high 6 bits
+            // (i.e., it bumps the [n] value in PPU sprite evaluation - it's
+            // plausible that it could bump the low bits instead depending on
+            // the current status of sprite evaluation). This extends to DMA
+            // transfers via OAMDMA, since that uses writes to $2004. For
+            // emulation purposes, it is probably best to completely ignore
+            // writes during rendering.
+
+            // @QUIRK: Un implemented bits
+            // https://www.nesdev.org/wiki/PPU_OAM#Byte_2
+            // We don't emulate this.
+            // Not sure if we can know the byte is a attribute byte (i.e. byte
+            // 2).
+        }
+        break;
+
         case PPUSCROLL:
         {
             if (!this->w)
@@ -159,6 +206,7 @@ PPU::write_register(Register i_reg, Byte i_val)
             this->w = !this->w;
         }
         break;
+
         case PPUADDR:
         {
             if (!this->w)
@@ -173,11 +221,13 @@ PPU::write_register(Register i_reg, Byte i_val)
             this->w = !this->w;
         }
         break;
+
         case PPUMASK:
         {
             // @TODO: grayscale, emphasis, 8-column clipping
         }
         break;
+
         case PPUDATA:
         {
             Address vram_addr = this->v & LN_PPU_ADDR_MASK;
@@ -195,9 +245,49 @@ PPU::write_register(Register i_reg, Byte i_val)
         }
         break;
 
+        case OAMDMA:
+        {
+            m_cpu->init_oam_dma(i_val);
+        }
+
         default:
             break;
     }
+}
+
+bool
+PPU::reg_read_only(Register i_reg)
+{
+    switch (i_reg)
+    {
+        case PPUSTATUS:
+            return true;
+            break;
+
+        default:
+            break;
+    }
+    return false;
+}
+
+bool
+PPU::reg_wrtie_only(Register i_reg)
+{
+    switch (i_reg)
+    {
+        case PPUCTRL:
+        case PPUMASK:
+        case OAMADDR:
+        case PPUSCROLL:
+        case PPUADDR:
+        case OAMDMA:
+            return true;
+            break;
+
+        default:
+            break;
+    }
+    return false;
 }
 
 FrameBuffer *

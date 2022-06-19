@@ -36,4 +36,13 @@ is_signed_overflow_sbc(Byte i_lhs, Byte i_rhs, bool i_borrow)
     return result > 127 || result < -128;
 }
 
+inline void
+byte_reverse(Byte &io_byte)
+{
+    // Courtesy of https://stackoverflow.com/a/2602885
+    io_byte = (io_byte & 0xF0) >> 4 | (io_byte & 0x0F) << 4;
+    io_byte = (io_byte & 0xCC) >> 2 | (io_byte & 0x33) << 2;
+    io_byte = (io_byte & 0xAA) >> 1 | (io_byte & 0x55) << 1;
+}
+
 } // namespace ln

@@ -10,7 +10,7 @@
 namespace ln {
 
 Emulator::Emulator()
-    : m_cpu(&m_memory)
+    : m_cpu(&m_memory, &m_ppu)
     , m_ppu(&m_video_memory, &m_cpu)
     , m_cart(nullptr)
     , m_controllers{}
@@ -65,8 +65,7 @@ Emulator::hard_wire()
         auto get = [](const MappingEntry *i_entry, Address i_addr,
                       Byte &o_val) -> Error {
             (void)(i_addr);
-            Emulator *thiz = (Emulator *)i_entry->opaque;
-            PPU *ppu = (PPU *)&thiz->m_ppu;
+            PPU *ppu = (PPU *)i_entry->opaque;
 
             o_val = ppu->read_register(PPU::OAMDMA);
             return Error::OK;
@@ -74,17 +73,14 @@ Emulator::hard_wire()
         auto set = [](const MappingEntry *i_entry, Address i_addr,
                       Byte i_val) -> Error {
             (void)(i_addr);
-            Emulator *thiz = (Emulator *)i_entry->opaque;
-            PPU *ppu = (PPU *)&thiz->m_ppu;
-            CPU *cpu = (CPU *)&thiz->m_cpu;
+            PPU *ppu = (PPU *)i_entry->opaque;
 
             ppu->write_register(PPU::OAMDMA, i_val);
-            cpu->init_oam_dma(i_val);
             return Error::OK;
         };
         m_memory.set_mapping(
             MemoryMappingPoint::OAMDMA,
-            {LN_OAMDMA_ADDR, LN_OAMDMA_ADDR, false, get, set, this});
+            {LN_OAMDMA_ADDR, LN_OAMDMA_ADDR, false, get, set, &m_ppu});
     }
 }
 

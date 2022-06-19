@@ -49,7 +49,7 @@ struct MappableMemory {
     EMappingPoint m_mapping_registry[AddressableSize];
     struct EntryElement {
         EntryElement()
-            : entry(Uninitialized_t())
+            : entry(Uninitialized)
             , valid(false)
         {
         }

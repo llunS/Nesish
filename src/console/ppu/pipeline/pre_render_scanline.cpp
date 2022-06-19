@@ -8,7 +8,8 @@ namespace ln {
 PreRenderScanline::PreRenderScanline(PipelineAccessor *io_accessor)
     : Ticker(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
-    , m_bg(io_accessor, false)
+    , m_bg(io_accessor)
+    , m_sp(io_accessor, true)
 {
 }
 
@@ -18,6 +19,7 @@ PreRenderScanline::reset()
     Ticker::reset();
 
     m_bg.reset();
+    m_sp.reset();
 }
 
 Cycle
@@ -76,6 +78,7 @@ PreRenderScanline::on_tick(Cycle i_curr, Cycle i_total)
     }
 
     m_bg.tick();
+    m_sp.tick();
 
     return 1;
 }

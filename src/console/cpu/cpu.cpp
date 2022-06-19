@@ -3,11 +3,13 @@
 #include "console/byte_utils.hpp"
 #include "console/assert.hpp"
 #include "console/spec.hpp"
+#include "console/ppu/ppu.hpp"
 
 namespace ln {
 
-CPU::CPU(Memory *i_memory)
+CPU::CPU(Memory *i_memory, PPU *i_ppu)
     : m_memory(i_memory)
+    , m_ppu(i_ppu)
     , m_cycle(0)
     , m_halted(false)
     , m_nmi(false)
@@ -118,18 +120,16 @@ CPU::tick()
                 return 1;
             }
             Byte byte_idx = Byte(dma_counter / 2);
-            // Address addr = (m_oam_dma_ctx.upper << 8) | byte_idx;
 
             /* read */
             if (dma_counter % 2 == 0)
             {
-                // @TODO: dma transfer to PPU
-                // m_oam_dma_ctx.tmp = this->get_byte(addr);
+                Address addr = (m_oam_dma_ctx.upper << 8) | byte_idx;
+                m_oam_dma_ctx.tmp = this->get_byte(addr);
             }
             else
             {
-                // @TODO: dma transfer to PPU
-                //(void)(m_oam_dma_ctx.tmp);
+                m_ppu->write_register(PPU::OAMDATA, m_oam_dma_ctx.tmp);
 
                 /* end of the transfer process */
                 if (byte_idx >= 256 - 1)

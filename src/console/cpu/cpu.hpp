@@ -14,9 +14,11 @@
 
 namespace ln {
 
+struct PPU;
+
 struct CPU {
   public:
-    CPU(Memory *i_memory);
+    CPU(Memory *i_memory, PPU *i_ppu);
     LN_KLZ_DELETE_COPY_MOVE(CPU);
 
   public:
@@ -63,7 +65,7 @@ struct CPU {
     void
     poll_interrupt();
 
-    friend struct Emulator;
+    friend struct PPU;
     void
     init_oam_dma(Byte i_val);
 
@@ -182,6 +184,8 @@ struct CPU {
 
     // ---- External components references
     Memory *m_memory;
+    // @TODO: Use a bus object to avoid direct reference?
+    PPU *m_ppu;
 
   private:
     Cycle m_cycle;

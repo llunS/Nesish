@@ -35,7 +35,6 @@ struct VideoMemory
     // https://www.nesdev.org/wiki/PPU_memory_map
     Byte m_ram[LN_PPU_INTERNAL_RAM_SIZE];
     Byte m_palette[LN_PALETTE_SIZE];
-    Byte m_oam[LN_OAM_SIZE];
 };
 
 } // namespace ln

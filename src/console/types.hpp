@@ -11,5 +11,6 @@ typedef Byte2 Address;
 typedef std::int8_t SignedByte;
 
 struct Uninitialized_t {};
+extern Uninitialized_t Uninitialized;
 
 } // namespace ln

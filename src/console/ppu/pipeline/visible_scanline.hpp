@@ -2,7 +2,9 @@
 
 #include "console/ppu/pipeline/ticker.hpp"
 #include "common/klass.hpp"
-#include "console/ppu/pipeline/bg_fetch_render.hpp"
+#include "console/ppu/pipeline/bg_fetch.hpp"
+#include "console/ppu/pipeline/sp_eval_fetch.hpp"
+#include "console/ppu/pipeline/render.hpp"
 
 namespace ln {
 
@@ -21,7 +23,9 @@ struct VisibleScanline : public Ticker {
   private:
     PipelineAccessor *m_accessor;
 
-    BgFetchRender m_bg;
+    Render m_render;
+    BgFetch m_bg;
+    SpEvalFetch m_sp;
 };
 
 } // namespace ln

@@ -6,6 +6,7 @@
 #include "console/ppu/frame_buffer.hpp"
 #include "console/ppu/palette_default.hpp"
 #include "console/memory/video_memory.hpp"
+#include "console/spec.hpp"
 
 namespace ln {
 
@@ -56,7 +57,10 @@ struct PPU {
     write_register(Register i_reg, Byte i_val);
 
   private:
-    /* allow access from other internal components */
+    bool
+    reg_read_only(Register i_reg);
+    bool
+    reg_wrtie_only(Register i_reg);
 
     friend struct Emulator;
     FrameBuffer *
@@ -76,6 +80,9 @@ struct PPU {
     Byte m_regs[Register::SIZE];
     Byte m_ppudata_buf;
 
+    /* OAM */
+    Byte m_oam[LN_OAM_SIZE];
+
     // ---- External components references
     VideoMemory *m_memory;
     CPU *m_cpu;
@@ -91,22 +98,40 @@ struct PPU {
     Byte w;
 
     struct PipelineContext {
+        // ------ Background related storage
+        // fetch
         Byte bg_nt_byte;          // intermediate to get pattern
         Byte bg_attr_palette_idx; // 2-bit
         Byte bg_lower_sliver;
         Byte bg_upper_sliver;
 
+        // rendering
         /* internal shift registers (and the latches) */
         // https://www.nesdev.org/wiki/PPU_rendering#Preface
-        Byte2 shift_pattern_lower;
-        Byte2 shift_pattern_upper;
+        Byte2 sf_bg_pattern_lower;
+        Byte2 sf_bg_pattern_upper;
         // the latch need only 1 bit each, but we expand it to 8-bit for
         // convenience.
-        Byte2 shift_palette_idx_lower;
-        Byte2 shift_palette_idx_upper;
+        Byte2 sf_bg_palette_idx_lower;
+        Byte2 sf_bg_palette_idx_upper;
 
+        // ------ Sprite related storage
+        Byte sec_oam[LN_SEC_OAM_SIZE];
+
+        // rendering preparation
+        Byte sf_sp_pattern_lower[LN_MAX_VISIBLE_SP_NUM];
+        Byte sf_sp_pattern_upper[LN_MAX_VISIBLE_SP_NUM];
+        Byte sp_attr[LN_MAX_VISIBLE_SP_NUM];
+        Byte sp_pos_x[LN_MAX_VISIBLE_SP_NUM];
+        // rendering
+        Byte sp_active_counter[LN_MAX_VISIBLE_SP_NUM];
+
+        // ------ Rendering
+        bool draw_any;
+
+        // ------ Other shared pipeline states
         bool is_odd_frame;
-        int scanline_no;
+        int scanline_no; // [-1, 260]
         int pixel_row;
         int pixel_col;
     } m_pipeline_ctx;

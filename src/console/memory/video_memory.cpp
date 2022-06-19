@@ -5,7 +5,6 @@ namespace ln {
 VideoMemory::VideoMemory()
     : m_ram{}
     , m_palette{}
-    , m_oam{}
 {
     // Nametable mirror
     {

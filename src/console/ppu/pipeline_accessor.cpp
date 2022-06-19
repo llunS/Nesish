@@ -37,6 +37,19 @@ PipelineAccessor::get_x()
     return m_ppu->x;
 }
 
+Byte
+PipelineAccessor::get_oam(Byte i_addr)
+{
+    return *get_oam_addr(i_addr);
+}
+
+Byte *
+PipelineAccessor::get_oam_addr(Byte i_addr)
+{
+    static_assert(sizeof(m_ppu->m_oam) == 256, "Wrong primary OAM size.");
+    return &m_ppu->m_oam[i_addr];
+}
+
 VideoMemory *
 PipelineAccessor::get_memory()
 {
@@ -62,7 +75,7 @@ PipelineAccessor::bg_enabled()
 }
 
 bool
-PipelineAccessor::sprite_enabled()
+PipelineAccessor::sp_enabled()
 {
     return get_register(PPU::PPUMASK) & 0x10;
 }
@@ -70,7 +83,7 @@ PipelineAccessor::sprite_enabled()
 bool
 PipelineAccessor::rendering_enabled()
 {
-    return bg_enabled() || sprite_enabled();
+    return bg_enabled() || sp_enabled();
 }
 
 void
