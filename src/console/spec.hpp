@@ -11,11 +11,10 @@
 #define LN_INTERNAL_RAM_SIZE (2 * 1024) // 2KiB
 #define LN_INTERNAL_RAM_ADDR_HEAD 0x0000
 #define LN_INTERNAL_RAM_ADDR_TAIL 0x07FF
-#define LN_INTERNAL_RAM_MASK 0x07FF // leftmost 5 bits zero
 
 #define LN_RAM_ADDR_HEAD 0x0000
-#define LN_RAM_ADDR_TAIL 0x1FFF
-#define LN_RAM_MASK 0x1FFF // leftmost 3 bits zero
+#define LN_RAM_ADDR_TAIL 0x1FFF // including mirror
+#define LN_RAM_ADDR_MASK 0x07FF // leftmost 5 bits zero
 
 #define LN_PPU_ADDRESSABLE_SIZE (16 * 1024) // 14bit addressable memory
 #define LN_PPU_ADDR_MASK 0x3FFF
@@ -27,9 +26,13 @@
 #define LN_MAX_VISIBLE_SP_NUM 8
 #define LN_SEC_OAM_SIZE (LN_MAX_VISIBLE_SP_NUM * LN_OAM_SP_SIZE)
 
-#define LN_PPUCTRL_ADDR 0x2000
-#define LN_PPUDATA_ADDR 0x2007
+#define LN_PPU_REG_ADDR_HEAD 0x2000
+#define LN_PPU_REG_ADDR_TAIL 0x3FFF // including mirror
+#define LN_PPU_REG_ADDR_MASK 0x0007 // rightmost 3 bits 1
 #define LN_OAMDMA_ADDR 0x4014
+
+#define LN_CTRL_REG_ADDR_HEAD 0x4016
+#define LN_CTRL_REG_ADDR_TAIL 0x4017
 
 #define LN_PATTERN_TILE_WIDTH 8 // pixels
 #define LN_PATTERN_TILE_HEIGHT 8

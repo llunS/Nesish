@@ -6,20 +6,20 @@
 namespace ln {
 
 enum Key {
-    BEGIN = 0,
+    KEY_BEGIN = 0,
 
     /* value is the bit position */
-    A = 0,
-    B = 1,
-    SELECT = 2,
-    START = 3,
-    UP = 4,
-    DOWN = 5,
-    LEFT = 6,
-    RIGHT = 7,
+    KEY_A = 0,
+    KEY_B = 1,
+    KEY_SELECT = 2,
+    KEY_START = 3,
+    KEY_UP = 4,
+    KEY_DOWN = 5,
+    KEY_LEFT = 6,
+    KEY_RIGHT = 7,
 
-    SIZE,
-    END = SIZE,
+    KEY_SIZE,
+    KEY_END = KEY_SIZE,
 };
 typedef std::underlying_type<ln::Key>::type KeyIt;
 

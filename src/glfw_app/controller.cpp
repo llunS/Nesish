@@ -2,61 +2,82 @@
 
 namespace ln_app {
 
-typedef int GLFWKey;
-
-static GLFWKey
-pvt_map_key(ln::Key i_key);
-
 Controller::Controller(GLFWwindow *window)
     : m_window(window)
-    , m_strobe_idx(ln::Key::BEGIN)
+    , m_strobing(false)
+    , m_strobe_idx(ln::KEY_END)
 {
 }
 
 void
 Controller::strobe(bool i_on)
 {
-    if (i_on)
-    {
-        // reload all bits with latest state.
-        for (ln::KeyIt it = ln::Key::BEGIN; it < ln::Key::END; ++it)
-        {
-            auto key = ln::Key(it);
+    m_strobing = i_on;
 
-            auto app_key = pvt_map_key(key);
-            m_key_state[key] = glfwGetKey(m_window, app_key) == GLFW_PRESS;
-        }
-    }
-    else
+    if (!i_on)
     {
-        m_strobe_idx = ln::Key::BEGIN;
+        reload_states();
+        m_strobe_idx = ln::KEY_BEGIN;
     }
 }
 
 bool
 Controller::report()
 {
-    if (m_strobe_idx < ln::Key::END)
+    if (m_strobing)
     {
-        return m_key_state[m_strobe_idx++];
+        reload_states();
+        return m_key_state[ln::KEY_A];
     }
     else
     {
-        // https://www.nesdev.org/wiki/Standard_controller
-        // "All subsequent reads will return 1 on official Nintendo brand
-        // controllers but may return 0 on third party controllers such as the
-        // U-Force."
-        return true;
+        if (m_strobe_idx < ln::KEY_END)
+        {
+            return m_key_state[m_strobe_idx++];
+        }
+        else
+        {
+            // https://www.nesdev.org/wiki/Standard_controller
+            // "All subsequent reads will return 1 on official Nintendo brand
+            // controllers but may return 0 on third party controllers such as
+            // the U-Force."
+            return true;
+        }
+    }
+}
+
+void
+Controller::reload_states()
+{
+    // reload all bits with latest state.
+    for (ln::KeyIt it = ln::KEY_BEGIN; it < ln::KEY_END; ++it)
+    {
+        auto key = ln::Key(it);
+
+        auto app_key = map_key(key);
+        m_key_state[key] = glfwGetKey(m_window, app_key) == GLFW_PRESS;
     }
 }
 
 GLFWKey
-pvt_map_key(ln::Key i_key)
+ControllerP1::map_key(ln::Key i_key)
 {
     // @TODO: Support custom mapping.
-    constexpr static GLFWKey s_mapping[ln::Key::SIZE] = {
+    constexpr static GLFWKey s_mapping[ln::KEY_SIZE] = {
         GLFW_KEY_K, GLFW_KEY_J, GLFW_KEY_V, GLFW_KEY_B,
         GLFW_KEY_W, GLFW_KEY_S, GLFW_KEY_A, GLFW_KEY_D,
+    };
+    return s_mapping[i_key];
+}
+
+GLFWKey
+ControllerP2::map_key(ln::Key i_key)
+{
+    // @TODO: Support custom mapping.
+    constexpr static GLFWKey s_mapping[ln::KEY_SIZE] = {
+        GLFW_KEY_PERIOD,        GLFW_KEY_COMMA, GLFW_KEY_LEFT_BRACKET,
+        GLFW_KEY_RIGHT_BRACKET, GLFW_KEY_UP,    GLFW_KEY_DOWN,
+        GLFW_KEY_LEFT,          GLFW_KEY_RIGHT,
     };
     return s_mapping[i_key];
 }

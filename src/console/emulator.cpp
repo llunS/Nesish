@@ -6,6 +6,7 @@
 #include "common/logger.hpp"
 #include "console/cartridge/cartridge_loader.hpp"
 #include "console/spec.hpp"
+#include "console/assert.hpp"
 
 namespace ln {
 
@@ -13,7 +14,8 @@ Emulator::Emulator()
     : m_cpu(&m_memory, &m_ppu)
     , m_ppu(&m_video_memory, &m_cpu)
     , m_cart(nullptr)
-    , m_controllers{}
+    , m_ctrl_regs{}
+    , m_ctrls{}
     , m_cpu_clock(LN_CPU_HZ)
 {
     hard_wire();
@@ -21,11 +23,10 @@ Emulator::Emulator()
 
 Emulator::~Emulator()
 {
-    for (std::underlying_type<ControllerSlot>::type i = 0;
-         i < ControllerSlot::SIZE; ++i)
+    for (std::underlying_type<CtrlSlot>::type i = 0; i < CTRL_SIZE; ++i)
     {
-        delete m_controllers[i];
-        m_controllers[i] = nullptr;
+        delete m_ctrls[i];
+        m_ctrls[i] = nullptr;
     }
 
     if (m_cart)
@@ -45,7 +46,9 @@ Emulator::hard_wire()
                       Byte &o_val) -> Error {
             PPU *ppu = (PPU *)i_entry->opaque;
 
-            PPU::Register reg = PPU::Register(i_addr - i_entry->begin);
+            Address addr =
+                (i_addr & LN_PPU_REG_ADDR_MASK) | LN_PPU_REG_ADDR_HEAD;
+            PPU::Register reg = PPU::Register(addr - i_entry->begin);
             o_val = ppu->read_register(reg);
             return Error::OK;
         };
@@ -53,14 +56,17 @@ Emulator::hard_wire()
                       Byte i_val) -> Error {
             PPU *ppu = (PPU *)i_entry->opaque;
 
-            PPU::Register reg = PPU::Register(i_addr - i_entry->begin);
+            Address addr =
+                (i_addr & LN_PPU_REG_ADDR_MASK) | LN_PPU_REG_ADDR_HEAD;
+            PPU::Register reg = PPU::Register(addr - i_entry->begin);
             ppu->write_register(reg, i_val);
             return Error::OK;
         };
-        m_memory.set_mapping(
-            MemoryMappingPoint::PPU_REGISTER,
-            {LN_PPUCTRL_ADDR, LN_PPUDATA_ADDR, false, get, set, &m_ppu});
+        m_memory.set_mapping(MemoryMappingPoint::PPU_REG,
+                             {LN_PPU_REG_ADDR_HEAD, LN_PPU_REG_ADDR_TAIL, false,
+                              get, set, &m_ppu});
     }
+    // OAM DMA
     {
         auto get = [](const MappingEntry *i_entry, Address i_addr,
                       Byte &o_val) -> Error {
@@ -82,12 +88,109 @@ Emulator::hard_wire()
             MemoryMappingPoint::OAMDMA,
             {LN_OAMDMA_ADDR, LN_OAMDMA_ADDR, false, get, set, &m_ppu});
     }
+    // Controller registers (along with the one for APU)
+    {
+        auto get = [](const MappingEntry *i_entry, Address i_addr,
+                      Byte &o_val) -> Error {
+            Emulator *thiz = (Emulator *)i_entry->opaque;
+
+            static_assert(CtrlReg::REG_4016 == 0,
+                          "CtrlReg must be consecutive and starts from 0");
+            CtrlReg reg = CtrlReg(i_addr - i_entry->begin);
+            o_val = thiz->read_ctrl_reg(reg);
+            return Error::OK;
+        };
+        auto set = [](const MappingEntry *i_entry, Address i_addr,
+                      Byte i_val) -> Error {
+            Emulator *thiz = (Emulator *)i_entry->opaque;
+
+            static_assert(CtrlReg::REG_4016 == 0,
+                          "CtrlReg must be consecutive and starts from 0");
+            CtrlReg reg = CtrlReg(i_addr - i_entry->begin);
+            thiz->write_ctrl_reg(reg, i_val);
+            return Error::OK;
+        };
+        m_memory.set_mapping(MemoryMappingPoint::APU_CTRL_REG,
+                             {LN_CTRL_REG_ADDR_HEAD, LN_CTRL_REG_ADDR_TAIL,
+                              false, get, set, this});
+    }
+}
+
+Byte
+Emulator::read_ctrl_reg(CtrlReg i_reg)
+{
+    auto val = m_ctrl_regs[i_reg];
+
+    switch (i_reg)
+    {
+        case CtrlReg::REG_4016:
+        case CtrlReg::REG_4017:
+        {
+            int index = i_reg - CtrlReg::REG_4016;
+            if (index < 0 || index >= CTRL_SIZE)
+            {
+                LN_ASSERT_FATAL(
+                    "Implementation error for controller register: {}", index);
+            }
+            else
+            {
+                auto ctrl = m_ctrls[index];
+                /* @NOTE: We don't support parsing other bits yet */
+                Byte primaryBit{0};
+                if (!ctrl)
+                {
+                    // Repot 0 for unconnected controller.
+                    // https://www.nesdev.org/wiki/Standard_controller#Output_($4016/$4017_read)
+                    primaryBit = 0;
+                }
+                else
+                {
+                    primaryBit = ctrl->report();
+                }
+                val = (val & 0xFE) | primaryBit;
+            }
+        }
+        break;
+
+        default:
+            break;
+    }
+
+    return val;
 }
 
 void
-Emulator::plug_controller(ControllerSlot i_slot, Controller *i_controller)
+Emulator::write_ctrl_reg(CtrlReg i_reg, Byte i_val)
 {
-    m_controllers[i_slot] = i_controller;
+    m_ctrl_regs[i_reg] = i_val;
+
+    switch (i_reg)
+    {
+        case CtrlReg::REG_4016:
+        {
+            bool strobeOn = i_val & 0x01;
+            for (std::underlying_type<CtrlSlot>::type i = 0; i < CTRL_SIZE; ++i)
+            {
+                auto ctrl = m_ctrls[i];
+                if (!ctrl)
+                {
+                    continue;
+                }
+
+                ctrl->strobe(strobeOn);
+            }
+        }
+        break;
+
+        default:
+            break;
+    }
+}
+
+void
+Emulator::plug_controller(CtrlSlot i_slot, Controller *i_controller)
+{
+    m_ctrls[i_slot] = i_controller;
 }
 
 Error

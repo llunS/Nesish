@@ -14,8 +14,11 @@ enum class MemoryMappingPoint : unsigned char {
     ADHOC, // @TMP
 
     INTERNAL_RAM,
-    PPU_REGISTER,
+
+    PPU_REG,
     OAMDMA,
+    APU_CTRL_REG,
+
     PRG_ROM,
     PRG_RAM,
 

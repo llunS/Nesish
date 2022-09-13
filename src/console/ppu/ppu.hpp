@@ -28,7 +28,7 @@ struct PPU {
     void
     tick();
 
-    // @NOTE: The value must can be used as array index, see "m_regs".
+    // @IMPL: The value must can be used as array index, see "m_regs".
     // https://wiki.nesdev.org/w/index.php?title=PPU_registers
     enum Register {
         PPUCTRL = 0, // NMI enable (V), PPU master/slave (P), sprite height (H),

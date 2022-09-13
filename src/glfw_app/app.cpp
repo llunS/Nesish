@@ -96,8 +96,10 @@ App::run(const std::string &i_rom_path)
         ln::FrameBuffer front_buffer;
 
         /* Setup emulator */
-        emulator->plug_controller(ln::Emulator::P1,
-                                  new ln_app::Controller(window));
+        emulator->plug_controller(ln::CTRL_P1,
+                                  new ln_app::ControllerP1(window));
+        emulator->plug_controller(ln::CTRL_P2,
+                                  new ln_app::ControllerP2(window));
         emulator->power_up();
 
         /* Setup renderer */

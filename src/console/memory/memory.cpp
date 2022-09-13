@@ -20,7 +20,7 @@ Memory::Memory()
                          Address i_addr) -> Byte * {
             Byte *ram = (Byte *)i_entry->opaque;
 
-            Address addr = i_addr & LN_INTERNAL_RAM_MASK;
+            Address addr = i_addr & LN_RAM_ADDR_MASK;
             return ram + addr;
         };
         set_mapping(MemoryMappingPoint::INTERNAL_RAM,

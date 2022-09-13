@@ -7,6 +7,8 @@
 
 namespace ln_app {
 
+typedef int GLFWKey;
+
 struct Controller : public ln::Controller {
   public:
     Controller(GLFWwindow *window);
@@ -17,10 +19,43 @@ struct Controller : public ln::Controller {
     report() override;
 
   private:
+    void
+    reload_states();
+
+  protected:
+    virtual GLFWKey
+    map_key(ln::Key i_key) = 0;
+
+  private:
     GLFWwindow *m_window;
 
-    unsigned int m_strobe_idx;
-    bool m_key_state[ln::Key::SIZE];
+    bool m_strobing;
+    unsigned int m_strobe_idx; // valid only if "m_strobing" == false.
+    bool m_key_state[ln::KEY_SIZE];
+};
+
+struct ControllerP1 : public Controller {
+  public:
+    ControllerP1(GLFWwindow *window)
+        : Controller(window)
+    {
+    }
+
+  protected:
+    GLFWKey
+    map_key(ln::Key i_key) override;
+};
+
+struct ControllerP2 : public Controller {
+  public:
+    ControllerP2(GLFWwindow *window)
+        : Controller(window)
+    {
+    }
+
+  protected:
+    GLFWKey
+    map_key(ln::Key i_key) override;
 };
 
 } // namespace ln_app

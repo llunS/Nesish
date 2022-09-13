@@ -11,11 +11,19 @@
 #include "console/peripheral/controller.hpp"
 #include "console/clock.hpp"
 #include "console/ppu/frame_buffer.hpp"
+#include "console/spec.hpp"
+#include "console/types.hpp"
 
 #include <string>
 #include <cstddef>
 
 namespace ln {
+
+enum CtrlSlot {
+    CTRL_P1,
+    CTRL_P2,
+    CTRL_SIZE,
+};
 
 struct Emulator {
   public:
@@ -24,14 +32,8 @@ struct Emulator {
     LN_CONSOLE_API ~Emulator();
     LN_KLZ_DELETE_COPY_MOVE(Emulator);
 
-    enum ControllerSlot {
-        P1,
-        P2,
-        SIZE,
-    };
-
     LN_CONSOLE_API void
-    plug_controller(ControllerSlot i_slot, Controller *i_controller);
+    plug_controller(CtrlSlot i_slot, Controller *i_controller);
 
     LN_CONSOLE_API Error
     insert_cartridge(const std::string &i_rom_path);
@@ -65,6 +67,20 @@ struct Emulator {
     hard_wire();
 
   private:
+    // @IMPL: The enumerator must be consecutive and starts from 0 to be
+    // implicitly converted from integer type.
+    // e.g. See hard_wire() for details.
+    enum CtrlReg {
+        REG_4016 = 0,
+        REG_4017,
+    };
+
+    Byte
+    read_ctrl_reg(CtrlReg i_reg);
+    void
+    write_ctrl_reg(CtrlReg i_reg, Byte i_val);
+
+  private:
     CPU m_cpu;
     Memory m_memory;
     PPU m_ppu;
@@ -72,7 +88,8 @@ struct Emulator {
 
     Cartridge *m_cart;
 
-    Controller *m_controllers[ControllerSlot::SIZE];
+    Byte m_ctrl_regs[LN_CTRL_REG_ADDR_TAIL - LN_CTRL_REG_ADDR_HEAD + 1];
+    Controller *m_ctrls[CTRL_SIZE];
 
     Clock m_cpu_clock;
 };
