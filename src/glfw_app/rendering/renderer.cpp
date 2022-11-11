@@ -205,7 +205,7 @@ Renderer::render(const ln::FrameBuffer &i_frame_buf)
 
         glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
         {
-            glClearColor(0.0f, (float)0x8B / 0xFF, (float)0x8B / 0xFF, 1.0f);
+            glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
             glActiveTexture(GL_TEXTURE0);
@@ -217,6 +217,31 @@ Renderer::render(const ln::FrameBuffer &i_frame_buf)
             glDrawArrays(GL_TRIANGLES, 0, VERT_COUNT);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+}
+
+void
+Renderer::render_direct(const ln::FrameBuffer &i_frame_buf)
+{
+    /* update input texture with "i_frame_buf" */
+    {
+        glBindTexture(GL_TEXTURE_2D, m_tex);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, ln::FrameBuffer::WIDTH,
+                        ln::FrameBuffer::HEIGHT, GL_RGB, GL_UNSIGNED_BYTE,
+                        i_frame_buf.get_data());
+    }
+    /* draw */
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, m_tex);
+
+            glUseProgram(m_shader.program());
+
+            glBindVertexArray(m_vao);
+            glDrawArrays(GL_TRIANGLES, 0, VERT_COUNT);
+        }
     }
 }
 

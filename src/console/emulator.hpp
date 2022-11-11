@@ -34,6 +34,8 @@ struct Emulator {
 
     LN_CONSOLE_API void
     plug_controller(CtrlSlot i_slot, Controller *i_controller);
+    LN_CONSOLE_API void
+    unplug_controller(CtrlSlot i_slot);
 
     LN_CONSOLE_API Error
     insert_cartridge(const std::string &i_rom_path);
@@ -89,7 +91,7 @@ struct Emulator {
     Cartridge *m_cart;
 
     Byte m_ctrl_regs[LN_CTRL_REG_ADDR_TAIL - LN_CTRL_REG_ADDR_HEAD + 1];
-    Controller *m_ctrls[CTRL_SIZE];
+    Controller *m_ctrls[CTRL_SIZE]; // References
 
     Clock m_cpu_clock;
 };

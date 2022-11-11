@@ -29,6 +29,8 @@ struct Renderer {
 
     void
     render(const ln::FrameBuffer &i_frame_buf);
+    void
+    render_direct(const ln::FrameBuffer &i_frame_buf);
 
     GLuint
     texture() const;

@@ -1,28 +1,14 @@
 #include "app.hpp"
 
 #include <cstdio>
-#include <cstdint>
 #include <memory>
 
-// @FIXME: spdlog will include windows header files, we need to include them
-// before "glfw3.h"
-#include "console/emulator.hpp"
-
-#include "glfw_app/controller.hpp"
-#include "glfw_app/rendering/renderer.hpp"
-
 #include "glfw/glfw3.h"
-#include "glfw_app/glad/glad.h"
 
-#include "imconfig.h"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-
-#include "common/time.hpp"
+#include "glfw_app/window/emulator_window.hpp"
+#include "glfw_app/window/debugger_window.hpp"
 
 #include "console/spec.hpp"
-#include "console/ppu/frame_buffer.hpp"
 
 namespace ln_app {
 
@@ -34,93 +20,38 @@ error_callback(int error, const char *description);
 int
 App::run(const std::string &i_rom_path)
 {
-    int err = 0;
-
+    std::unique_ptr<EmulatorWindow> emulatorWin{new EmulatorWindow()};
     /* Insert cartridge */
-    auto emulator = std::unique_ptr<ln::Emulator>(new ln::Emulator());
-    auto ln_err = emulator->insert_cartridge(i_rom_path);
-    if (LN_FAILED(ln_err))
+    if (!emulatorWin->insert_cart(i_rom_path))
     {
-        LN_LOG_INFO(ln::get_logger(), "Failed to load cartridge: {}", ln_err);
         return 1;
     }
 
-    /* App and OpenGL setup */
-    GLFWwindow *window = NULL;
-    const char *glsl_version = "#version 330";
+    /* init glfw */
+    glfwSetErrorCallback(error_callback);
+    if (!glfwInit())
     {
-        glfwSetErrorCallback(error_callback);
+        return 1;
+    }
 
-        if (!glfwInit())
-        {
-            return 1;
-        }
+    int err = 0;
+    std::unique_ptr<DebuggerWindow> debuggerWin{new DebuggerWindow()};
 
-        // OpenGL 3.3
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-#if defined(__APPLE__)
-        glfwWindowHint(GLFW_OPENGL_PROFILE,
-                       GLFW_OPENGL_CORE_PROFILE);            // 3.2+ only
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on Mac
-#endif
-        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        if (!monitor)
-        {
-            return 1;
-        }
-
-        // fullscreen
-        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-        window =
-            glfwCreateWindow(mode->width, mode->height, "LightNES", NULL, NULL);
-        if (!window)
-        {
-            err = 1;
-            goto l_cleanup_glfw;
-        }
-        glfwMakeContextCurrent(window);
-        gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-
-        // we want to do the timing ourselves.
-        glfwSwapInterval(0);
+    /* init windows */
+    if (!debuggerWin->init(640, 480, true, false, "Debugger"))
+    {
+        err = 1;
+        goto l_end;
+    }
+    if (!emulatorWin->init(LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2, false, false,
+                           "Emulator"))
+    {
+        err = 1;
+        goto l_end;
     }
 
     /* Main loop */
     {
-        /* Setup app state */
-        ln::FrameBuffer front_buffer;
-
-        /* Setup emulator */
-        emulator->plug_controller(ln::CTRL_P1,
-                                  new ln_app::ControllerP1(window));
-        emulator->plug_controller(ln::CTRL_P2,
-                                  new ln_app::ControllerP2(window));
-        emulator->power_up();
-
-        /* Setup renderer */
-        Renderer renderer;
-        if (LN_FAILED(renderer.setup()))
-        {
-            err = 1;
-            goto l_cleanup_glfw;
-        }
-
-        /* imgui setup */
-        {
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
-        }
-        {
-            ImGui_ImplGlfw_InitForOpenGL(window, true);
-            ImGui_ImplOpenGL3_Init(glsl_version);
-        }
-
-        /* Event Loop */
         constexpr double S_TO_MS = 1000.0;
         constexpr double S_TO_US = S_TO_MS * S_TO_MS;
         constexpr double US_TO_MS = 1.0 / 1000.0;
@@ -129,91 +60,62 @@ App::run(const std::string &i_rom_path)
         double currTimeUS = ln::get_now_micro();
         double prevSimTimeUS = currTimeUS;
         double nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
-        while (!glfwWindowShouldClose(window))
+
+        while (emulatorWin)
         {
             // Dispatch events
             glfwPollEvents();
 
+            if (emulatorWin && emulatorWin->shouldClose())
+            {
+                emulatorWin->release();
+                emulatorWin.reset();
+            }
+            if (debuggerWin && debuggerWin->shouldClose())
+            {
+                debuggerWin->release();
+                debuggerWin.reset();
+            }
+
             /* Simulate */
             currTimeUS = ln::get_now_micro();
             auto deltaTimeMS = (currTimeUS - prevSimTimeUS) * US_TO_MS;
-            emulator->advance(deltaTimeMS);
             prevSimTimeUS = currTimeUS;
+            if (emulatorWin)
+            {
+                emulatorWin->advance(deltaTimeMS);
+            }
 
             /* Render, at most at fixed rate */
             if (currTimeUS >= nextRenderTimeUS)
             {
-                int width, height;
-                glfwGetFramebufferSize(window, &width, &height);
-                glViewport(0, 0, width, height);
-
-                glClearColor(0.0f, float(0x64) / 0xff, 0.0f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT);
-
-                // Start the Dear ImGui frame
-                ImGui_ImplOpenGL3_NewFrame();
-                ImGui_ImplGlfw_NewFrame();
-                ImGui::NewFrame();
-
+                if (emulatorWin)
                 {
-                    if (ImGui::Begin("Console", NULL,
-                                     ImGuiWindowFlags_NoResize |
-                                         ImGuiWindowFlags_AlwaysAutoResize))
-                    {
-                        ImGui::Text("Welcome to LightNES!");
-                    }
-                    ImGui::End();
-
-                    /* Render emulator output */
-                    if (ImGui::Begin("Emulator", NULL,
-                                     ImGuiWindowFlags_NoResize |
-                                         ImGuiWindowFlags_AlwaysAutoResize))
-                    {
-                        auto frame_buf = emulator->frame_dirty();
-                        if (frame_buf)
-                        {
-                            /* swap */
-                            frame_buf->swap(front_buffer);
-
-                            // Draw emulator ouput.
-                            renderer.render(front_buffer);
-
-                            ImGui::Image(
-                                (ImTextureID)(std::intptr_t)renderer.texture(),
-                                {float(renderer.get_width()),
-                                 float(renderer.get_height())},
-                                {0, 1}, {1, 0}, {1, 1, 1, 1}, {1, 1, 1, 1});
-                        }
-                    }
-                    ImGui::End();
+                    emulatorWin->render();
                 }
-
-                // End the Dear ImGui frame
-                ImGui::Render();
-                ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-                glfwSwapBuffers(window);
+                if (debuggerWin)
+                {
+                    debuggerWin->render();
+                }
 
                 nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
             }
         }
     }
 
-    /* l_cleanup_imgui: */
+l_end:
+    // before glfw termination
+    if (emulatorWin)
     {
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
+        emulatorWin->release();
+        emulatorWin.reset();
     }
-l_cleanup_glfw:
-    /* l_cleanup_glfw: */
+    if (debuggerWin)
     {
-        if (window)
-            glfwDestroyWindow(window);
-        window = NULL;
-
-        glfwTerminate();
+        debuggerWin->release();
+        debuggerWin.reset();
     }
+    glfwTerminate();
 
     return err;
 }

@@ -23,6 +23,10 @@ list(APPEND sources rendering/error.cpp)
 list(APPEND sources rendering/shader.cpp)
 list(APPEND sources rendering/renderer.cpp)
 
+list(APPEND sources window/platform_window.cpp)
+list(APPEND sources window/emulator_window.cpp)
+list(APPEND sources window/debugger_window.cpp)
+
 target_sources(${module_name} PRIVATE ${sources})
 
 

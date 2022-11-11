@@ -23,12 +23,6 @@ Emulator::Emulator()
 
 Emulator::~Emulator()
 {
-    for (std::underlying_type<CtrlSlot>::type i = 0; i < CTRL_SIZE; ++i)
-    {
-        delete m_ctrls[i];
-        m_ctrls[i] = nullptr;
-    }
-
     if (m_cart)
     {
         m_cart->unmap_memory(&m_memory, &m_video_memory);
@@ -191,6 +185,12 @@ void
 Emulator::plug_controller(CtrlSlot i_slot, Controller *i_controller)
 {
     m_ctrls[i_slot] = i_controller;
+}
+
+void
+Emulator::unplug_controller(CtrlSlot i_slot)
+{
+    m_ctrls[i_slot] = nullptr;
 }
 
 Error
