@@ -65,7 +65,7 @@ PipelineAccessor::get_palette()
 FrameBuffer &
 PipelineAccessor::get_frame_buf()
 {
-    return m_ppu->m_frame_buf;
+    return m_ppu->m_back_buf;
 }
 
 bool
@@ -95,7 +95,7 @@ PipelineAccessor::check_gen_nmi()
 void
 PipelineAccessor::finish_frame()
 {
-    m_ppu->m_frame_buf_dirty = true;
+    m_ppu->m_front_buf.swap(m_ppu->m_back_buf);
 }
 
 } // namespace ln

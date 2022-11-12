@@ -92,8 +92,8 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
     {
         /* Render current frame */
         ImGui::Text("Frame");
-        auto framebuf = i_emu.frame_dirty();
-        if (framebuf && m_emu_frame.from_frame(*framebuf))
+        const auto &framebuf = i_emu.get_frame();
+        if (m_emu_frame.from_frame(framebuf))
         {
             ImGui::Image((ImTextureID)(std::intptr_t)m_emu_frame.texture(),
                          {float(m_emu_frame.get_width()),

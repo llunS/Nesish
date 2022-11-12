@@ -63,8 +63,8 @@ struct PPU {
     reg_wrtie_only(Register i_reg);
 
     friend struct Emulator;
-    FrameBuffer *
-    frame_dirty() const;
+    const FrameBuffer &
+    get_frame() const;
 
   private:
     Byte &
@@ -126,19 +126,16 @@ struct PPU {
         // rendering
         Byte sp_active_counter[LN_MAX_VISIBLE_SP_NUM];
 
-        // ------ Rendering
-        bool draw_any;
-
         // ------ Other shared pipeline states
         bool is_odd_frame;
-        int scanline_no; // [-1, 260]
+        int scanline_no; // [-1, 260], i.e. 261 == -1.
         int pixel_row;
         int pixel_col;
     } m_pipeline_ctx;
     Pipeline *m_pipeline;
 
-    FrameBuffer m_frame_buf;
-    bool m_frame_buf_dirty;
+    FrameBuffer m_back_buf;
+    FrameBuffer m_front_buf;
 
     PaletteDefault m_palette;
 };

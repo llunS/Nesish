@@ -289,10 +289,10 @@ Emulator::advance(Time_t i_ms)
     }
 }
 
-FrameBuffer *
-Emulator::frame_dirty() const
+const FrameBuffer &
+Emulator::get_frame() const
 {
-    return m_ppu.frame_dirty();
+    return m_ppu.get_frame();
 }
 
 const CPU &

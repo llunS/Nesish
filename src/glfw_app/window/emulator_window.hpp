@@ -7,7 +7,6 @@
 #include "glfw_app/window/platform_window.hpp"
 
 #include "glfw_app/rendering/renderer.hpp"
-#include "console/ppu/frame_buffer.hpp"
 
 namespace ln {
 struct Emulator;
@@ -50,7 +49,6 @@ struct EmulatorWindow : public PlatformWindow {
     ln::Controller *m_p2;
 
     Renderer *m_renderer;
-    ln::FrameBuffer m_front_buffer;
 };
 
 } // namespace ln_app

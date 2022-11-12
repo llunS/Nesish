@@ -14,7 +14,6 @@ PPU::PPU(VideoMemory *i_memory, CPU *i_cpu)
     , m_cpu(i_cpu)
     , m_pipeline_accessor(nullptr)
     , m_pipeline(nullptr)
-    , m_frame_buf_dirty(false)
 {
     m_pipeline_accessor = new PipelineAccessor(this);
     m_pipeline = new Pipeline(m_pipeline_accessor);
@@ -57,7 +56,6 @@ PPU::reset()
 
     m_ppudata_buf = 0x00;
     m_pipeline_ctx.is_odd_frame = 0;
-    m_frame_buf_dirty = false;
 }
 
 void
@@ -290,14 +288,10 @@ PPU::reg_wrtie_only(Register i_reg)
     return false;
 }
 
-FrameBuffer *
-PPU::frame_dirty() const
+const FrameBuffer &
+PPU::get_frame() const
 {
-    if (m_frame_buf_dirty)
-    {
-        return const_cast<FrameBuffer *>(&m_frame_buf);
-    }
-    return nullptr;
+    return m_front_buf;
 }
 
 Byte &

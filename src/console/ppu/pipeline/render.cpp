@@ -70,8 +70,6 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
             // reset active counters
             std::memset(m_accessor->get_context().sp_active_counter, 0,
                         sizeof(m_accessor->get_context().sp_active_counter));
-
-            m_accessor->get_context().draw_any = false;
         }
 
         /* decrement sprite X counters */
@@ -115,9 +113,10 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
             pvt_muxer(m_accessor,
                       (m_accessor->bg_enabled() ? &bg_clr : nullptr),
                       (m_accessor->sp_enabled() ? &sp_clr : nullptr));
-            if (i_curr == 257 && m_accessor->get_context().draw_any)
+
+            /* @IMPL: Mark dirty after rendering to the last dot */
+            if (i_curr == 257 && 239 == m_accessor->get_context().scanline_no)
             {
-                /* @IMPL: Mark dirty after rendering to the last dot */
                 m_accessor->finish_frame();
             }
         }
@@ -330,7 +329,6 @@ pvt_muxer(PipelineAccessor *io_accessor, const OutputColor *i_bg_clr,
     io_accessor->get_frame_buf().write(io_accessor->get_context().pixel_row,
                                        io_accessor->get_context().pixel_col,
                                        output_clr->color);
-    io_accessor->get_context().draw_any = true;
 }
 
 } // namespace ln

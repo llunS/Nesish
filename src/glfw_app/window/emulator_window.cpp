@@ -99,15 +99,8 @@ EmulatorWindow::render()
     glClear(GL_COLOR_BUFFER_BIT);
 
     /* Render emulator output */
-    auto frame_buf = m_emu->frame_dirty();
-    if (frame_buf)
-    {
-        /* swap */
-        frame_buf->swap(m_front_buffer);
-
-        // Draw emulator ouput.
-        m_renderer->render(m_front_buffer);
-    }
+    const auto &framebuf = m_emu->get_frame();
+    m_renderer->render(framebuf);
 
     glfwSwapBuffers(m_win);
 }
