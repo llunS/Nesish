@@ -2,7 +2,15 @@
 
 #include "glfw_app/window/platform_window.hpp"
 
+#include "common/klass.hpp"
+
 #include "imgui.h"
+
+#include "glfw_app/rendering/texture.hpp"
+
+namespace ln {
+struct Emulator;
+} // namespace ln
 
 namespace ln_app {
 
@@ -12,9 +20,11 @@ struct DebuggerWindow : public PlatformWindow {
     void
     release() override;
 
+    LN_KLZ_DELETE_COPY_MOVE(DebuggerWindow);
+
   public:
     void
-    render() override;
+    render(const ln::Emulator &i_emu);
 
   protected:
     bool
@@ -25,6 +35,9 @@ struct DebuggerWindow : public PlatformWindow {
 
   private:
     ImGuiContext *m_imgui_ctx;
+
+  private:
+    Texture m_emu_frame;
 };
 
 } // namespace ln_app

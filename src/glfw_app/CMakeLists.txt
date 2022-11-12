@@ -22,6 +22,7 @@ list(APPEND sources controller.cpp)
 list(APPEND sources rendering/error.cpp)
 list(APPEND sources rendering/shader.cpp)
 list(APPEND sources rendering/renderer.cpp)
+list(APPEND sources rendering/texture.cpp)
 
 list(APPEND sources window/platform_window.cpp)
 list(APPEND sources window/emulator_window.cpp)

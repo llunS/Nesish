@@ -7,6 +7,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "console/emulator.hpp"
+
 namespace ln_app {
 
 DebuggerWindow::DebuggerWindow()
@@ -64,7 +66,7 @@ DebuggerWindow::makeCurrent()
 }
 
 void
-DebuggerWindow::render()
+DebuggerWindow::render(const ln::Emulator &i_emu)
 {
     assert(m_win);
 
@@ -85,12 +87,23 @@ DebuggerWindow::render()
 
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    if (ImGui::Begin("Fullscreen window", nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_NoSavedSettings))
+    ImGui::SetNextWindowSize(ImVec2(300, 300));
+    if (ImGui::Begin("Frame debugger", nullptr, ImGuiWindowFlags_NoResize))
     {
-        ImGui::Text("Welcome to LightNES!");
+        /* Render current frame */
+        ImGui::Text("Frame");
+        auto framebuf = i_emu.frame_dirty();
+        if (framebuf && m_emu_frame.from_frame(*framebuf))
+        {
+            ImGui::Image((ImTextureID)(std::intptr_t)m_emu_frame.texture(),
+                         {float(m_emu_frame.get_width()),
+                          float(m_emu_frame.get_height())},
+                         {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
+        }
+        else
+        {
+            ImGui::Text("[Empty]");
+        }
     }
     ImGui::End();
 

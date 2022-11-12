@@ -9,6 +9,7 @@
 #include "glfw_app/window/debugger_window.hpp"
 
 #include "console/spec.hpp"
+#include "console/emulator.hpp"
 
 namespace ln_app {
 
@@ -20,10 +21,14 @@ error_callback(int error, const char *description);
 int
 App::run(const std::string &i_rom_path)
 {
-    std::unique_ptr<EmulatorWindow> emulatorWin{new EmulatorWindow()};
+    ln::Emulator emulator{};
+    auto ln_err = ln::Error::OK;
+
     /* Insert cartridge */
-    if (!emulatorWin->insert_cart(i_rom_path))
+    ln_err = emulator.insert_cartridge(i_rom_path);
+    if (LN_FAILED(ln_err))
     {
+        LN_LOG_INFO(ln::get_logger(), "Failed to load cartridge: {}", ln_err);
         return 1;
     }
 
@@ -35,6 +40,7 @@ App::run(const std::string &i_rom_path)
     }
 
     int err = 0;
+    std::unique_ptr<EmulatorWindow> emulatorWin{new EmulatorWindow()};
     std::unique_ptr<DebuggerWindow> debuggerWin{new DebuggerWindow()};
 
     /* init windows */
@@ -43,12 +49,14 @@ App::run(const std::string &i_rom_path)
         err = 1;
         goto l_end;
     }
-    if (!emulatorWin->init(LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2, false, false,
-                           "Emulator"))
+    debuggerWin->set_pos(50 + LN_NES_WIDTH * 2 + 50, 150);
+    if (!emulatorWin->init(&emulator, LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2,
+                           false, false, "Emulator"))
     {
         err = 1;
         goto l_end;
     }
+    emulatorWin->set_pos(50, 150);
 
     /* Main loop */
     {
@@ -66,6 +74,7 @@ App::run(const std::string &i_rom_path)
             // Dispatch events
             glfwPollEvents();
 
+            /* Close window if necessary */
             if (emulatorWin && emulatorWin->shouldClose())
             {
                 emulatorWin->release();
@@ -77,14 +86,12 @@ App::run(const std::string &i_rom_path)
                 debuggerWin.reset();
             }
 
-            /* Simulate */
+            /* Calculate elapsed time */
             currTimeUS = ln::get_now_micro();
             auto deltaTimeMS = (currTimeUS - prevSimTimeUS) * US_TO_MS;
             prevSimTimeUS = currTimeUS;
-            if (emulatorWin)
-            {
-                emulatorWin->advance(deltaTimeMS);
-            }
+            /* Simulate */
+            emulator.advance(deltaTimeMS);
 
             /* Render, at most at fixed rate */
             if (currTimeUS >= nextRenderTimeUS)
@@ -95,7 +102,7 @@ App::run(const std::string &i_rom_path)
                 }
                 if (debuggerWin)
                 {
-                    debuggerWin->render();
+                    debuggerWin->render(emulator);
                 }
 
                 nextRenderTimeUS = currTimeUS + FRAME_TIME_US;

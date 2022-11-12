@@ -48,7 +48,7 @@ struct Emulator {
     advance(Time_t i_ms);
 
     LN_CONSOLE_API FrameBuffer *
-    frame_dirty();
+    frame_dirty() const;
 
     /* query */
 

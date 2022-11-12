@@ -64,7 +64,7 @@ struct PPU {
 
     friend struct Emulator;
     FrameBuffer *
-    frame_dirty();
+    frame_dirty() const;
 
   private:
     Byte &

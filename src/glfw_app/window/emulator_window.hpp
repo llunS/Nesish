@@ -2,13 +2,17 @@
 
 #include <string>
 
-// @FIXME: spdlog will include windows header files, we need to include them
-// before "glfw3.h" so that glfw won't redefine symbols.
-#include "console/emulator.hpp"
+#include "common/klass.hpp"
+
 #include "glfw_app/window/platform_window.hpp"
 
 #include "glfw_app/rendering/renderer.hpp"
 #include "console/ppu/frame_buffer.hpp"
+
+namespace ln {
+struct Emulator;
+struct Controller;
+} // namespace ln
 
 namespace ln_app {
 
@@ -18,9 +22,19 @@ struct EmulatorWindow : public PlatformWindow {
     void
     release() override;
 
+    LN_KLZ_DELETE_COPY_MOVE(EmulatorWindow);
+
+  private:
+    using PlatformWindow::init;
+
+  public:
+    bool
+    init(ln::Emulator *i_emu, int i_width, int i_height, bool i_load_gl,
+         bool i_resizable = false, const char *i_name = nullptr);
+
   public:
     void
-    render() override;
+    render();
 
   protected:
     bool
@@ -29,12 +43,9 @@ struct EmulatorWindow : public PlatformWindow {
   public:
     bool
     insert_cart(const std::string i_rom_path);
-    void
-    advance(double i_delta);
 
   private:
-    ln::Emulator m_emu;
-
+    ln::Emulator *m_emu;
     ln::Controller *m_p1;
     ln::Controller *m_p2;
 

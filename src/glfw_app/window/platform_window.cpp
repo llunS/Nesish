@@ -77,6 +77,14 @@ PlatformWindow::shouldClose()
 }
 
 void
+PlatformWindow::set_pos(int i_x, int i_y)
+{
+    assert(m_win);
+
+    glfwSetWindowPos(m_win, i_x, i_y);
+}
+
+void
 PlatformWindow::makeCurrent()
 {
     if (m_win)

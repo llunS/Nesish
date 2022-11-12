@@ -6,6 +6,7 @@
 
 #include "glfw_app/rendering/shader.hpp"
 #include "glfw_app/glad/glad.h"
+#include "glfw_app/rendering/texture.hpp"
 
 namespace ln {
 struct FrameBuffer;
@@ -13,6 +14,7 @@ struct FrameBuffer;
 
 namespace ln_app {
 
+/// @brief A fullscreen rect renderer for emulator frame buffer
 struct Renderer {
   public:
     Renderer();
@@ -22,18 +24,9 @@ struct Renderer {
     ln::Error
     setup();
 
-    static int
-    get_width();
-    static int
-    get_height();
-
+  public:
     void
     render(const ln::FrameBuffer &i_frame_buf);
-    void
-    render_direct(const ln::FrameBuffer &i_frame_buf);
-
-    GLuint
-    texture() const;
 
   private:
     void
@@ -42,11 +35,9 @@ struct Renderer {
   private:
     GLuint m_vbo;
     GLuint m_vao;
-    GLuint m_tex;
     Shader m_shader;
 
-    GLuint m_fbo;
-    GLuint m_fb_tex;
+    Texture m_tex;
 };
 
 } // namespace ln_app

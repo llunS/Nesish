@@ -291,11 +291,11 @@ PPU::reg_wrtie_only(Register i_reg)
 }
 
 FrameBuffer *
-PPU::frame_dirty()
+PPU::frame_dirty() const
 {
     if (m_frame_buf_dirty)
     {
-        return &m_frame_buf;
+        return const_cast<FrameBuffer *>(&m_frame_buf);
     }
     return nullptr;
 }

@@ -20,8 +20,8 @@ struct PlatformWindow {
     bool
     shouldClose();
 
-    virtual void
-    render() = 0;
+    void
+    set_pos(int i_x, int i_y);
 
   protected:
     virtual bool
