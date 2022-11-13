@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glfw_app/window/platform_window.hpp"
+#include "glfw_app/gui/platform_window.hpp"
 
 #include "common/klass.hpp"
 
@@ -26,6 +26,9 @@ struct DebuggerWindow : public PlatformWindow {
     void
     render(const ln::Emulator &i_emu);
 
+    bool
+    isPaused() const;
+
   protected:
     bool
     post_init() override;
@@ -37,6 +40,7 @@ struct DebuggerWindow : public PlatformWindow {
     ImGuiContext *m_imgui_ctx;
 
   private:
+    bool m_paused;
     Texture m_emu_frame;
 };
 

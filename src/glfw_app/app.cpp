@@ -5,8 +5,8 @@
 
 #include "glfw/glfw3.h"
 
-#include "glfw_app/window/emulator_window.hpp"
-#include "glfw_app/window/debugger_window.hpp"
+#include "glfw_app/gui/emulator_window.hpp"
+#include "glfw_app/gui/debugger_window.hpp"
 
 #include "console/spec.hpp"
 #include "console/emulator.hpp"
@@ -60,13 +60,12 @@ App::run(const std::string &i_rom_path)
 
     /* Main loop */
     {
-        constexpr double S_TO_MS = 1000.0;
-        constexpr double S_TO_US = S_TO_MS * S_TO_MS;
+        constexpr double S_TO_US = 1000.0 * 1000.0;
         constexpr double US_TO_MS = 1.0 / 1000.0;
         constexpr double FRAME_TIME_US = FRAME_TIME * S_TO_US;
 
         double currTimeUS = ln::get_now_micro();
-        double prevSimTimeUS = currTimeUS;
+        double prevLoopTimeUS = currTimeUS;
         double nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
 
         while (emulatorWin)
@@ -84,21 +83,36 @@ App::run(const std::string &i_rom_path)
             {
                 debuggerWin->release();
                 debuggerWin.reset();
+
+                /* The release of the debugger window will add overhead to this
+                 * loop, so we skip this one to make each emulation delta taking
+                 * roughly the same time (or small enough) to smooth the
+                 * emulation process */
+                prevLoopTimeUS = ln::get_now_micro();
+                continue;
             }
 
-            /* Calculate elapsed time */
+            /* Emulate */
             currTimeUS = ln::get_now_micro();
-            auto deltaTimeMS = (currTimeUS - prevSimTimeUS) * US_TO_MS;
-            prevSimTimeUS = currTimeUS;
-            /* Simulate */
-            emulator.advance(deltaTimeMS);
+            auto deltaTimeMS = (currTimeUS - prevLoopTimeUS) * US_TO_MS;
+            if (!debuggerWin || !debuggerWin->isPaused())
+            {
+                emulator.advance(deltaTimeMS);
+            }
+            prevLoopTimeUS = currTimeUS;
 
             /* Render, at most at fixed rate */
             if (currTimeUS >= nextRenderTimeUS)
             {
-                if (emulatorWin)
+                // Don't bother to render emulator if paused.
+                // @IMPL: Handle emulator window first anyhow to reflect latest
+                // visuals.
+                if (!debuggerWin || !debuggerWin->isPaused())
                 {
-                    emulatorWin->render();
+                    if (emulatorWin)
+                    {
+                        emulatorWin->render();
+                    }
                 }
                 if (debuggerWin)
                 {

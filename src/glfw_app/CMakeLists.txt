@@ -24,9 +24,10 @@ list(APPEND sources rendering/shader.cpp)
 list(APPEND sources rendering/renderer.cpp)
 list(APPEND sources rendering/texture.cpp)
 
-list(APPEND sources window/platform_window.cpp)
-list(APPEND sources window/emulator_window.cpp)
-list(APPEND sources window/debugger_window.cpp)
+list(APPEND sources gui/platform_window.cpp)
+list(APPEND sources gui/emulator_window.cpp)
+list(APPEND sources gui/debugger_window.cpp)
+list(APPEND sources gui/rect_cut.cpp)
 
 target_sources(${module_name} PRIVATE ${sources})
 

@@ -4,7 +4,7 @@
 
 #include "common/klass.hpp"
 
-#include "glfw_app/window/platform_window.hpp"
+#include "glfw_app/gui/platform_window.hpp"
 
 #include "glfw_app/rendering/renderer.hpp"
 

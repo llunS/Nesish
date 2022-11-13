@@ -9,10 +9,13 @@
 
 #include "console/emulator.hpp"
 
+#include "glfw_app/gui/rect_cut.hpp"
+
 namespace ln_app {
 
 DebuggerWindow::DebuggerWindow()
     : m_imgui_ctx(nullptr)
+    , m_paused(false)
 {
 }
 
@@ -86,9 +89,38 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
     ImGui::NewFrame();
 
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(ImVec2(300, 300));
-    if (ImGui::Begin("Frame debugger", nullptr, ImGuiWindowFlags_NoResize))
+    Rect layout_win = {viewport->WorkPos, viewport->WorkSize};
+
+    /* Control */
+    Rect layout_ctrl = cut_top(layout_win, 55);
+    ImGui::SetNextWindowPos(layout_ctrl.pos(), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(layout_ctrl.size(), ImGuiCond_Once);
+    if (ImGui::Begin("Control", nullptr,
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+    {
+        if (m_paused)
+        {
+            if (ImGui::Button("Play"))
+            {
+                m_paused = !m_paused;
+            }
+        }
+        else
+        {
+            if (ImGui::Button("Pause"))
+            {
+                m_paused = !m_paused;
+            }
+        }
+    }
+    ImGui::End();
+
+    /* Frame Debugger */
+    Rect layout_fd = layout_win;
+    ImGui::SetNextWindowPos(layout_fd.pos(), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(layout_fd.size(), ImGuiCond_Once);
+    if (ImGui::Begin("Frame Debugger", nullptr,
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
     {
         /* Render current frame */
         ImGui::Text("Frame");
@@ -112,6 +144,12 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(m_win);
+}
+
+bool
+DebuggerWindow::isPaused() const
+{
+    return m_paused;
 }
 
 } // namespace ln_app
