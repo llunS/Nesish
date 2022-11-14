@@ -123,7 +123,7 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
     {
         /* Render current frame */
-        ImGui::Text("Frame");
+        ImGui::Text("<Frame>");
         const auto &framebuf = i_emu.get_frame();
         if (m_emu_frame.from_frame(framebuf))
         {
@@ -134,8 +134,61 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
         }
         else
         {
-            ImGui::Text("[Empty]");
+            ImGui::Text("Failed to get frame");
         }
+
+        static_assert(ln::Emulator::palette_color_count() == 32,
+                      "Rework code below.");
+        /* Palette */
+        ImGui::Spacing();
+        ImGui::Text("<Palette>");
+
+        auto rgb_to_imvec4 = [](ln::Color i_clr) -> ImVec4 {
+            return ImVec4(i_clr.r / 255.f, i_clr.g / 255.f, i_clr.b / 255.f,
+                          1.0f);
+        };
+
+        // Background
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Background");
+        ImGui::SameLine(0.0f, 20.f);
+        float lock_x = ImGui::GetCursorPosX();
+        for (int i = 0; i < 16; ++i)
+        {
+            ImGui::ColorButton("", rgb_to_imvec4(i_emu.get_palette_color(i)),
+                               ImGuiColorEditFlags_NoBorder |
+                                   ImGuiColorEditFlags_NoAlpha);
+            if ((i + 1) % 4 != 0)
+            {
+                ImGui::SameLine(0.0f, 0.0f);
+            }
+            else
+            {
+                ImGui::SameLine(0.0f, 25.f);
+            }
+        }
+        ImGui::NewLine();
+
+        // Sprite
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Sprite");
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(lock_x);
+        for (int i = 16; i < 32; ++i)
+        {
+            ImGui::ColorButton("", rgb_to_imvec4(i_emu.get_palette_color(i)),
+                               ImGuiColorEditFlags_NoBorder |
+                                   ImGuiColorEditFlags_NoAlpha);
+            if ((i + 1) % 4 != 0)
+            {
+                ImGui::SameLine(0.0f, 0.0f);
+            }
+            else
+            {
+                ImGui::SameLine(0.0f, 25.f);
+            }
+        }
+        ImGui::NewLine();
     }
     ImGui::End();
 

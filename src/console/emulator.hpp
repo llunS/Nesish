@@ -13,6 +13,7 @@
 #include "console/ppu/frame_buffer.hpp"
 #include "console/spec.hpp"
 #include "console/types.hpp"
+#include "console/ppu/color.hpp"
 
 #include <string>
 #include <cstddef>
@@ -50,12 +51,22 @@ struct Emulator {
     LN_CONSOLE_API const FrameBuffer &
     get_frame() const;
 
-    /* query */
+  public:
+    /* debug */
+
+    LN_CONSOLE_API static constexpr int
+    palette_color_count()
+    {
+        return 32;
+    }
+    LN_CONSOLE_API Color
+    get_palette_color(int i_idx) const;
+
+  public:
+    /* test */
 
     LN_CONSOLE_API const CPU &
     get_cpu() const;
-
-    /* test */
 
     typedef bool (*TestExitFunc)(const ln::CPU *i_cpu, std::size_t i_instr,
                                  void *i_context);

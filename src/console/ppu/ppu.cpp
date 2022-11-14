@@ -294,6 +294,12 @@ PPU::get_frame() const
     return m_front_buf;
 }
 
+const Palette &
+PPU::get_palette() const
+{
+    return m_palette;
+}
+
 Byte &
 PPU::get_register(PPU::Register i_reg)
 {

@@ -65,6 +65,9 @@ struct PPU {
     friend struct Emulator;
     const FrameBuffer &
     get_frame() const;
+    friend struct Emulator;
+    const Palette &
+    get_palette() const;
 
   private:
     Byte &

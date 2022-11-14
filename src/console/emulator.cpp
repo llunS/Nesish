@@ -295,6 +295,17 @@ Emulator::get_frame() const
     return m_ppu.get_frame();
 }
 
+Color
+Emulator::get_palette_color(int i_idx) const
+{
+    Address color_addr = LN_PALETTE_ADDR_HEAD + i_idx;
+    Byte color_byte = 0;
+    // @NOTE: The address is in VRAM.
+    (void)m_video_memory.get_byte(color_addr, color_byte);
+    Color clr = m_ppu.get_palette().to_rgb(color_byte);
+    return clr;
+}
+
 const CPU &
 Emulator::get_cpu() const
 {
