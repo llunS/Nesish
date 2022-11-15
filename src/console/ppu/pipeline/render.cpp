@@ -55,22 +55,7 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
 {
     (void)(i_total);
 
-    /* capture oam at the start */
-    if (0 == i_curr)
-    {
-        if (0 == m_accessor->get_context().scanline_no)
-        {
-            if (m_accessor->capture_palette_on())
-            {
-                m_accessor->capture_palette();
-            }
-            if (m_accessor->capture_oam_on())
-            {
-                m_accessor->capture_oam();
-            }
-        }
-    }
-    else if (2 <= i_curr && i_curr <= 257)
+    if (2 <= i_curr && i_curr <= 257)
     {
         /* reset some states */
         if (2 == i_curr)
@@ -213,6 +198,13 @@ pvt_bg_render(PipelineAccessor *io_accessor)
 OutputColor
 pvt_sp_render(PipelineAccessor *io_accessor)
 {
+    // @IMPL: Although the color of "ColorEmpty" may be a valid value for sprite
+    // 0, but the pattern member with a transparent value ensures that it won't
+    // trigger sprite 0 hit. So we are safe to use this, when no sprites are
+    // rendered at this pixel.
+    OutputColor color = ColorEmpty;
+
+    bool got = false;
     // search for the first non-transparent pixel among activated sprites.
     for (decltype(LN_MAX_VISIBLE_SP_NUM) i = 0; i < LN_MAX_VISIBLE_SP_NUM; ++i)
     {
@@ -232,6 +224,14 @@ pvt_sp_render(PipelineAccessor *io_accessor)
             continue;
         }
         --ctx.sp_active_counter[i];
+
+        // @IMPL: No need to execute following logic.
+        // However, the active counter must be decremented still for those
+        // active ones not chosen.
+        if (got)
+        {
+            continue;
+        }
 
         /* 0. Get fine x */
         Byte fine_x = LN_PATTERN_TILE_WIDTH - ctx.sp_active_counter[i] - 1;
@@ -284,14 +284,11 @@ pvt_sp_render(PipelineAccessor *io_accessor)
                               LN_MAX_VISIBLE_SP_NUM - 1,
                       "Invalid range for \"sp_no\"");
         Byte sp_no = (Byte)i;
-        return {pixel, pattern_data, (ctx.sp_attr[i] & 0x20) != 0, sp_no};
+        color = {pixel, pattern_data, (ctx.sp_attr[i] & 0x20) != 0, sp_no};
+        got = true;
     }
 
-    // @IMPL: Although the color of "ColorEmpty" may be a valid value for sprite
-    // 0, but the pattern member with a transparent value ensures that it won't
-    // trigger sprite 0 hit. So we are safe to use this, when no sprites are
-    // rendered at this pixel.
-    return ColorEmpty;
+    return color;
 }
 
 void

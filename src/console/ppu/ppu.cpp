@@ -37,13 +37,13 @@ PPU::~PPU()
 void
 PPU::power_up()
 {
-    write_register(PPUCTRL, 0x00);
-    write_register(PPUMASK, 0x00);
-    write_register(PPUSTATUS, 0xA0); // +0+x xxxx
-    write_register(OAMADDR, 0x00);
+    get_register(PPUCTRL) = 0x00;
+    get_register(PPUMASK) = 0x00;
+    get_register(PPUSTATUS) = 0xA0; // +0+x xxxx
+    get_register(OAMADDR) = 0x00;
     // @NOTE: latches should be cleared as well
-    write_register(PPUSCROLL, 0x00);
-    write_register(PPUADDR, 0x00);
+    get_register(PPUSCROLL) = 0x00;
+    get_register(PPUADDR) = 0x00;
 
     m_ppudata_buf = 0x00;
 }
@@ -51,10 +51,10 @@ PPU::power_up()
 void
 PPU::reset()
 {
-    write_register(PPUCTRL, 0x00);
-    write_register(PPUMASK, 0x00);
+    get_register(PPUCTRL) = 0x00;
+    get_register(PPUMASK) = 0x00;
     // @NOTE: latches should be cleared as well
-    write_register(PPUSCROLL, 0x00);
+    get_register(PPUSCROLL) = 0x00;
 
     m_ppudata_buf = 0x00;
     m_pipeline_ctx.is_odd_frame = 0;

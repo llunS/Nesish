@@ -1,6 +1,5 @@
 #pragma once
 
-// Resolution
 #define LN_NES_WIDTH 256
 #define LN_NES_HEIGHT 240
 

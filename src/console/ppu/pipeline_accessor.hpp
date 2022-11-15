@@ -53,7 +53,7 @@ struct PipelineAccessor {
     void
     finish_frame();
 
-  public:
+  private:
     /*debug */
 
     bool
@@ -65,10 +65,6 @@ struct PipelineAccessor {
     capture_oam_on();
     void
     capture_oam();
-
-  private:
-    /*debug */
-
     void
     update_oam_sprite(lnd::Sprite &o_sprite, int i_idx);
 

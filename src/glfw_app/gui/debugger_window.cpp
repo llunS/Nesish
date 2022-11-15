@@ -178,8 +178,7 @@ DebuggerWindow::render(ln::Emulator &io_emu)
         ImGui::AlignTextToFramePadding();
         ImGui::Text("<Palette>");
         ImGui::SameLine();
-        HelpMarker("The snapshot makes sense if and only if the game fully "
-                   "initializes the Palette before the rendering begins.");
+        HelpMarker("The snapshot was took at the end of the rendering.");
 
         auto rgb_to_imvec4 = [](ln::Color i_clr) -> ImVec4 {
             return ImVec4(i_clr.r / 255.f, i_clr.g / 255.f, i_clr.b / 255.f,
@@ -251,9 +250,8 @@ DebuggerWindow::render(ln::Emulator &io_emu)
         ImGui::AlignTextToFramePadding();
         ImGui::Text("<OAM>");
         ImGui::SameLine();
-        HelpMarker("The snapshot makes sense if and only if the game fully "
-                   "initializes the OAM before the rendering begins and the "
-                   "OAMADDR starts at 0.");
+        HelpMarker("The snapshot was took at the end of the rendering, and "
+                   "assumes OAMADDR starts with 0.");
 
         const auto &oam = io_emu.get_oam_dbg();
         static_assert(lnd::OAM::get_sprite_count() == 64, "Rework code below.");

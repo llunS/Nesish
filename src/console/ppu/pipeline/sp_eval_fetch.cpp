@@ -224,6 +224,9 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
         ++io_ctx->sec_oam_write_idx;
     };
 
+    // @TODO: hide sprites before OAMADDR
+    // https://www.nesdev.org/wiki/PPU_registers#Values_during_rendering
+
     // read cycle
     if (i_curr % 2 == 0)
     {

@@ -2,6 +2,7 @@
 
 #include "console/debug/sprite.hpp"
 #include "console/spec.hpp"
+#include "console/byte_utils.hpp"
 
 namespace ln {
 
@@ -98,6 +99,17 @@ PipelineAccessor::check_gen_nmi()
 void
 PipelineAccessor::finish_frame()
 {
+    // @IMPL: Do these the same time as we swap the buffer to synchronize with
+    // it.
+    if (capture_palette_on())
+    {
+        capture_palette();
+    }
+    if (capture_oam_on())
+    {
+        capture_oam();
+    }
+
     m_ppu->m_front_buf.swap(m_ppu->m_back_buf);
 }
 
@@ -164,6 +176,23 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
         sliver_addr = fine_y | (upper << 3) | (i_tile << 4) | (tbl_right << 12);
         Byte ptn_bit1_byte = 0;
         (void)m_ppu->m_memory->get_byte(sliver_addr, ptn_bit1_byte);
+
+        /* flipping */
+        bool flip_y = i_attr & 0x80;
+        if (flip_y)
+        {
+            static_assert(LN_PATTERN_TILE_HEIGHT >= 1,
+                          "oops, invalid LN_PATTERN_TILE_HEIGHT.");
+            fine_y = (LN_PATTERN_TILE_HEIGHT - 1) - fine_y;
+        }
+        // @IMPL: We choose to reverse the bits to implement sprite horizontal
+        // flipping.
+        bool flip_x = i_attr & 0x40;
+        if (flip_x)
+        {
+            byte_reverse(ptn_bit0_byte);
+            byte_reverse(ptn_bit1_byte);
+        }
 
         for (int fine_x = 0; fine_x < 8; ++fine_x)
         {
