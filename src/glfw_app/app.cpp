@@ -83,6 +83,7 @@ App::run(const std::string &i_rom_path)
             }
             if (debuggerWin && debuggerWin->shouldClose())
             {
+                debuggerWin->post_render(emulator);
                 debuggerWin->release();
                 debuggerWin.reset();
 
@@ -135,6 +136,7 @@ l_end:
     }
     if (debuggerWin)
     {
+        debuggerWin->post_render(emulator);
         debuggerWin->release();
         debuggerWin.reset();
     }

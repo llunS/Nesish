@@ -4,7 +4,8 @@ namespace lnd {
 
 enum DebugFlags {
     DBG_OFF = 0,
-    DBG_OAM = 1 << 0,
+    DBG_PALETTE = 1 << 0,
+    DBG_OAM = 1 << 1,
 };
 
 inline bool

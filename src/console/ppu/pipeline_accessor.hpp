@@ -57,6 +57,11 @@ struct PipelineAccessor {
     /*debug */
 
     bool
+    capture_palette_on();
+    void
+    capture_palette();
+
+    bool
     capture_oam_on();
     void
     capture_oam();

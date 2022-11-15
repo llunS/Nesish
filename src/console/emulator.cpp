@@ -308,21 +308,16 @@ Emulator::set_debug_off(lnd::DebugFlags i_flag)
     lnd::debug_off(m_debug_flags, i_flag);
 }
 
-Color
-Emulator::get_palette_color(int i_idx) const
+const lnd::Palette &
+Emulator::get_palette_dbg() const
 {
-    Address color_addr = LN_PALETTE_ADDR_HEAD + i_idx;
-    Byte color_byte = 0;
-    // @NOTE: The address is in VRAM.
-    (void)m_video_memory.get_byte(color_addr, color_byte);
-    Color clr = m_ppu.get_palette().to_rgb(color_byte);
-    return clr;
+    return m_ppu.get_palette_dbg();
 }
 
 const lnd::OAM &
-Emulator::get_oam() const
+Emulator::get_oam_dbg() const
 {
-    return m_ppu.get_oam();
+    return m_ppu.get_oam_dbg();
 }
 
 const CPU &

@@ -296,14 +296,14 @@ PPU::get_frame() const
     return m_front_buf;
 }
 
-const Palette &
-PPU::get_palette() const
+const lnd::Palette &
+PPU::get_palette_dbg() const
 {
-    return m_palette;
+    return m_palette_snapshot;
 }
 
 const lnd::OAM &
-PPU::get_oam() const
+PPU::get_oam_dbg() const
 {
     return m_oam_snapshot;
 }

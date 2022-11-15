@@ -27,6 +27,8 @@ struct DebuggerWindow : public PlatformWindow {
     pre_render(ln::Emulator &io_emu);
     void
     render(ln::Emulator &io_emu);
+    void
+    post_render(ln::Emulator &io_emu);
 
     bool
     isPaused() const;

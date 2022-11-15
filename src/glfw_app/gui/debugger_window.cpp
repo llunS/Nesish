@@ -90,7 +90,15 @@ DebuggerWindow::makeCurrent()
 void
 DebuggerWindow::pre_render(ln::Emulator &io_emu)
 {
+    io_emu.set_debug_on(lnd::DBG_PALETTE);
     io_emu.set_debug_on(lnd::DBG_OAM);
+}
+
+void
+DebuggerWindow::post_render(ln::Emulator &io_emu)
+{
+    io_emu.set_debug_off(lnd::DBG_PALETTE);
+    io_emu.set_debug_off(lnd::DBG_OAM);
 }
 
 void
@@ -167,15 +175,19 @@ DebuggerWindow::render(ln::Emulator &io_emu)
         /* Palette */
         ImGui::PushID("<Palette>");
         ImGui::Spacing();
+        ImGui::AlignTextToFramePadding();
         ImGui::Text("<Palette>");
+        ImGui::SameLine();
+        HelpMarker("The snapshot makes sense if and only if the game fully "
+                   "initializes the Palette before the rendering begins.");
 
         auto rgb_to_imvec4 = [](ln::Color i_clr) -> ImVec4 {
             return ImVec4(i_clr.r / 255.f, i_clr.g / 255.f, i_clr.b / 255.f,
                           1.0f);
         };
 
-        static_assert(ln::Emulator::palette_color_count() == 32,
-                      "Rework code below.");
+        static_assert(lnd::Palette::color_count() == 32, "Rework code below.");
+        const auto &palette = io_emu.get_palette_dbg();
 
         // Background
         ImGui::PushID("Background");
@@ -187,9 +199,9 @@ DebuggerWindow::render(ln::Emulator &io_emu)
         {
             ImGui::PushID(i);
 
-            ImGui::ColorButton(
-                "##color", rgb_to_imvec4(io_emu.get_palette_color(i)),
-                ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoAlpha);
+            ImGui::ColorButton("##color", rgb_to_imvec4(palette.get_color(i)),
+                               ImGuiColorEditFlags_NoBorder |
+                                   ImGuiColorEditFlags_NoAlpha);
             if ((i + 1) % 4 != 0)
             {
                 ImGui::SameLine(0.0f, 0.0f);
@@ -214,9 +226,9 @@ DebuggerWindow::render(ln::Emulator &io_emu)
         {
             ImGui::PushID(i);
 
-            ImGui::ColorButton(
-                "##color", rgb_to_imvec4(io_emu.get_palette_color(i)),
-                ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoAlpha);
+            ImGui::ColorButton("##color", rgb_to_imvec4(palette.get_color(i)),
+                               ImGuiColorEditFlags_NoBorder |
+                                   ImGuiColorEditFlags_NoAlpha);
             if ((i + 1) % 4 != 0)
             {
                 ImGui::SameLine(0.0f, 0.0f);
@@ -243,7 +255,7 @@ DebuggerWindow::render(ln::Emulator &io_emu)
                    "initializes the OAM before the rendering begins and the "
                    "OAMADDR starts at 0.");
 
-        const auto &oam = io_emu.get_oam();
+        const auto &oam = io_emu.get_oam_dbg();
         static_assert(lnd::OAM::get_sprite_count() == 64, "Rework code below.");
         static_assert(sizeof(m_sp_tex) / sizeof(Texture) == 64,
                       "Rework code below.");

@@ -61,16 +61,10 @@ struct Emulator {
     LN_CONSOLE_API void
     set_debug_off(lnd::DebugFlags i_flag);
 
-    LN_CONSOLE_API static constexpr int
-    palette_color_count()
-    {
-        return 32;
-    }
-    LN_CONSOLE_API Color
-    get_palette_color(int i_idx) const;
-
+    LN_CONSOLE_API const lnd::Palette &
+    get_palette_dbg() const;
     LN_CONSOLE_API const lnd::OAM &
-    get_oam() const;
+    get_oam_dbg() const;
 
   public:
     /* test */

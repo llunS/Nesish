@@ -102,6 +102,28 @@ PipelineAccessor::finish_frame()
 }
 
 bool
+PipelineAccessor::capture_palette_on()
+{
+    return lnd::is_debug_on(m_ppu->m_debug_flags, lnd::DBG_PALETTE);
+}
+
+void
+PipelineAccessor::capture_palette()
+{
+    for (decltype(m_ppu->m_palette_snapshot.color_count()) i = 0;
+         i < m_ppu->m_palette_snapshot.color_count(); ++i)
+    {
+        Address color_addr = LN_PALETTE_ADDR_HEAD + i;
+        Byte color_byte = 0;
+        // @NOTE: The address is in VRAM.
+        (void)m_ppu->m_memory->get_byte(color_addr, color_byte);
+        Color clr = get_palette().to_rgb(color_byte);
+
+        m_ppu->m_palette_snapshot.set_color(i, clr);
+    }
+}
+
+bool
 PipelineAccessor::capture_oam_on()
 {
     return lnd::is_debug_on(m_ppu->m_debug_flags, lnd::DBG_OAM);
@@ -150,7 +172,7 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
                 Byte color_byte = 0;
                 // @NOTE: The address is in VRAM.
                 (void)this->m_ppu->m_memory->get_byte(color_addr, color_byte);
-                Color clr = this->m_ppu->get_palette().to_rgb(color_byte);
+                Color clr = this->get_palette().to_rgb(color_byte);
                 return clr;
             };
 
