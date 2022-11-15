@@ -55,7 +55,16 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
 {
     (void)(i_total);
 
-    if (2 <= i_curr && i_curr <= 257)
+    /* capture oam at the start */
+    if (i_curr == 0)
+    {
+        if (m_accessor->capture_oam_on() &&
+            0 == m_accessor->get_context().scanline_no)
+        {
+            m_accessor->capture_oam();
+        }
+    }
+    else if (2 <= i_curr && i_curr <= 257)
     {
         /* reset some states */
         if (2 == i_curr)

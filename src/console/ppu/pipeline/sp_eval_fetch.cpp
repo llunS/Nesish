@@ -74,6 +74,7 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
                 Byte oam_cpy_addr = oam_addr & 0xF8;
                 if (oam_cpy_addr)
                 {
+                    // @IMPL: memcpy is ok, no memmove needed.
                     std::memcpy(m_accessor->get_oam_addr(0),
                                 m_accessor->get_oam_addr(oam_cpy_addr), 8);
                 }

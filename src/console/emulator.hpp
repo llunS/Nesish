@@ -15,6 +15,8 @@
 #include "console/types.hpp"
 #include "console/ppu/color.hpp"
 
+#include "console/debug/debug_flags.hpp"
+
 #include <string>
 #include <cstddef>
 
@@ -54,6 +56,11 @@ struct Emulator {
   public:
     /* debug */
 
+    LN_CONSOLE_API void
+    set_debug_on(lnd::DebugFlags i_flag);
+    LN_CONSOLE_API void
+    set_debug_off(lnd::DebugFlags i_flag);
+
     LN_CONSOLE_API static constexpr int
     palette_color_count()
     {
@@ -61,6 +68,9 @@ struct Emulator {
     }
     LN_CONSOLE_API Color
     get_palette_color(int i_idx) const;
+
+    LN_CONSOLE_API const lnd::OAM &
+    get_oam() const;
 
   public:
     /* test */
@@ -105,6 +115,9 @@ struct Emulator {
     Controller *m_ctrls[CTRL_SIZE]; // References
 
     Clock m_cpu_clock;
+
+  private:
+    lnd::DebugFlags m_debug_flags;
 };
 
 } // namespace ln

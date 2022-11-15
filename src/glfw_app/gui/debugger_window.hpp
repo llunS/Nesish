@@ -24,7 +24,9 @@ struct DebuggerWindow : public PlatformWindow {
 
   public:
     void
-    render(const ln::Emulator &i_emu);
+    pre_render(ln::Emulator &io_emu);
+    void
+    render(ln::Emulator &io_emu);
 
     bool
     isPaused() const;
@@ -41,7 +43,8 @@ struct DebuggerWindow : public PlatformWindow {
 
   private:
     bool m_paused;
-    Texture m_emu_frame;
+    Texture m_frame_tex;
+    Texture m_sp_tex[64];
 };
 
 } // namespace ln_app

@@ -8,6 +8,9 @@
 #include "console/memory/video_memory.hpp"
 #include "console/spec.hpp"
 
+#include "console/debug/debug_flags.hpp"
+#include "console/debug/oam.hpp"
+
 namespace ln {
 
 struct PipelineAccessor;
@@ -16,7 +19,8 @@ struct CPU;
 
 struct PPU {
   public:
-    PPU(VideoMemory *i_memory, CPU *i_cpu);
+    PPU(VideoMemory *i_memory, CPU *i_cpu,
+        const lnd::DebugFlags &i_debug_flags);
     ~PPU();
     LN_KLZ_DELETE_COPY_MOVE(PPU);
 
@@ -65,9 +69,17 @@ struct PPU {
     friend struct Emulator;
     const FrameBuffer &
     get_frame() const;
+
+  private:
+    /* debug */
+
     friend struct Emulator;
     const Palette &
     get_palette() const;
+
+    friend struct Emulator;
+    const lnd::OAM &
+    get_oam() const;
 
   private:
     Byte &
@@ -141,6 +153,12 @@ struct PPU {
     FrameBuffer m_front_buf;
 
     PaletteDefault m_palette;
+
+  private:
+    /* debug */
+
+    const lnd::DebugFlags &m_debug_flags;
+    lnd::OAM m_oam_snapshot;
 };
 
 } // namespace ln

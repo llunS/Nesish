@@ -4,6 +4,10 @@
 #include "console/types.hpp"
 #include "console/ppu/ppu.hpp"
 
+namespace lnd {
+struct Sprite;
+} // namespace lnd
+
 namespace ln {
 
 struct PipelineAccessor {
@@ -48,6 +52,20 @@ struct PipelineAccessor {
 
     void
     finish_frame();
+
+  public:
+    /*debug */
+
+    bool
+    capture_oam_on();
+    void
+    capture_oam();
+
+  private:
+    /*debug */
+
+    void
+    update_oam_sprite(lnd::Sprite &o_sprite, int i_idx);
 
   private:
     PipelineAccessor(PPU *i_ppu);

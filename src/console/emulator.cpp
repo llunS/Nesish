@@ -12,11 +12,12 @@ namespace ln {
 
 Emulator::Emulator()
     : m_cpu(&m_memory, &m_ppu)
-    , m_ppu(&m_video_memory, &m_cpu)
+    , m_ppu(&m_video_memory, &m_cpu, m_debug_flags)
     , m_cart(nullptr)
     , m_ctrl_regs{}
     , m_ctrls{}
     , m_cpu_clock(LN_CPU_HZ)
+    , m_debug_flags(lnd::DBG_OFF)
 {
     hard_wire();
 }
@@ -295,6 +296,18 @@ Emulator::get_frame() const
     return m_ppu.get_frame();
 }
 
+void
+Emulator::set_debug_on(lnd::DebugFlags i_flag)
+{
+    lnd::debug_on(m_debug_flags, i_flag);
+}
+
+void
+Emulator::set_debug_off(lnd::DebugFlags i_flag)
+{
+    lnd::debug_off(m_debug_flags, i_flag);
+}
+
 Color
 Emulator::get_palette_color(int i_idx) const
 {
@@ -304,6 +317,12 @@ Emulator::get_palette_color(int i_idx) const
     (void)m_video_memory.get_byte(color_addr, color_byte);
     Color clr = m_ppu.get_palette().to_rgb(color_byte);
     return clr;
+}
+
+const lnd::OAM &
+Emulator::get_oam() const
+{
+    return m_ppu.get_oam();
 }
 
 const CPU &

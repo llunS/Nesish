@@ -8,12 +8,14 @@
 
 namespace ln {
 
-PPU::PPU(VideoMemory *i_memory, CPU *i_cpu)
+PPU::PPU(VideoMemory *i_memory, CPU *i_cpu,
+         const lnd::DebugFlags &i_debug_flags)
     : m_ppudata_buf(0xFF)
     , m_memory(i_memory)
     , m_cpu(i_cpu)
     , m_pipeline_accessor(nullptr)
     , m_pipeline(nullptr)
+    , m_debug_flags(i_debug_flags)
 {
     m_pipeline_accessor = new PipelineAccessor(this);
     m_pipeline = new Pipeline(m_pipeline_accessor);
@@ -298,6 +300,12 @@ const Palette &
 PPU::get_palette() const
 {
     return m_palette;
+}
+
+const lnd::OAM &
+PPU::get_oam() const
+{
+    return m_oam_snapshot;
 }
 
 Byte &

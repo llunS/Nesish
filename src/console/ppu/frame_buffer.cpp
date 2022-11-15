@@ -1,5 +1,7 @@
 #include "frame_buffer.hpp"
 
+#include <type_traits>
+
 #include "console/assert.hpp"
 
 namespace ln {
@@ -37,6 +39,7 @@ FrameBuffer::swap(FrameBuffer &i_other)
 const Byte *
 FrameBuffer::get_data() const
 {
+    static_assert(std::is_pod<Color>::value, "Rework code below.");
     return (Byte *)(&m_buf[0]);
 }
 

@@ -8,6 +8,9 @@
 namespace ln {
 struct FrameBuffer;
 } // namespace ln
+namespace lnd {
+struct Sprite;
+} // namespace lnd
 
 namespace ln_app {
 
@@ -25,6 +28,8 @@ struct Texture {
   public:
     bool
     from_frame(const ln::FrameBuffer &i_frame_buf);
+    bool
+    from_sprite(const lnd::Sprite &i_sprite);
 
     int
     get_width();

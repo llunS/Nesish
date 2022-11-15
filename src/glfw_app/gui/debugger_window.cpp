@@ -13,9 +13,28 @@
 
 namespace ln_app {
 
+static void
+HelpMarker(const char *desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+} // namespace ln_app
+
+namespace ln_app {
+
 DebuggerWindow::DebuggerWindow()
     : m_imgui_ctx(nullptr)
     , m_paused(false)
+    , m_sp_tex{}
 {
 }
 
@@ -69,7 +88,13 @@ DebuggerWindow::makeCurrent()
 }
 
 void
-DebuggerWindow::render(const ln::Emulator &i_emu)
+DebuggerWindow::pre_render(ln::Emulator &io_emu)
+{
+    io_emu.set_debug_on(lnd::DBG_OAM);
+}
+
+void
+DebuggerWindow::render(ln::Emulator &io_emu)
 {
     assert(m_win);
 
@@ -123,23 +148,24 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
     {
         /* Render current frame */
+        ImGui::PushID("<Frame>");
         ImGui::Text("<Frame>");
-        const auto &framebuf = i_emu.get_frame();
-        if (m_emu_frame.from_frame(framebuf))
+        const auto &framebuf = io_emu.get_frame();
+        if (m_frame_tex.from_frame(framebuf))
         {
-            ImGui::Image((ImTextureID)(std::intptr_t)m_emu_frame.texture(),
-                         {float(m_emu_frame.get_width()),
-                          float(m_emu_frame.get_height())},
+            ImGui::Image((ImTextureID)(std::intptr_t)m_frame_tex.texture(),
+                         {float(m_frame_tex.get_width()),
+                          float(m_frame_tex.get_height())},
                          {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
         }
         else
         {
             ImGui::Text("Failed to get frame");
         }
+        ImGui::PopID();
 
-        static_assert(ln::Emulator::palette_color_count() == 32,
-                      "Rework code below.");
         /* Palette */
+        ImGui::PushID("<Palette>");
         ImGui::Spacing();
         ImGui::Text("<Palette>");
 
@@ -148,16 +174,22 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
                           1.0f);
         };
 
+        static_assert(ln::Emulator::palette_color_count() == 32,
+                      "Rework code below.");
+
         // Background
+        ImGui::PushID("Background");
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Background");
         ImGui::SameLine(0.0f, 20.f);
         float lock_x = ImGui::GetCursorPosX();
         for (int i = 0; i < 16; ++i)
         {
-            ImGui::ColorButton("", rgb_to_imvec4(i_emu.get_palette_color(i)),
-                               ImGuiColorEditFlags_NoBorder |
-                                   ImGuiColorEditFlags_NoAlpha);
+            ImGui::PushID(i);
+
+            ImGui::ColorButton(
+                "##color", rgb_to_imvec4(io_emu.get_palette_color(i)),
+                ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoAlpha);
             if ((i + 1) % 4 != 0)
             {
                 ImGui::SameLine(0.0f, 0.0f);
@@ -166,19 +198,25 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
             {
                 ImGui::SameLine(0.0f, 25.f);
             }
+
+            ImGui::PopID();
         }
         ImGui::NewLine();
+        ImGui::PopID();
 
         // Sprite
+        ImGui::PushID("Sprite");
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Sprite");
         ImGui::SameLine();
         ImGui::SetCursorPosX(lock_x);
         for (int i = 16; i < 32; ++i)
         {
-            ImGui::ColorButton("", rgb_to_imvec4(i_emu.get_palette_color(i)),
-                               ImGuiColorEditFlags_NoBorder |
-                                   ImGuiColorEditFlags_NoAlpha);
+            ImGui::PushID(i);
+
+            ImGui::ColorButton(
+                "##color", rgb_to_imvec4(io_emu.get_palette_color(i)),
+                ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoAlpha);
             if ((i + 1) % 4 != 0)
             {
                 ImGui::SameLine(0.0f, 0.0f);
@@ -187,8 +225,54 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
             {
                 ImGui::SameLine(0.0f, 25.f);
             }
+
+            ImGui::PopID();
         }
         ImGui::NewLine();
+        ImGui::PopID();
+
+        ImGui::PopID();
+
+        /* OAM */
+        ImGui::PushID("<OAM>");
+        ImGui::Spacing();
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("<OAM>");
+        ImGui::SameLine();
+        HelpMarker("The snapshot makes sense if and only if the game fully "
+                   "initializes the OAM before the rendering begins and the "
+                   "OAMADDR starts at 0.");
+
+        const auto &oam = io_emu.get_oam();
+        static_assert(lnd::OAM::get_sprite_count() == 64, "Rework code below.");
+        static_assert(sizeof(m_sp_tex) / sizeof(Texture) == 64,
+                      "Rework code below.");
+        ImGui::Spacing();
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 16; ++j)
+            {
+                int k = i * 16 + j;
+
+                const auto &sp = oam.get_sprite(k);
+                if (m_sp_tex[k].from_sprite(sp))
+                {
+                    constexpr float scale = 3.f;
+                    ImGui::Image(
+                        (ImTextureID)(std::intptr_t)m_sp_tex[k].texture(),
+                        {float(m_sp_tex[k].get_width() * scale),
+                         float(m_sp_tex[k].get_height() * scale)});
+                }
+                else
+                {
+                    ImGui::Text("[X]");
+                }
+                ImGui::SameLine();
+            }
+            ImGui::NewLine();
+        }
+
+        ImGui::PopID();
     }
     ImGui::End();
 

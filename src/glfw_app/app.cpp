@@ -58,6 +58,8 @@ App::run(const std::string &i_rom_path)
     }
     emulatorWin->set_pos(50, 150);
 
+    debuggerWin->pre_render(emulator);
+
     /* Main loop */
     {
         constexpr double S_TO_US = 1000.0 * 1000.0;

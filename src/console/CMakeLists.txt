@@ -54,6 +54,9 @@ list(APPEND sources ppu/pipeline/bg_fetch.cpp)
 list(APPEND sources ppu/pipeline/sp_eval_fetch.cpp)
 list(APPEND sources ppu/pipeline/render.cpp)
 
+list(APPEND sources debug/oam.cpp)
+list(APPEND sources debug/sprite.cpp)
+
 target_sources(${module_name} PRIVATE ${sources})
 
 
