@@ -11,6 +11,8 @@
 
 #include "glfw_app/gui/rect_cut.hpp"
 
+#include <string>
+
 namespace ln_app {
 
 static void
@@ -180,67 +182,81 @@ DebuggerWindow::render(ln::Emulator &io_emu)
         ImGui::SameLine();
         HelpMarker("The snapshot was took at the end of the rendering.");
 
-        auto rgb_to_imvec4 = [](ln::Color i_clr) -> ImVec4 {
-            return ImVec4(i_clr.r / 255.f, i_clr.g / 255.f, i_clr.b / 255.f,
-                          1.0f);
-        };
-
-        static_assert(lnd::Palette::color_count() == 32, "Rework code below.");
         const auto &palette = io_emu.get_palette_dbg();
-
-        // Background
-        ImGui::PushID("Background");
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Background");
-        ImGui::SameLine(0.0f, 20.f);
-        float lock_x = ImGui::GetCursorPosX();
-        for (int i = 0; i < 16; ++i)
+        static_assert(lnd::Palette::color_count() == 32, "Rework code below.");
+        char const *const pa_rows[2] = {"Background", "Sprite"};
+        float lock_x = 0.0;
+        for (int r = 0; r < 2; ++r)
         {
-            ImGui::PushID(i);
+            const char *row = pa_rows[r];
 
-            ImGui::ColorButton("##color", rgb_to_imvec4(palette.get_color(i)),
-                               ImGuiColorEditFlags_NoBorder |
-                                   ImGuiColorEditFlags_NoAlpha);
-            if ((i + 1) % 4 != 0)
+            ImGui::PushID(row);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(row);
+            ImGui::SameLine(0.0f, 20.f);
+            if (r <= 0)
             {
-                ImGui::SameLine(0.0f, 0.0f);
+                lock_x = ImGui::GetCursorPosX();
             }
             else
             {
-                ImGui::SameLine(0.0f, 25.f);
+                ImGui::SetCursorPosX(lock_x);
             }
+            for (int c = 0; c < 16; ++c)
+            {
+                int palette_idx = r * 16 + c;
 
+                ImGui::PushID(c);
+
+                auto rgb_to_imvec4 = [](lnd::Color i_clr) -> ImVec4 {
+                    return ImVec4(i_clr.r / 255.f, i_clr.g / 255.f,
+                                  i_clr.b / 255.f, 1.0f);
+                };
+                lnd::Color color = palette.get_color(palette_idx);
+                ImVec4 im_color = rgb_to_imvec4(color);
+
+                if (c % 4 == 0)
+                {
+                    std::string s = std::to_string(c / 4);
+                    ImGui::TextUnformatted(s.c_str());
+                    ImGui::SameLine();
+                }
+
+                ImGui::ColorButton("##color", im_color,
+                                   ImGuiColorEditFlags_NoBorder |
+                                       ImGuiColorEditFlags_NoAlpha |
+                                       ImGuiColorEditFlags_NoTooltip);
+                if ((c + 1) % 4 != 0)
+                {
+                    ImGui::SameLine(0.0f, 0.0f);
+                }
+                else
+                {
+                    ImGui::SameLine(0.0f, 25.f);
+                }
+
+                // details tooltip
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::ColorButton("##color", im_color,
+                                       ImGuiColorEditFlags_NoBorder |
+                                           ImGuiColorEditFlags_NoAlpha |
+                                           ImGuiColorEditFlags_NoTooltip,
+                                       ImVec2(40, 40));
+                    ImGui::SameLine();
+                    ImGui::BeginGroup();
+                    ImGui::Text("%u (0x%02X)", color.index, color.index);
+                    ImGui::Text("(%d, %d, %d)", color.r, color.g, color.b);
+                    ImGui::EndGroup();
+                    ImGui::EndTooltip();
+                }
+
+                ImGui::PopID();
+            }
+            ImGui::NewLine();
             ImGui::PopID();
         }
-        ImGui::NewLine();
-        ImGui::PopID();
-
-        // Sprite
-        ImGui::PushID("Sprite");
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Sprite");
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(lock_x);
-        for (int i = 16; i < 32; ++i)
-        {
-            ImGui::PushID(i);
-
-            ImGui::ColorButton("##color", rgb_to_imvec4(palette.get_color(i)),
-                               ImGuiColorEditFlags_NoBorder |
-                                   ImGuiColorEditFlags_NoAlpha);
-            if ((i + 1) % 4 != 0)
-            {
-                ImGui::SameLine(0.0f, 0.0f);
-            }
-            else
-            {
-                ImGui::SameLine(0.0f, 25.f);
-            }
-
-            ImGui::PopID();
-        }
-        ImGui::NewLine();
-        ImGui::PopID();
 
         ImGui::PopID();
 
@@ -272,6 +288,43 @@ DebuggerWindow::render(ln::Emulator &io_emu)
                         (ImTextureID)(std::intptr_t)m_sp_tex[k].texture(),
                         {float(m_sp_tex[k].get_width() * scale),
                          float(m_sp_tex[k].get_height() * scale)});
+
+                    // details tooltip
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+
+                        constexpr float scale = 12.f;
+                        ImGui::Image(
+                            (ImTextureID)(std::intptr_t)m_sp_tex[k].texture(),
+                            {float(m_sp_tex[k].get_width() * scale),
+                             float(m_sp_tex[k].get_height() * scale)},
+                            {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
+
+                        ImGui::SameLine();
+                        ImGui::BeginGroup();
+
+                        ImGui::BeginGroup();
+                        ImGui::Text("X: %u (0x%02X)", sp.x, sp.x);
+                        ImGui::Text("Y: %u (0x%02X)", sp.y, sp.y);
+                        ImGui::EndGroup();
+
+                        ImGui::SameLine();
+                        ImGui::BeginGroup();
+                        ImGui::Text("Tile: %u (0x%02X)", sp.tile, sp.tile);
+                        ImGui::Text("Attr: %u (0x%02X)", sp.attr, sp.attr);
+                        ImGui::EndGroup();
+
+                        ImGui::Text("SP Palette: %u", sp.palette_set());
+                        ImGui::Text("Over Background: %u",
+                                    sp.over_background());
+                        ImGui::Text("Flip X: %u", sp.flip_x());
+                        ImGui::Text("Flip Y: %u", sp.flip_y());
+
+                        ImGui::EndGroup();
+
+                        ImGui::EndTooltip();
+                    }
                 }
                 else
                 {

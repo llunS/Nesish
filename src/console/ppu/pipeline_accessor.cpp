@@ -129,9 +129,9 @@ PipelineAccessor::capture_palette()
         Byte color_byte = 0;
         // @NOTE: The address is in VRAM.
         (void)m_ppu->m_memory->get_byte(color_addr, color_byte);
-        Color clr = get_palette().to_rgb(color_byte);
 
-        m_ppu->m_palette_snapshot.set_color(i, clr);
+        Color clr = get_palette().to_rgb(color_byte);
+        m_ppu->m_palette_snapshot.set_color(i, color_byte, clr.r, clr.g, clr.b);
     }
 }
 
@@ -156,10 +156,12 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
 {
     // @IMPL: Assuming OAMADDR starts at 0.
     Byte byte_idx_start = i_idx * 4;
-    // Byte i_y = get_oam(byte_idx_start);
+    Byte i_y = get_oam(byte_idx_start);
     Byte i_tile = get_oam(byte_idx_start + 1);
     Byte i_attr = get_oam(byte_idx_start + 2);
-    // Byte i_x= get_oam(byte_idx_start+3);
+    Byte i_x = get_oam(byte_idx_start + 3);
+
+    o_sprite.set_raw(i_y, i_tile, i_attr, i_x);
 
     // @TODO: Support 8x16 as well.
     // Assuming 8x8 for now.

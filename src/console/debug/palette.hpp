@@ -3,7 +3,7 @@
 #include "common/klass.hpp"
 
 #include "console/dllexport.h"
-#include "console/ppu/color.hpp"
+#include "console/debug/color.hpp"
 
 namespace lnd {
 
@@ -19,15 +19,16 @@ struct Palette {
     {
         return 32;
     }
-    LN_CONSOLE_API const ln::Color &
+    LN_CONSOLE_API const lnd::Color &
     get_color(int i_idx) const;
 
   public:
     void
-    set_color(int i_idx, const ln::Color &i_color);
+    set_color(int i_idx, unsigned char i_index, unsigned char i_r,
+              unsigned char i_g, unsigned char i_b);
 
   private:
-    ln::Color m_colors[32];
+    lnd::Color m_colors[32];
 };
 
 } // namespace lnd
