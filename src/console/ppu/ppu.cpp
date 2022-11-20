@@ -37,6 +37,7 @@ PPU::~PPU()
 void
 PPU::power_up()
 {
+    // https://www.nesdev.org/wiki/PPU_power_up_state
     get_register(PPUCTRL) = 0x00;
     get_register(PPUMASK) = 0x00;
     get_register(PPUSTATUS) = 0xA0; // +0+x xxxx
@@ -44,6 +45,9 @@ PPU::power_up()
     // @NOTE: latches should be cleared as well
     get_register(PPUSCROLL) = 0x00;
     get_register(PPUADDR) = 0x00;
+
+    // @NOTE: The palette content is unspecified according to the link above,
+    // but the Nintendulator debugger shows black for them.
 
     m_ppudata_buf = 0x00;
 }

@@ -125,7 +125,9 @@ PipelineAccessor::capture_palette()
     for (decltype(m_ppu->m_palette_snapshot.color_count()) i = 0;
          i < m_ppu->m_palette_snapshot.color_count(); ++i)
     {
-        Address color_addr = LN_PALETTE_ADDR_HEAD + i;
+        static_assert(lnd::Palette::color_count() == 32,
+                      "Might overflow below.");
+        Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i);
         Byte color_byte = 0;
         // @NOTE: The address is in VRAM.
         (void)m_ppu->m_memory->get_byte(color_addr, color_byte);
@@ -155,7 +157,7 @@ void
 PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
 {
     // @IMPL: Assuming OAMADDR starts at 0.
-    Byte byte_idx_start = i_idx * 4;
+    Byte byte_idx_start = Byte(i_idx * 4);
     Byte i_y = get_oam(byte_idx_start);
     Byte i_tile = get_oam(byte_idx_start + 1);
     Byte i_attr = get_oam(byte_idx_start + 2);
@@ -170,12 +172,13 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
     {
         bool upper = false;
         Address sliver_addr =
-            fine_y | (upper << 3) | (i_tile << 4) | (tbl_right << 12);
+            Byte(fine_y) | (upper << 3) | (i_tile << 4) | (tbl_right << 12);
         Byte ptn_bit0_byte = 0;
         (void)m_ppu->m_memory->get_byte(sliver_addr, ptn_bit0_byte);
 
         upper = true;
-        sliver_addr = fine_y | (upper << 3) | (i_tile << 4) | (tbl_right << 12);
+        sliver_addr =
+            Byte(fine_y) | (upper << 3) | (i_tile << 4) | (tbl_right << 12);
         Byte ptn_bit1_byte = 0;
         (void)m_ppu->m_memory->get_byte(sliver_addr, ptn_bit1_byte);
 
@@ -199,7 +202,7 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
         for (int fine_x = 0; fine_x < 8; ++fine_x)
         {
             auto get_palette_color = [this](int i_idx) {
-                Address color_addr = LN_PALETTE_ADDR_HEAD + i_idx;
+                Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i_idx);
                 Byte color_byte = 0;
                 // @NOTE: The address is in VRAM.
                 (void)this->m_ppu->m_memory->get_byte(color_addr, color_byte);
@@ -209,7 +212,7 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
 
             int addr_palette_set_offset = i_attr & 0x03; // 4-color palette
             int ptn = (bool(ptn_bit1_byte & (0x80 >> fine_x)) << 1) |
-                      (bool(ptn_bit0_byte & (0x80 >> fine_x)));
+                      (bool(ptn_bit0_byte & (0x80 >> fine_x)) << 0);
 
             static_assert(LN_PALETTE_SIZE == 32, "Rework code below.");
             Color pixel =

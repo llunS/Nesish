@@ -1,3 +1,6 @@
+// @FIXME: spdlog will include windows header files, we need to include them
+// before "glfw3.h" so that glfw won't redefine symbols.
+#include "console/emulator.hpp"
 #include "debugger_window.hpp"
 
 #include <cassert>
@@ -6,8 +9,6 @@
 
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-
-#include "console/emulator.hpp"
 
 #include "glfw_app/gui/rect_cut.hpp"
 
@@ -294,11 +295,11 @@ DebuggerWindow::render(ln::Emulator &io_emu)
                     {
                         ImGui::BeginTooltip();
 
-                        constexpr float scale = 12.f;
+                        constexpr float scale_details = 12.f;
                         ImGui::Image(
                             (ImTextureID)(std::intptr_t)m_sp_tex[k].texture(),
-                            {float(m_sp_tex[k].get_width() * scale),
-                             float(m_sp_tex[k].get_height() * scale)},
+                            {float(m_sp_tex[k].get_width() * scale_details),
+                             float(m_sp_tex[k].get_height() * scale_details)},
                             {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
 
                         ImGui::SameLine();

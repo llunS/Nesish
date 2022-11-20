@@ -8,8 +8,6 @@
 #include "glfw_app/controller.hpp"
 #include "glfw_app/glad/glad.h"
 
-#include "common/logger.hpp"
-
 namespace ln_app {
 
 EmulatorWindow::EmulatorWindow()

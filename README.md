@@ -1,6 +1,6 @@
 # LightNES
 
-A NES emulator.
+An NES emulator.
 
 ## Dependencies
 

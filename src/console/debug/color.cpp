@@ -3,7 +3,7 @@
 namespace lnd {
 
 Color::Color()
-    : index(255)
+    : index(0)
     , r(0)
     , g(0)
     , b(0)

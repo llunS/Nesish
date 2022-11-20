@@ -3,13 +3,14 @@
 #include <cstdio>
 #include <memory>
 
+// @FIXME: spdlog will include windows header files, we need to include them
+// before "glfw3.h" so that glfw won't redefine symbols.
+#include "console/emulator.hpp"
 #include "glfw/glfw3.h"
-
 #include "glfw_app/gui/emulator_window.hpp"
 #include "glfw_app/gui/debugger_window.hpp"
 
 #include "console/spec.hpp"
-#include "console/emulator.hpp"
 
 namespace ln_app {
 
@@ -21,11 +22,11 @@ error_callback(int error, const char *description);
 int
 App::run(const std::string &i_rom_path)
 {
-    ln::Emulator emulator{};
+    std::unique_ptr<ln::Emulator> emulator{new ln::Emulator()};
     auto ln_err = ln::Error::OK;
 
     /* Insert cartridge */
-    ln_err = emulator.insert_cartridge(i_rom_path);
+    ln_err = emulator->insert_cartridge(i_rom_path);
     if (LN_FAILED(ln_err))
     {
         LN_LOG_INFO(ln::get_logger(), "Failed to load cartridge: {}", ln_err);
@@ -50,7 +51,7 @@ App::run(const std::string &i_rom_path)
         goto l_end;
     }
     debuggerWin->set_pos(50 + LN_NES_WIDTH * 2 + 50, 150);
-    if (!emulatorWin->init(&emulator, LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2,
+    if (!emulatorWin->init(emulator.get(), LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2,
                            false, false, "Emulator"))
     {
         err = 1;
@@ -58,7 +59,7 @@ App::run(const std::string &i_rom_path)
     }
     emulatorWin->set_pos(50, 150);
 
-    debuggerWin->pre_render(emulator);
+    debuggerWin->pre_render(*emulator);
 
     /* Main loop */
     {
@@ -83,7 +84,7 @@ App::run(const std::string &i_rom_path)
             }
             if (debuggerWin && debuggerWin->shouldClose())
             {
-                debuggerWin->post_render(emulator);
+                debuggerWin->post_render(*emulator);
                 debuggerWin->release();
                 debuggerWin.reset();
 
@@ -100,7 +101,7 @@ App::run(const std::string &i_rom_path)
             auto deltaTimeMS = (currTimeUS - prevLoopTimeUS) * US_TO_MS;
             if (!debuggerWin || !debuggerWin->isPaused())
             {
-                emulator.advance(deltaTimeMS);
+                emulator->advance(deltaTimeMS);
             }
             prevLoopTimeUS = currTimeUS;
 
@@ -119,7 +120,7 @@ App::run(const std::string &i_rom_path)
                 }
                 if (debuggerWin)
                 {
-                    debuggerWin->render(emulator);
+                    debuggerWin->render(*emulator);
                 }
 
                 nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
@@ -136,7 +137,7 @@ l_end:
     }
     if (debuggerWin)
     {
-        debuggerWin->post_render(emulator);
+        debuggerWin->post_render(*emulator);
         debuggerWin->release();
         debuggerWin.reset();
     }
