@@ -6,7 +6,7 @@
 namespace ln {
 
 PreRenderScanline::PreRenderScanline(PipelineAccessor *io_accessor)
-    : Ticker(LN_SCANLINE_CYCLES)
+    : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
     , m_bg(io_accessor)
     , m_sp(io_accessor, true)
@@ -16,7 +16,7 @@ PreRenderScanline::PreRenderScanline(PipelineAccessor *io_accessor)
 void
 PreRenderScanline::reset()
 {
-    Ticker::reset();
+    Tickable::reset();
 
     m_bg.reset();
     m_sp.reset();

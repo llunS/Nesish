@@ -1,14 +1,14 @@
 #pragma once
 
-#include "console/ppu/pipeline/ticker.hpp"
+#include "console/ppu/pipeline/tickable.hpp"
 #include "common/klass.hpp"
-#include "console/ppu/pipeline/lambda_ticker.hpp"
+#include "console/ppu/pipeline/functor_tickable.hpp"
 
 namespace ln {
 
 struct PipelineAccessor;
 
-struct BgFetch : public Ticker {
+struct BgFetch : public Tickable {
   public:
     BgFetch(PipelineAccessor *io_accessor);
     LN_KLZ_DELETE_COPY_MOVE(BgFetch);
@@ -21,7 +21,7 @@ struct BgFetch : public Ticker {
   private:
     PipelineAccessor *m_accessor;
 
-    LambdaTicker m_bg_tile_fetch;
+    FunctorTickable m_bg_tile_fetch;
 };
 
 } // namespace ln

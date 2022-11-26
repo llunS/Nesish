@@ -1,6 +1,6 @@
 #pragma once
 
-#include "console/ppu/pipeline/ticker.hpp"
+#include "console/ppu/pipeline/tickable.hpp"
 #include "common/klass.hpp"
 #include "console/ppu/pipeline/bg_fetch.hpp"
 #include "console/ppu/pipeline/sp_eval_fetch.hpp"
@@ -10,7 +10,7 @@ namespace ln {
 
 struct PipelineAccessor;
 
-struct VisibleScanline : public Ticker {
+struct VisibleScanline : public Tickable {
   public:
     VisibleScanline(PipelineAccessor *io_accessor);
     LN_KLZ_DELETE_COPY_MOVE(VisibleScanline);

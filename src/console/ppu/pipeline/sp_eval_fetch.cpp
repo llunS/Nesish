@@ -12,7 +12,7 @@ namespace ln {
 static constexpr int SEC_OAM_CLEAR_CYCLES = 64;
 
 SpEvalFetch::SpEvalFetch(PipelineAccessor *io_accessor, bool i_sp_fetch_only)
-    : Ticker(LN_SCANLINE_CYCLES)
+    : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
     , m_sp_fetch_only(i_sp_fetch_only)
     , m_sec_oam_clear(SEC_OAM_CLEAR_CYCLES,
@@ -32,7 +32,7 @@ SpEvalFetch::SpEvalFetch(PipelineAccessor *io_accessor, bool i_sp_fetch_only)
 void
 SpEvalFetch::reset()
 {
-    Ticker::reset();
+    Tickable::reset();
 
     m_sec_oam_clear.set_done();
     m_sp_eval.set_done();

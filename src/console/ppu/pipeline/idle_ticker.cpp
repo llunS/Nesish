@@ -3,7 +3,7 @@
 namespace ln {
 
 IdleTicker::IdleTicker(Cycle i_total)
-    : Ticker(i_total)
+    : Tickable(i_total)
 {
 }
 

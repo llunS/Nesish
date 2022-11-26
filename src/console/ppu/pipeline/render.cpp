@@ -45,7 +45,7 @@ pvt_muxer(PipelineAccessor *io_accessor, const OutputColor *i_bg_clr,
           const OutputColor *i_sp_clr);
 
 Render::Render(PipelineAccessor *io_accessor)
-    : Ticker(LN_SCANLINE_CYCLES)
+    : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
 {
 }
@@ -178,7 +178,7 @@ pvt_bg_render(PipelineAccessor *io_accessor)
 
     /* 4. get palette index color */
     Address idx_color_addr =
-        LN_PALETTE_ADDR_BKG_OR_MASK | (palette_idx << 2) | pattern_data;
+        LN_PALETTE_ADDR_BG_OR_MASK | (palette_idx << 2) | pattern_data;
     Byte idx_color_byte;
     auto error =
         io_accessor->get_memory()->get_byte(idx_color_addr, idx_color_byte);

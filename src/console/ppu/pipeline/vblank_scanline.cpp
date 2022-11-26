@@ -6,7 +6,7 @@
 namespace ln {
 
 VBlankScanline::VBlankScanline(PipelineAccessor *io_accessor)
-    : Ticker(LN_SCANLINE_CYCLES)
+    : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
 {
 }

@@ -29,7 +29,7 @@ VideoMemory::VideoMemory()
             // $3F00/$3F04/$3F08/$3F0C.
             if ((addr & LN_PALETTE_ADDR_BACKDROP_MASK) == 0)
             {
-                addr &= LN_PALETTE_ADDR_BKG_MASK;
+                addr &= LN_PALETTE_ADDR_BG_MASK;
             }
 
             Address index = addr - i_entry->begin;

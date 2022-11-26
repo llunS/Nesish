@@ -1,15 +1,15 @@
 #pragma once
 
-#include "console/ppu/pipeline/ticker.hpp"
+#include "console/ppu/pipeline/tickable.hpp"
 #include "common/klass.hpp"
-#include "console/ppu/pipeline/lambda_ticker.hpp"
+#include "console/ppu/pipeline/functor_tickable.hpp"
 #include "console/types.hpp"
 
 namespace ln {
 
 struct PipelineAccessor;
 
-struct SpEvalFetch : public Ticker {
+struct SpEvalFetch : public Tickable {
   public:
     SpEvalFetch(PipelineAccessor *io_accessor, bool i_sp_fetch_only);
     LN_KLZ_DELETE_COPY_MOVE(SpEvalFetch);
@@ -23,9 +23,9 @@ struct SpEvalFetch : public Ticker {
     PipelineAccessor *m_accessor;
     const bool m_sp_fetch_only;
 
-    LambdaTicker m_sec_oam_clear;
-    LambdaTicker m_sp_eval;
-    LambdaTicker m_sp_fetch_reload;
+    FunctorTickable m_sec_oam_clear;
+    FunctorTickable m_sp_eval;
+    FunctorTickable m_sp_fetch_reload;
 
     struct Context {
         /* eval */

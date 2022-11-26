@@ -4,10 +4,10 @@
 
 namespace ln {
 
-struct Ticker {
+struct Tickable {
   public:
-    Ticker(Cycle i_total);
-    virtual ~Ticker() = default;
+    Tickable(Cycle i_total);
+    virtual ~Tickable() = default;
 
     virtual void
     reset();

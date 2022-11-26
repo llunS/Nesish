@@ -56,9 +56,11 @@
 #define LN_PALETTE_ADDR_TAIL 0x3FFF
 #define LN_PALETTE_ADDR_MASK 0x001F          // rightmost 5 bits
 #define LN_PALETTE_ADDR_BACKDROP_MASK 0x0003 // rightmost 2 bits (modulo 4)
-#define LN_PALETTE_ADDR_BKG_MASK 0xFF0F      // background palette prefix
-#define LN_PALETTE_ADDR_BKG_OR_MASK 0x3F00   // used to get bkg palette color
-#define LN_PALETTE_ADDR_SP_OR_MASK 0x3F10    // used to get sp palette color
+#define LN_PALETTE_ADDR_BG_MASK 0xFF0F       // background palette prefix
+// used to get background palette color
+#define LN_PALETTE_ADDR_BG_OR_MASK 0x3F00
+// used to get sprite palette color
+#define LN_PALETTE_ADDR_SP_OR_MASK 0x3F10
 
 #define LN_PPU_INVALID_ADDR_HEAD 0x4000
 #define LN_PPU_INVALID_ADDR_TAIL 0xFFFF

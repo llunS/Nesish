@@ -20,7 +20,7 @@ static void
 pvt_shift_regs_reload(PipelineAccessor *io_accessor);
 
 BgFetch::BgFetch(PipelineAccessor *io_accessor)
-    : Ticker(LN_SCANLINE_CYCLES)
+    : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
     , m_bg_tile_fetch(8, std::bind(pvt_tile_fetch, std::placeholders::_1,
                                    std::placeholders::_2, io_accessor))
@@ -31,7 +31,7 @@ BgFetch::BgFetch(PipelineAccessor *io_accessor)
 void
 BgFetch::reset()
 {
-    Ticker::reset();
+    Tickable::reset();
 
     m_bg_tile_fetch.set_done();
 }

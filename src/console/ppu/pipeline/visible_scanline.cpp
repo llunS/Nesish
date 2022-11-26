@@ -6,7 +6,7 @@
 namespace ln {
 
 VisibleScanline::VisibleScanline(PipelineAccessor *io_accessor)
-    : Ticker(LN_SCANLINE_CYCLES)
+    : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
     , m_render(io_accessor)
     , m_bg(io_accessor)
@@ -17,7 +17,7 @@ VisibleScanline::VisibleScanline(PipelineAccessor *io_accessor)
 void
 VisibleScanline::reset()
 {
-    Ticker::reset();
+    Tickable::reset();
 
     m_render.reset();
     m_bg.reset();

@@ -8,7 +8,7 @@ namespace ln {
 constexpr int Pipeline::SCANLINE_COUNT;
 
 Pipeline::Pipeline(PipelineAccessor *io_accessor)
-    : Ticker(1)
+    : Tickable(1)
     , m_accessor(io_accessor)
     , m_pre_render_scanline(io_accessor)
     , m_visible_scanline(io_accessor)
@@ -37,7 +37,7 @@ Pipeline::Pipeline(PipelineAccessor *io_accessor)
 void
 Pipeline::reset()
 {
-    Ticker::reset();
+    Tickable::reset();
 
     m_pre_render_scanline.reset();
     m_visible_scanline.reset();
@@ -65,7 +65,7 @@ Pipeline::on_tick(Cycle i_curr, Cycle i_total)
 
     auto &ctx = m_accessor->get_context();
 
-    Ticker *curr = m_scanline_sequence[m_curr_scanline_idx];
+    Tickable *curr = m_scanline_sequence[m_curr_scanline_idx];
     curr->tick();
     if (curr->done())
     {
@@ -84,7 +84,7 @@ Pipeline::on_tick(Cycle i_curr, Cycle i_total)
                               ? -1
                               : m_curr_scanline_idx - 1;
 
-        Ticker *next = m_scanline_sequence[m_curr_scanline_idx];
+        Tickable *next = m_scanline_sequence[m_curr_scanline_idx];
         next->reset();
     }
 

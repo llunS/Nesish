@@ -42,8 +42,8 @@ list(APPEND sources ppu/pipeline_accessor.cpp)
 list(APPEND sources ppu/frame_buffer.cpp)
 list(APPEND sources ppu/palette_default.cpp)
 
-list(APPEND sources ppu/pipeline/ticker.cpp)
-list(APPEND sources ppu/pipeline/lambda_ticker.cpp)
+list(APPEND sources ppu/pipeline/tickable.cpp)
+list(APPEND sources ppu/pipeline/functor_tickable.cpp)
 list(APPEND sources ppu/pipeline/idle_ticker.cpp)
 
 list(APPEND sources ppu/pipeline/pipeline.cpp)

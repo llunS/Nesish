@@ -1,6 +1,6 @@
 #pragma once
 
-#include "console/ppu/pipeline/ticker.hpp"
+#include "console/ppu/pipeline/tickable.hpp"
 #include "common/klass.hpp"
 #include "console/ppu/pipeline/pre_render_scanline.hpp"
 #include "console/ppu/pipeline/visible_scanline.hpp"
@@ -11,7 +11,7 @@ namespace ln {
 
 struct PipelineAccessor;
 
-struct Pipeline : public Ticker {
+struct Pipeline : public Tickable {
   public:
     Pipeline(PipelineAccessor *io_accessor);
     LN_KLZ_DELETE_COPY_MOVE(Pipeline);
@@ -34,7 +34,7 @@ struct Pipeline : public Ticker {
     VBlankScanline m_vblank_scanline;
 
     static constexpr int SCANLINE_COUNT = 262;
-    Ticker *m_scanline_sequence[SCANLINE_COUNT];
+    Tickable *m_scanline_sequence[SCANLINE_COUNT];
     int m_curr_scanline_idx;
 };
 

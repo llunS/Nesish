@@ -1,33 +1,33 @@
-#include "ticker.hpp"
+#include "tickable.hpp"
 
 namespace ln {
 
-Ticker::Ticker(Cycle i_total)
+Tickable::Tickable(Cycle i_total)
     : m_curr(0)
     , m_total(i_total)
 {
 }
 
 void
-Ticker::reset()
+Tickable::reset()
 {
     m_curr = 0;
 }
 
 bool
-Ticker::done()
+Tickable::done()
 {
     return m_curr >= m_total;
 }
 
 void
-Ticker::set_done()
+Tickable::set_done()
 {
     m_curr = m_total;
 }
 
 void
-Ticker::tick()
+Tickable::tick()
 {
     if (done())
     {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "console/ppu/pipeline/ticker.hpp"
+#include "console/ppu/pipeline/tickable.hpp"
 #include "common/klass.hpp"
 
 namespace ln {
 
 struct PipelineAccessor;
 
-struct VBlankScanline : public Ticker {
+struct VBlankScanline : public Tickable {
   public:
     VBlankScanline(PipelineAccessor *io_accessor);
     LN_KLZ_DELETE_COPY_MOVE(VBlankScanline);
