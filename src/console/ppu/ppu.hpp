@@ -25,6 +25,7 @@ struct PPU {
     ~PPU();
     LN_KLZ_DELETE_COPY_MOVE(PPU);
 
+  public:
     void
     power_up();
     void
@@ -33,27 +34,24 @@ struct PPU {
     void
     tick();
 
-    // @IMPL: The value must can be used as array index, see "m_regs".
+  public:
     // https://wiki.nesdev.org/w/index.php?title=PPU_registers
+    // @IMPL: The value must can be used as array index, see "m_regs".
     enum Register {
-        PPUCTRL = 0, // NMI enable (V), PPU master/slave (P), sprite height (H),
-                     // background tile select (B), sprite tile select (S),
-                     // increment mode (I), nametable select (NN)
-        PPUMASK,   // color emphasis (BGR), sprite enable (s), background enable
-                   // (b), sprite left column enable (M), background left column
-                   // enable (m), greyscale (G)
-        PPUSTATUS, // vblank (V), sprite 0 hit (S), sprite overflow (O); read
-                   // resets write pair for $2005/$2006
-        OAMADDR,   // OAM read/write address
-        OAMDATA,   // OAM data read/write
+        /* clang-format off */
+        PPUCTRL = 0, // VPHB SINN / NMI enable (V), PPU master/slave (P), sprite height (H), background tile select (B), sprite tile select (S), increment mode (I), nametable select (NN)
+        PPUMASK, // BGRs bMmG / color emphasis (BGR), sprite enable (s), background enable (b), sprite left column enable (M), background left column enable (m), greyscale (G)
+        PPUSTATUS, // VSO- ---- / vblank (V), sprite 0 hit (S), sprite overflow (O); read resets write pair for $2005/$2006
+        OAMADDR, // OAM read/write address
+        OAMDATA, // OAM data read/write
         PPUSCROLL, // fine scroll position (two writes: X scroll, Y scroll)
-        PPUADDR,   // PPU read/write address (two writes: most significant byte,
-                   // least significant byte)
-        PPUDATA,   // PPU data read/write
+        PPUADDR, // PPU read/write address (two writes: most significant byte, least significant byte)
+        PPUDATA, // PPU data read/write
 
-        OAMDMA, // OAM DMA high address
+        OAMDMA, // OAM DMA high address (this port is actually located on the CPU)
 
         SIZE,
+        /* clang-format on */
     };
 
     Byte
@@ -67,6 +65,7 @@ struct PPU {
     bool
     reg_wrtie_only(Register i_reg);
 
+  private:
     friend struct Emulator;
     const FrameBuffer &
     get_frame() const;

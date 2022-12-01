@@ -10,7 +10,8 @@ namespace ln {
 
 PPU::PPU(VideoMemory *i_memory, CPU *i_cpu,
          const lnd::DebugFlags &i_debug_flags)
-    : m_ppudata_buf(0xFF)
+    : m_regs{}
+    , m_ppudata_buf(0xFF)
     , m_memory(i_memory)
     , m_cpu(i_cpu)
     , m_pipeline_accessor(nullptr)
@@ -38,6 +39,7 @@ void
 PPU::power_up()
 {
     // https://www.nesdev.org/wiki/PPU_power_up_state
+    // @IMPL: Excluding side effects via get_register(), not sure if it's right.
     get_register(PPUCTRL) = 0x00;
     get_register(PPUMASK) = 0x00;
     get_register(PPUSTATUS) = 0xA0; // +0+x xxxx

@@ -3,18 +3,23 @@
 #include "common/error.hpp"
 #include "console/dllexport.h"
 #include "common/klass.hpp"
+
 #include "console/cpu/cpu.hpp"
 #include "console/memory/memory.hpp"
+
 #include "console/ppu/ppu.hpp"
 #include "console/memory/video_memory.hpp"
-#include "console/cartridge/cartridge.hpp"
-#include "console/peripheral/controller.hpp"
-#include "console/clock.hpp"
 #include "console/ppu/frame_buffer.hpp"
-#include "console/spec.hpp"
-#include "console/types.hpp"
 #include "console/ppu/color.hpp"
 
+#include "console/cartridge/cartridge.hpp"
+#include "console/peripheral/controller.hpp"
+
+#include "console/apu/apu.hpp"
+
+#include "console/clock.hpp"
+#include "console/spec.hpp"
+#include "console/types.hpp"
 #include "console/debug/debug_flags.hpp"
 
 #include <string>
@@ -47,11 +52,22 @@ struct Emulator {
     LN_CONSOLE_API void
     reset();
 
-    LN_CONSOLE_API void
-    advance(Time_t i_ms);
+    /// @brief Get ticks produced after specified time
+    /// @param i_delta In milliseconds
+    LN_CONSOLE_API Cycle
+    ticks(Time_t i_delta);
+    /// @return If a new audio sample is available
+    LN_CONSOLE_API bool
+    tick();
 
     LN_CONSOLE_API const FrameBuffer &
     get_frame() const;
+
+    LN_CONSOLE_API float
+    get_sample_rate() const;
+    /// @return Amplitude in range [0, 1]
+    LN_CONSOLE_API float
+    get_sample() const;
 
   public:
     /* debug */
@@ -84,12 +100,12 @@ struct Emulator {
     hard_wire();
 
   private:
-    // @IMPL: The enumerator must be consecutive and starts from 0 to be
-    // implicitly converted from integer type.
-    // e.g. See hard_wire() for details.
+    // @IMPL: The value must can be used as array index, see "m_ctrl_regs".
     enum CtrlReg {
         REG_4016 = 0,
         REG_4017,
+
+        SIZE,
     };
 
     Byte
@@ -102,10 +118,11 @@ struct Emulator {
     Memory m_memory;
     PPU m_ppu;
     VideoMemory m_video_memory;
+    APU m_apu;
 
     Cartridge *m_cart;
 
-    Byte m_ctrl_regs[LN_CTRL_REG_ADDR_TAIL - LN_CTRL_REG_ADDR_HEAD + 1];
+    Byte m_ctrl_regs[CtrlReg::SIZE];
     Controller *m_ctrls[CTRL_SIZE]; // References
 
     Clock m_cpu_clock;

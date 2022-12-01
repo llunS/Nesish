@@ -32,6 +32,8 @@ struct DebuggerWindow : public PlatformWindow {
 
     bool
     isPaused() const;
+    bool
+    shouldQuit() const;
 
   protected:
     bool
@@ -45,6 +47,7 @@ struct DebuggerWindow : public PlatformWindow {
 
   private:
     bool m_paused;
+    bool m_should_quit;
     Texture m_frame_tex;
     Texture m_sp_tex[64];
 };

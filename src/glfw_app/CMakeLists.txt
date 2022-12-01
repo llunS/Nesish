@@ -29,6 +29,10 @@ list(APPEND sources gui/emulator_window.cpp)
 list(APPEND sources gui/debugger_window.cpp)
 list(APPEND sources gui/rect_cut.cpp)
 
+list(APPEND sources blip_buf/blip_buf.c)
+list(APPEND sources audio/blip_buf_adapter.cpp)
+list(APPEND sources audio/pcm_writer.cpp)
+
 target_sources(${module_name} PRIVATE ${sources})
 
 

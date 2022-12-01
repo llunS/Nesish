@@ -37,6 +37,7 @@ namespace ln_app {
 DebuggerWindow::DebuggerWindow()
     : m_imgui_ctx(nullptr)
     , m_paused(false)
+    , m_should_quit(false)
     , m_sp_tex{}
 {
 }
@@ -147,6 +148,12 @@ DebuggerWindow::render(ln::Emulator &io_emu)
             {
                 m_paused = !m_paused;
             }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Quit"))
+        {
+            m_should_quit = true;
         }
     }
     ImGui::End();
@@ -351,6 +358,12 @@ bool
 DebuggerWindow::isPaused() const
 {
     return m_paused;
+}
+
+bool
+DebuggerWindow::shouldQuit() const
+{
+    return m_should_quit;
 }
 
 } // namespace ln_app

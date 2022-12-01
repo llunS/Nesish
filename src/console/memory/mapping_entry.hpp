@@ -2,6 +2,7 @@
 
 #include "console/types.hpp"
 #include "common/error.hpp"
+#include "common/klass.hpp"
 
 #include <functional>
 
@@ -28,7 +29,7 @@ struct MappingEntry {
                  MappingGetByteFunc i_get_byte, MappingSetByteFunc i_set_byte,
                  void *i_opaque);
 
-    MappingEntry(const MappingEntry &) = default; // trivially copyable
+    LN_KLZ_DEFAULT_COPY(MappingEntry); // trivially copyable
 
   private:
     MappingEntry(Address i_begin, Address i_end, bool i_readonly,

@@ -27,6 +27,8 @@ struct CPU {
     void
     reset();
 
+    /// @return Cycles of the executed instruction. Return 0 if the instruction
+    /// is not complete yet.
     Cycle
     tick();
 

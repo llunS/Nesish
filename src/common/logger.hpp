@@ -1,9 +1,5 @@
 #pragma once
 
-/* Disable logging on debug build */
-#ifndef NDEBUG
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF
-#endif
 #include "spdlog/spdlog.h"
 
 #include "common/dllexport.h"

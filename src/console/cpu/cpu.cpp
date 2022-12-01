@@ -22,37 +22,18 @@ CPU::CPU(Memory *i_memory, PPU *i_ppu)
 void
 CPU::power_up()
 {
-    /* Init some states */
     // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
-
     // P = 0x34; // (IRQ disabled)
     P = 0x24; // according to nestest.log (IRQ disabled still)
     A = X = Y = 0;
     S = 0xFD;
 
-    // @TODO NES APU and I/O registers
-    for (Address i = 0x4000; i <= 0x400F; ++i)
-    {
-        (void)m_memory->set_byte(i, 0x00);
-    }
-    for (Address i = 0x4010; i <= 0x4013; ++i)
-    {
-        (void)m_memory->set_byte(i, 0x00);
-    }
-    (void)m_memory->set_byte(0x4015, 0x00); // (all channels disabled)
-    (void)m_memory->set_byte(0x4017, 0x00); // (frame irq enabled)
-
-    // All 15 bits of noise channel LFSR = $0000[5]. The first time the LFSR
-    // is clocked from the all-0s state, it will shift in a 1.
-    // @TODO: noise channel LFSR
-
-    (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00); // 2A03G
-
     // consistent RAM startup state
     m_memory->set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
                        0xFF);
 
-    /* set program entry point */
+    /* implementation state */
+    // set program entry point
     this->PC = this->get_byte2(Memory::RESET_VECTOR_ADDR);
 }
 
@@ -61,14 +42,9 @@ CPU::reset()
 {
     S -= 3;
     set_flag(StatusFlag::I); // The I (IRQ disable) flag was set to true
-    // @TODO NES APU and I/O registers
-    (void)m_memory->set_byte(0x4015, 0x00); // APU was silenced
-    // @TODO: APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
-    // first step of its waveform)
-    // @TODO: APU DPCM output ANDed with 1 (upper 6 bits cleared)
 
-    (void)m_memory->set_byte(LN_APU_FC_ADDR, 0x00);
-
+    /* implementation state */
+    // @TODO: Go through these when implementing reset.
     m_cycle = 0;
     m_halted = false;
 

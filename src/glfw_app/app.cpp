@@ -12,6 +12,13 @@
 
 #include "console/spec.hpp"
 
+#include "glfw_app/audio/blip_buf_adapter.hpp"
+#include "common/path.hpp"
+#include "glfw_app/audio/pcm_writer.hpp"
+
+#define LN_APP_AUDIO_BUF_SIZE 64
+#define LN_APP_AUDIO_SAMPLE_RATE 48000
+
 namespace ln_app {
 
 static constexpr double FRAME_TIME = 1.0 / 60.0;
@@ -20,7 +27,7 @@ static void
 error_callback(int error, const char *description);
 
 int
-App::run(const std::string &i_rom_path)
+run_app(const std::string &i_rom_path, AppOpt i_opts)
 {
     std::unique_ptr<ln::Emulator> emulator{new ln::Emulator()};
     auto ln_err = ln::Error::OK;
@@ -43,6 +50,17 @@ App::run(const std::string &i_rom_path)
     int err = 0;
     std::unique_ptr<EmulatorWindow> emulatorWin{new EmulatorWindow()};
     std::unique_ptr<DebuggerWindow> debuggerWin{new DebuggerWindow()};
+    BlipBufAdapter blip{emulator->get_sample_rate(), LN_APP_AUDIO_SAMPLE_RATE,
+                        LN_APP_AUDIO_BUF_SIZE};
+    PCMWriter pcm_writer{};
+    if (i_opts & ln_app::OPT_PCM)
+    {
+        if (pcm_writer.open(ln::join_exec_rel_path("audio.pcm")))
+        {
+            err = 1;
+            goto l_end;
+        }
+    }
 
     /* init windows */
     if (!debuggerWin->init(640, 480, true, false, "Debugger"))
@@ -77,7 +95,8 @@ App::run(const std::string &i_rom_path)
             glfwPollEvents();
 
             /* Close window if necessary */
-            if (emulatorWin && emulatorWin->shouldClose())
+            if (emulatorWin && (emulatorWin->shouldClose() ||
+                                (debuggerWin && debuggerWin->shouldQuit())))
             {
                 emulatorWin->release();
                 emulatorWin.reset();
@@ -101,7 +120,33 @@ App::run(const std::string &i_rom_path)
             auto deltaTimeMS = (currTimeUS - prevLoopTimeUS) * US_TO_MS;
             if (!debuggerWin || !debuggerWin->isPaused())
             {
-                emulator->advance(deltaTimeMS);
+                auto cycles = emulator->ticks(deltaTimeMS);
+                for (decltype(cycles) i = 0; i < cycles; ++i)
+                {
+                    if (emulator->tick())
+                    {
+                        if (pcm_writer.is_open())
+                        {
+                            float sample = emulator->get_sample();
+                            // @NOTE: Once clocked, samples must be drained to
+                            // avoid buffer overflow.
+                            // @FIXME: Which is correct? [0, 1] or [-1, 1]
+                            blip.clock((sample * 2. - 1.) * 32767);
+                            // blip.clock(sample * 32767);
+
+                            // Drain the sample buffer
+                            short buf[LN_APP_AUDIO_BUF_SIZE] = {};
+                            while (
+                                blip.samples_avail(buf, LN_APP_AUDIO_BUF_SIZE))
+                            {
+                                for (int j = 0; j < LN_APP_AUDIO_BUF_SIZE; ++j)
+                                {
+                                    pcm_writer.write_s16le(buf[j]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
             prevLoopTimeUS = currTimeUS;
 
@@ -129,6 +174,18 @@ App::run(const std::string &i_rom_path)
     }
 
 l_end:
+    if (pcm_writer.is_open())
+    {
+        short buf[LN_APP_AUDIO_BUF_SIZE] = {};
+        int count = blip.flush_samples(buf, LN_APP_AUDIO_BUF_SIZE);
+        for (int i = 0; i < count; ++i)
+        {
+            pcm_writer.write_s16le(buf[i]);
+        }
+    }
+    pcm_writer.close();
+    blip.close();
+
     // before glfw termination
     if (emulatorWin)
     {

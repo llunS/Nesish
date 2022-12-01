@@ -35,7 +35,7 @@ Emulator::~Emulator()
 void
 Emulator::hard_wire()
 {
-    // PPU registers memory mapping.
+    /* PPU registers */
     {
         auto get = [](const MappingEntry *i_entry, Address i_addr,
                       Byte &o_val) -> Error {
@@ -43,7 +43,8 @@ Emulator::hard_wire()
 
             Address addr =
                 (i_addr & LN_PPU_REG_ADDR_MASK) | LN_PPU_REG_ADDR_HEAD;
-            PPU::Register reg = PPU::Register(addr - i_entry->begin);
+            PPU::Register reg =
+                PPU::Register(addr - i_entry->begin + PPU::PPUCTRL);
             o_val = ppu->read_register(reg);
             return Error::OK;
         };
@@ -53,61 +54,76 @@ Emulator::hard_wire()
 
             Address addr =
                 (i_addr & LN_PPU_REG_ADDR_MASK) | LN_PPU_REG_ADDR_HEAD;
-            PPU::Register reg = PPU::Register(addr - i_entry->begin);
+            PPU::Register reg =
+                PPU::Register(addr - i_entry->begin + PPU::PPUCTRL);
             ppu->write_register(reg, i_val);
             return Error::OK;
         };
-        m_memory.set_mapping(MemoryMappingPoint::PPU_REG,
+        m_memory.set_mapping(MemoryMappingPoint::PPU,
                              {LN_PPU_REG_ADDR_HEAD, LN_PPU_REG_ADDR_TAIL, false,
                               get, set, &m_ppu});
     }
-    // OAM DMA
-    {
-        auto get = [](const MappingEntry *i_entry, Address i_addr,
-                      Byte &o_val) -> Error {
-            (void)(i_addr);
-            PPU *ppu = (PPU *)i_entry->opaque;
-
-            o_val = ppu->read_register(PPU::OAMDMA);
-            return Error::OK;
-        };
-        auto set = [](const MappingEntry *i_entry, Address i_addr,
-                      Byte i_val) -> Error {
-            (void)(i_addr);
-            PPU *ppu = (PPU *)i_entry->opaque;
-
-            ppu->write_register(PPU::OAMDMA, i_val);
-            return Error::OK;
-        };
-        m_memory.set_mapping(
-            MemoryMappingPoint::OAMDMA,
-            {LN_OAMDMA_ADDR, LN_OAMDMA_ADDR, false, get, set, &m_ppu});
-    }
-    // Controller registers (along with the one for APU)
+    /* APU registers, OAM DMA register, Controller register */
     {
         auto get = [](const MappingEntry *i_entry, Address i_addr,
                       Byte &o_val) -> Error {
             Emulator *thiz = (Emulator *)i_entry->opaque;
 
-            static_assert(CtrlReg::REG_4016 == 0,
-                          "CtrlReg must be consecutive and starts from 0");
-            CtrlReg reg = CtrlReg(i_addr - i_entry->begin);
-            o_val = thiz->read_ctrl_reg(reg);
-            return Error::OK;
+            // OAM DMA
+            if (LN_OAMDMA_ADDR == i_addr)
+            {
+                o_val = thiz->m_ppu.read_register(PPU::OAMDMA);
+                return Error::OK;
+            }
+            // Controller registers.
+            else if (LN_CTRL1_REG_ADDR == i_addr || LN_CTRL2_REG_ADDR == i_addr)
+            {
+                o_val = thiz->read_ctrl_reg(LN_CTRL1_REG_ADDR == i_addr
+                                                ? CtrlReg::REG_4016
+                                                : CtrlReg::REG_4017);
+                return Error::OK;
+            }
+            // Left with APU registers
+            else
+            {
+                APU::Register reg = APU::addr_to_regsiter(i_addr);
+                if (APU::Register::SIZE == reg)
+                {
+                    o_val = 0xFF;
+                    return Error::PROGRAMMING;
+                }
+                o_val = thiz->m_apu.read_register(reg);
+                return Error::OK;
+            }
         };
         auto set = [](const MappingEntry *i_entry, Address i_addr,
                       Byte i_val) -> Error {
             Emulator *thiz = (Emulator *)i_entry->opaque;
 
-            static_assert(CtrlReg::REG_4016 == 0,
-                          "CtrlReg must be consecutive and starts from 0");
-            CtrlReg reg = CtrlReg(i_addr - i_entry->begin);
-            thiz->write_ctrl_reg(reg, i_val);
-            return Error::OK;
+            if (LN_OAMDMA_ADDR == i_addr)
+            {
+                thiz->m_ppu.write_register(PPU::OAMDMA, i_val);
+                return Error::OK;
+            }
+            else if (LN_CTRL1_REG_ADDR == i_addr)
+            {
+                thiz->write_ctrl_reg(CtrlReg::REG_4016, i_val);
+                return Error::OK;
+            }
+            else
+            {
+                APU::Register reg = APU::addr_to_regsiter(i_addr);
+                if (APU::Register::SIZE == reg)
+                {
+                    return Error::PROGRAMMING;
+                }
+                thiz->m_apu.write_register(reg, i_val);
+                return Error::OK;
+            }
         };
-        m_memory.set_mapping(MemoryMappingPoint::APU_CTRL_REG,
-                             {LN_CTRL_REG_ADDR_HEAD, LN_CTRL_REG_ADDR_TAIL,
-                              false, get, set, this});
+        m_memory.set_mapping(MemoryMappingPoint::APU_OAMDMA_CTRL,
+                             {LN_APU_REG_ADDR_HEAD, LN_APU_REG_ADDR_TAIL, false,
+                              get, set, this});
     }
 }
 
@@ -255,6 +271,7 @@ Emulator::power_up()
 
     m_cpu.power_up();
     m_ppu.power_up();
+    m_apu.power_up();
 }
 
 void
@@ -262,38 +279,59 @@ Emulator::reset()
 {
     m_cpu.reset();
     m_ppu.reset();
+    m_apu.reset();
 }
 
-void
-Emulator::advance(Time_t i_ms)
+Cycle
+Emulator::ticks(Time_t i_delta)
 {
-    Cycle cpu_cycles = m_cpu_clock.advance(i_ms);
-    for (decltype(cpu_cycles) i = 0; i < cpu_cycles; ++i)
-    {
-        auto instr_cycles = m_cpu.tick();
-        // one instruction is complete or we just need to let other components
-        // move forward.
-        if (instr_cycles)
-        {
-            constexpr int TICK_CPU_TO_PPU = 3; // NTSC version
-            for (decltype(TICK_CPU_TO_PPU * instr_cycles) j = 0;
-                 j < TICK_CPU_TO_PPU * instr_cycles; ++j)
-            {
-                m_ppu.tick();
-            }
+    Cycle cycles = m_cpu_clock.advance(i_delta);
+    return cycles;
+}
 
-            /* Check interrupts at the end of each instruction */
-            // @IMPL: Do this after we are done emulating other components, at
-            // least include PPU because it can generate NMI interrupt.
-            m_cpu.poll_interrupt();
+bool
+Emulator::tick()
+{
+    auto instr_cycles = m_cpu.tick();
+    // an instruction is complete
+    if (instr_cycles)
+    {
+        // @FIXME: Tick PPU independently of CPU?
+        constexpr int TICK_CPU_TO_PPU = 3; // NTSC version
+        for (decltype(TICK_CPU_TO_PPU * instr_cycles) j = 0;
+             j < TICK_CPU_TO_PPU * instr_cycles; ++j)
+        {
+            m_ppu.tick();
         }
+
+        /* Check interrupts at the end of each instruction */
+        // @IMPL: Do this after we are done emulating other components, at
+        // least include PPU because it can generate NMI interrupt.
+        m_cpu.poll_interrupt();
     }
+
+    m_apu.tick();
+    // APU generates a sample every CPU cycle.
+    return true;
 }
 
 const FrameBuffer &
 Emulator::get_frame() const
 {
     return m_ppu.get_frame();
+}
+
+float
+Emulator::get_sample_rate() const
+{
+    // APU generates a sample every CPU cycle.
+    return LN_CPU_HZ;
+}
+
+float
+Emulator::get_sample() const
+{
+    return m_apu.amplitude();
 }
 
 void

@@ -11,13 +11,11 @@ namespace ln {
 /* @IMPL: Valid enumerators must be unique and can be used as array index */
 enum class MemoryMappingPoint : unsigned char {
     INVALID = 0,
-    ADHOC, // @TMP
 
     INTERNAL_RAM,
 
-    PPU_REG,
-    OAMDMA,
-    APU_CTRL_REG,
+    PPU,
+    APU_OAMDMA_CTRL,
 
     PRG_ROM,
     PRG_RAM,
@@ -47,9 +45,6 @@ struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
 
     // On-board RAM
     Byte m_ram[LN_INTERNAL_RAM_SIZE];
-    // @TODO: Handle other mappings
-    // @TMP: Adhoc area for NES APU and I/O registers
-    Byte m_adhoc[0x0018];
 };
 
 } // namespace ln

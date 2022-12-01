@@ -10,3 +10,5 @@ An NES emulator.
 - gtest
 - GLFW
 - glad
+- imgui
+- blip_buf (by blargg)

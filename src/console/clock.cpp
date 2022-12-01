@@ -9,9 +9,11 @@ Clock::Clock(Hz_t i_frequency)
 }
 
 Cycle
-Clock::advance(Time_t i_ms)
+Clock::advance(Time_t i_delta)
 {
-    auto next = m_time + i_ms;
+    // @TODO: Bounded time frame.
+    // CPU cycle as well?
+    auto next = m_time + i_delta;
     Cycle cycles = Cycle(next / m_cycle) - Cycle(m_time / m_cycle);
     m_time = next;
     return cycles;

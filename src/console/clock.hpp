@@ -15,8 +15,9 @@ struct Clock {
     Clock(Hz_t i_frequency);
     LN_KLZ_DELETE_COPY_MOVE(Clock);
 
+    /// @param i_delta In milliseconds
     Cycle
-    advance(Time_t i_ms);
+    advance(Time_t i_delta);
 
   private:
     Time_t m_cycle;

@@ -6,6 +6,7 @@ project(LightNES)
 # Global compiler/linker options/flags
 # --------------------------------------------
 
+set(CMAKE_C_STANDARD 90)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)

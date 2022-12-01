@@ -12,7 +12,6 @@ constexpr Address Memory::IRQ_VECTOR_ADDR;
 
 Memory::Memory()
     : m_ram{}
-    , m_adhoc{}
 {
     // Internal RAM space mapping
     {
@@ -25,19 +24,6 @@ Memory::Memory()
         };
         set_mapping(MemoryMappingPoint::INTERNAL_RAM,
                     {LN_RAM_ADDR_HEAD, LN_RAM_ADDR_TAIL, false, decode, m_ram});
-    }
-
-    // @TMP: Ad-hoc solution until APU is implemented
-    {
-        auto decode = [](const MappingEntry *i_entry,
-                         Address i_addr) -> Byte * {
-            Byte *ram = (Byte *)i_entry->opaque;
-
-            Address addr = i_addr;
-            return ram + (addr - i_entry->begin);
-        };
-        set_mapping(MemoryMappingPoint::ADHOC,
-                    {0x4000, 0x4017, false, decode, m_adhoc});
     }
 }
 
