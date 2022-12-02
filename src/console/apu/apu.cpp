@@ -6,8 +6,8 @@ namespace ln {
 
 APU::APU()
     : m_regs{}
-    , m_fc(m_pulse1, m_pulse2)
-    , m_timer_divider(1)
+    , m_fc(m_pulse1, m_pulse2, m_triangle)
+    , m_divider_cpu2(1)
     , m_pulse1(true)
     , m_pulse2(false)
 {
@@ -68,14 +68,16 @@ APU::reset()
 void
 APU::tick()
 {
+    // Clock frame counter to apply parameter changes first.
     m_fc.tick();
 
     // Every second CPU cycle
-    if (m_timer_divider.tick())
+    if (m_divider_cpu2.tick())
     {
         m_pulse1.tick_timer();
         m_pulse2.tick_timer();
     }
+    m_triangle.tick_timer();
 
     // @TODO: Other channels
 }
@@ -84,9 +86,10 @@ float
 APU::amplitude() const
 {
     // @TODO: Other channels
-    Byte i_pulse1 = m_pulse1.amplitude();
-    Byte i_pulse2 = m_pulse2.amplitude();
-    return mix(i_pulse1, i_pulse2, 0.0, 0.0, 0.0);
+    Byte pulse1 = m_pulse1.amplitude();
+    Byte pulse2 = m_pulse2.amplitude();
+    Byte triangle = m_triangle.amplitude();
+    return mix(pulse1, pulse2, triangle, 0.0, 0.0);
 }
 
 float
@@ -137,10 +140,11 @@ APU::read_register(Register i_reg)
             // @TODO: Other channels.
             bool p1 = m_pulse1.length_counter().value() > 0;
             bool p2 = m_pulse2.length_counter().value() > 0;
+            bool tri = m_triangle.length_counter().value() > 0;
             bool frame_irq = m_fc.interrupt();
             m_fc.clear_interrupt();
 
-            return (frame_irq << 6) | (p2 << 1) | (p1 << 0);
+            return (frame_irq << 6) | (tri << 2) | (p2 << 1) | (p1 << 0);
         }
         break;
 
@@ -185,6 +189,18 @@ APU::write_register(Register i_reg, Byte i_val)
         }
         break;
 
+        case PULSE1_TIMER_LOW:
+        case PULSE2_TIMER_LOW:
+        {
+            Pulse *pulse = PULSE1_TIMER_LOW == i_reg ? &m_pulse1 : &m_pulse2;
+            Byte timer_high = PULSE1_TIMER_LOW == i_reg
+                                  ? (m_regs[PULSE1_LENGTH] & 0x07)
+                                  : (m_regs[PULSE2_LENGTH] & 0x07);
+            Byte2 timer = (timer_high << 8) | i_val;
+            pulse->timer().set_reload(timer);
+        }
+        break;
+
         case PULSE1_LENGTH:
         case PULSE2_LENGTH:
         {
@@ -200,11 +216,36 @@ APU::write_register(Register i_reg, Byte i_val)
         }
         break;
 
+        case TRI_LINEAR:
+        {
+            m_triangle.linear_counter().set_control(i_val & 0x80);
+            m_triangle.linear_counter().set_reload_val(i_val & 0x7F);
+        }
+        break;
+
+        case TRI_TIMER_LOW:
+        {
+            Byte2 timer = ((m_regs[TRI_LENGTH] & 0x07) << 8) | i_val;
+            m_triangle.timer().set_reload(timer);
+        }
+        break;
+
+        case TRI_LENGTH:
+        {
+            Byte2 timer = ((i_val & 0x07) << 8) | m_regs[TRI_TIMER_LOW];
+            m_triangle.timer().set_reload(timer);
+            m_triangle.length_counter().check_load(i_val >> 3);
+
+            m_triangle.linear_counter().set_reload();
+        }
+        break;
+
         case CTRL_STATUS:
         {
             // @TODO: Other channels.
             m_pulse1.length_counter().set_enabled(i_val & 0x01);
             m_pulse2.length_counter().set_enabled(i_val & 0x02);
+            m_triangle.length_counter().set_enabled(i_val & 0x04);
         }
         break;
 

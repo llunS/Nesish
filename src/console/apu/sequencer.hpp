@@ -4,6 +4,7 @@
 
 namespace ln {
 
+/// @brief Sequencer for pulse channel
 struct Sequencer {
   public:
     Sequencer();

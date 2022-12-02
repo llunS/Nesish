@@ -26,11 +26,10 @@ LengthCounter::tick()
     {
         return;
     }
-    if (!m_counter)
+    if (m_counter > 0)
     {
-        return;
+        --m_counter;
     }
-    --m_counter;
 }
 
 void

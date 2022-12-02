@@ -5,10 +5,11 @@
 namespace ln {
 
 struct Pulse;
+struct Triangle;
 
 struct FrameCounter {
   public:
-    FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2);
+    FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2, Triangle &o_triangle);
     ~FrameCounter() = default;
     LN_KLZ_DELETE_COPY_MOVE(FrameCounter);
 
@@ -38,6 +39,7 @@ struct FrameCounter {
   private:
     Pulse &m_pulse1;
     Pulse &m_pulse2;
+    Triangle &m_triangle;
 
   private:
     int m_timer;

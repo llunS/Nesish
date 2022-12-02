@@ -6,6 +6,7 @@
 
 #include "console/apu/frame_counter.hpp"
 #include "console/apu/pulse.hpp"
+#include "console/apu/triangle.hpp"
 #include "console/apu/divider.hpp"
 
 namespace ln {
@@ -90,10 +91,11 @@ struct APU {
     Byte m_regs[Register::SIZE];
 
     FrameCounter m_fc;
-    Divider m_timer_divider; // Hypothetical divider to tick timer every second
-                             // CPU cycle.
+    Divider m_divider_cpu2; // Hypothetical divider to tick timer every second
+                            // CPU cycle.
     Pulse m_pulse1;
     Pulse m_pulse2;
+    Triangle m_triangle;
 };
 
 } // namespace ln

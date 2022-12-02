@@ -1,7 +1,5 @@
 #include "pulse.hpp"
 
-#include "console/assert.hpp"
-
 // https://www.nesdev.org/wiki/APU_Pulse
 
 namespace ln {
