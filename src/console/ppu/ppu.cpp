@@ -38,6 +38,8 @@ PPU::~PPU()
 void
 PPU::power_up()
 {
+    // @TODO: powerup test
+
     // https://www.nesdev.org/wiki/PPU_power_up_state
     // @IMPL: Excluding side effects via get_register(), not sure if it's right.
     get_register(PPUCTRL) = 0x00;
@@ -57,6 +59,8 @@ PPU::power_up()
 void
 PPU::reset()
 {
+    // @TODO: reset test
+
     get_register(PPUCTRL) = 0x00;
     get_register(PPUMASK) = 0x00;
     // @NOTE: latches should be cleared as well

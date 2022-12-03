@@ -5,12 +5,15 @@
 #include "console/types.hpp"
 
 #include "console/apu/frame_counter.hpp"
+#include "console/apu/divider.hpp"
 #include "console/apu/pulse.hpp"
 #include "console/apu/triangle.hpp"
 #include "console/apu/noise.hpp"
-#include "console/apu/divider.hpp"
+#include "console/apu/dmc.hpp"
 
 namespace ln {
+
+struct Memory;
 
 struct APU {
   public:
@@ -26,10 +29,14 @@ struct APU {
 
     /// @brief Call this every CPU cycle
     void
-    tick();
+    tick(const Memory &i_memory);
     /// @return Amplitude in range [0, 1]
     float
     amplitude() const;
+    bool
+    interrupt() const;
+    bool
+    fetching() const;
 
   public:
     // They are write-only except $4015 (CTRL_STATUS) which is read/write.
@@ -98,6 +105,7 @@ struct APU {
     Pulse m_pulse2;
     Triangle m_triangle;
     Noise m_noise;
+    DMC m_dmc;
 };
 
 } // namespace ln

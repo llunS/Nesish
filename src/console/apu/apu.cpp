@@ -16,6 +16,8 @@ APU::APU()
 void
 APU::power_up()
 {
+    // @TODO: powerup test
+
     // https://www.nesdev.org/wiki/CPU_power_up_state
     // @IMPL: We want all the side effects applied, so we use write_register().
     write_register(PULSE1_DUTY, 0x00);
@@ -48,6 +50,9 @@ APU::power_up()
     // is clocked from the all-0s state, it will shift in a 1.
     m_noise.reset_lfsr();
 
+    // https://www.nesdev.org/wiki/APU_DMC#Overview
+    m_dmc.load(0);
+
     // @QUIRK: 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
     // counter powers up at a value equivalent to 15)
     m_fc.reset();
@@ -56,6 +61,8 @@ APU::power_up()
 void
 APU::reset()
 {
+    // @TODO: reset test
+
     write_register(CTRL_STATUS, 0x00);
     // @TODO: APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
     // first step of its waveform)
@@ -66,7 +73,7 @@ APU::reset()
 }
 
 void
-APU::tick()
+APU::tick(const Memory &i_memory)
 {
     // Clock frame counter to apply parameter changes first.
     m_fc.tick();
@@ -77,6 +84,8 @@ APU::tick()
         m_pulse1.tick_timer();
         m_pulse2.tick_timer();
         m_noise.tick_timer();
+        // @TEST: Test this
+        m_dmc.tick_timer(i_memory);
     }
     m_triangle.tick_timer();
 
@@ -91,7 +100,20 @@ APU::amplitude() const
     Byte pulse2 = m_pulse2.amplitude();
     Byte triangle = m_triangle.amplitude();
     Byte noise = m_noise.amplitude();
-    return mix(pulse1, pulse2, triangle, noise, 0.0);
+    Byte dmc = m_dmc.amplitude();
+    return mix(pulse1, pulse2, triangle, noise, dmc);
+}
+
+bool
+APU::interrupt() const
+{
+    return m_fc.interrupt() || m_dmc.interrupt();
+}
+
+bool
+APU::fetching() const
+{
+    return m_dmc.fetching();
 }
 
 float
@@ -144,11 +166,16 @@ APU::read_register(Register i_reg)
             bool p2 = m_pulse2.length_counter().value() > 0;
             bool tri = m_triangle.length_counter().value() > 0;
             bool noise = m_noise.length_counter().value() > 0;
-            bool frame_irq = m_fc.interrupt();
+            bool D = m_dmc.bytes_remaining();
+            // @NOTE: We don't emulate this.
+            // @QUIRK: If an interrupt flag was set at the same moment of the
+            // read, it will read back as 1 but it will not be cleared.
+            bool F = m_fc.interrupt();
             m_fc.clear_interrupt();
+            bool I = m_dmc.interrupt();
 
-            return (frame_irq << 6) | (noise << 3) | (tri << 2) | (p2 << 1) |
-                   (p1 << 0);
+            return (I << 7) | (F << 6) | (D << 4) | (noise << 3) | (tri << 2) |
+                   (p2 << 1) | (p1 << 0);
         }
         break;
 
@@ -269,6 +296,32 @@ APU::write_register(Register i_reg, Byte i_val)
         }
         break;
 
+        case DMC_FREQUENCY:
+        {
+            m_dmc.set_interrupt_enabled(i_val & 0x80);
+            m_dmc.set_loop(i_val & 0x40);
+            m_dmc.set_timer_reload(i_val & 0x0F);
+        }
+        break;
+
+        case DMC_LOAD:
+        {
+            m_dmc.load(i_val & 0x7F);
+        }
+        break;
+
+        case DMC_SAMPLE_ADDR:
+        {
+            m_dmc.set_sample_addr(i_val);
+        }
+        break;
+
+        case DMC_SAMPLE_LENGTH:
+        {
+            m_dmc.set_sample_length(i_val);
+        }
+        break;
+
         case CTRL_STATUS:
         {
             // @TODO: Other channels.
@@ -276,6 +329,9 @@ APU::write_register(Register i_reg, Byte i_val)
             m_pulse2.length_counter().set_enabled(i_val & 0x02);
             m_triangle.length_counter().set_enabled(i_val & 0x04);
             m_noise.length_counter().set_enabled(i_val & 0x08);
+            m_dmc.set_enabled(i_val & 0x10);
+
+            m_dmc.clear_interrupt();
         }
         break;
 
@@ -283,6 +339,11 @@ APU::write_register(Register i_reg, Byte i_val)
         {
             m_fc.set_mode(i_val & 0x80);
             m_fc.set_irq_inhibit(i_val & 0x40);
+
+            // @IMPL: We don't emulate the delay of the reset, because
+            // 1. Unclear about the delay amount (2/3 or 3/4).
+            // 2. Games should get by although we don't emulate this.
+            m_fc.reset();
         }
         break;
 

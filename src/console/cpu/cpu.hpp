@@ -15,10 +15,11 @@
 namespace ln {
 
 struct PPU;
+struct APU;
 
 struct CPU {
   public:
-    CPU(Memory *i_memory, PPU *i_ppu);
+    CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu);
     LN_KLZ_DELETE_COPY_MOVE(CPU);
 
   public:
@@ -32,6 +33,7 @@ struct CPU {
     Cycle
     tick();
 
+  public:
     /* Query */
 
     LN_CONSOLE_API Cycle
@@ -62,10 +64,6 @@ struct CPU {
 
   private:
     /* allow access from other internal components */
-
-    friend struct Emulator;
-    void
-    poll_interrupt();
 
     friend struct PPU;
     void
@@ -171,6 +169,9 @@ struct CPU {
     halt();
 
     void
+    poll_interrupt();
+
+    void
     report_exec_error(const std::string &i_msg);
 
   private:
@@ -188,6 +189,7 @@ struct CPU {
     Memory *m_memory;
     // @TODO: Use a bus object to avoid direct reference?
     PPU *m_ppu;
+    const APU *m_apu;
 
   private:
     Cycle m_cycle;

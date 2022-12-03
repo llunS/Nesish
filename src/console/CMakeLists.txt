@@ -64,6 +64,7 @@ list(APPEND sources apu/linear_counter.cpp)
 list(APPEND sources apu/triangle.cpp)
 list(APPEND sources apu/noise.cpp)
 list(APPEND sources apu/frame_counter.cpp)
+list(APPEND sources apu/dmc.cpp)
 list(APPEND sources apu/apu.cpp)
 
 list(APPEND sources debug/color.cpp)

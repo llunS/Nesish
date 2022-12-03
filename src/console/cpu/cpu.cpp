@@ -4,12 +4,14 @@
 #include "console/assert.hpp"
 #include "console/spec.hpp"
 #include "console/ppu/ppu.hpp"
+#include "console/apu/apu.hpp"
 
 namespace ln {
 
-CPU::CPU(Memory *i_memory, PPU *i_ppu)
+CPU::CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu)
     : m_memory(i_memory)
     , m_ppu(i_ppu)
+    , m_apu(i_apu)
     , m_cycle(0)
     , m_halted(false)
     , m_nmi(false)
@@ -22,6 +24,8 @@ CPU::CPU(Memory *i_memory, PPU *i_ppu)
 void
 CPU::power_up()
 {
+    // @TODO: powerup test
+
     // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
     // P = 0x34; // (IRQ disabled)
     P = 0x24; // according to nestest.log (IRQ disabled still)
@@ -40,6 +44,8 @@ CPU::power_up()
 void
 CPU::reset()
 {
+    // @TODO: reset test
+
     S -= 3;
     set_flag(StatusFlag::I); // The I (IRQ disable) flag was set to true
 
@@ -79,6 +85,9 @@ CPU::tick()
     {
         if (m_oam_dma_ctx.counter == 0)
         {
+            // @IMPL: 1 wait state cycle while waiting for writes to complete,
+            // +1 if on an odd CPU cycle
+            // @TODO: What wait state cycle?
             m_oam_dma_ctx.start_counter = curr_cycle % 2 == 0 ? 1 : 2;
         }
         if (m_oam_dma_ctx.counter >= m_oam_dma_ctx.start_counter)
@@ -205,6 +214,13 @@ CPU::tick()
                 }
                 break;
             }
+        }
+
+        /* Check interrupts at the last cycle of each normal instruction */
+        // @TEST: Don't count PPU DMA.
+        if (instr_cycles)
+        {
+            poll_interrupt();
         }
     }
     ++m_cycle;
@@ -506,21 +522,44 @@ CPU::halt()
 void
 CPU::poll_interrupt()
 {
+    // @TODO: Detailed implementation of interrupts.
+    // https://www.nesdev.org/wiki/CPU_interrupts
+
+    // @NOTE: The interrupt sequences themselves do not perform interrupt
+    // polling, meaning at least one instruction from the interrupt handler will
+    // execute before another interrupt is serviced.
+    // @IMPL: "interrupt sequences" should refer to the pushes and jumps, etc.
+    // And this should be implemented already by polling only at the end of
+    // the instruction.
+
+    // NMI has higher precedence than IRQ
+    // https://www.nesdev.org/wiki/NMI
     if (m_nmi)
     {
-        this->push_byte2(this->PC);
+        push_byte2(this->PC);
 
         // @QUIRK: https://www.nesdev.org/wiki/Status_flags#The_B_flag
-        this->push_byte((this->P & ~CPU::StatusFlag::B) | StatusFlag::U);
-
-        // https://www.nesdev.org/wiki/Status_flags#The_B_flag
-        this->set_flag(CPU::StatusFlag::I);
+        push_byte((this->P & ~StatusFlag::B) | StatusFlag::U);
+        set_flag(StatusFlag::I);
 
         // Jump to interrupt handler.
-        this->PC = this->get_byte2(Memory::NMI_VECTOR_ADDR);
+        this->PC = get_byte2(Memory::NMI_VECTOR_ADDR);
 
         // Clear the flag
         m_nmi = false;
+    }
+    // https://www.nesdev.org/wiki/IRQ
+    // @TEST: Test this
+    else if (!check_flag(StatusFlag::I) && m_apu->interrupt())
+    {
+        push_byte2(this->PC);
+
+        // @QUIRK: https://www.nesdev.org/wiki/Status_flags#The_B_flag
+        push_byte((this->P & ~StatusFlag::B) | StatusFlag::U);
+        set_flag(StatusFlag::I);
+
+        // Jump to interrupt handler.
+        this->PC = get_byte2(Memory::IRQ_VECTOR_ADDR);
     }
 }
 

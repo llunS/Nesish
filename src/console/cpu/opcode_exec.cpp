@@ -504,6 +504,7 @@ CPU::OpcodeExec::exec_kil(ln::CPU *i_cpu, ln::Operand i_operand,
     (void)(o_branch_cycles);
     (void)(i_operand);
 
+    // @TEST: Correct behavior of halt
     i_cpu->halt();
 }
 

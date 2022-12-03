@@ -11,7 +11,7 @@
 namespace ln {
 
 Emulator::Emulator()
-    : m_cpu(&m_memory, &m_ppu)
+    : m_cpu(&m_memory, &m_ppu, &m_apu)
     , m_ppu(&m_video_memory, &m_cpu, m_debug_flags)
     , m_cart(nullptr)
     , m_ctrl_regs{}
@@ -292,25 +292,31 @@ Emulator::ticks(Time_t i_delta)
 bool
 Emulator::tick()
 {
-    auto instr_cycles = m_cpu.tick();
+    ln::Cycle instr_cycles = 0;
+    if (m_apu.fetching())
+    {
+        // Stall CPU only, let PPU run.
+        instr_cycles = 1;
+    }
+    else
+    {
+        instr_cycles = m_cpu.tick();
+    }
+
+    // @NOTE: Emulate PPU after CPU makes progress.
+    // @FIXME: Tick PPU independently of CPU?
     // an instruction is complete
     if (instr_cycles)
     {
-        // @FIXME: Tick PPU independently of CPU?
         constexpr int TICK_CPU_TO_PPU = 3; // NTSC version
         for (decltype(TICK_CPU_TO_PPU * instr_cycles) j = 0;
              j < TICK_CPU_TO_PPU * instr_cycles; ++j)
         {
             m_ppu.tick();
         }
-
-        /* Check interrupts at the end of each instruction */
-        // @IMPL: Do this after we are done emulating other components, at
-        // least include PPU because it can generate NMI interrupt.
-        m_cpu.poll_interrupt();
     }
 
-    m_apu.tick();
+    m_apu.tick(m_memory);
     // APU generates a sample every CPU cycle.
     return true;
 }
