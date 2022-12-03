@@ -2,16 +2,18 @@
 
 #include "console/apu/pulse.hpp"
 #include "console/apu/triangle.hpp"
+#include "console/apu/noise.hpp"
 
 // https://www.nesdev.org/wiki/APU_Frame_Counter
 
 namespace ln {
 
 FrameCounter::FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2,
-                           Triangle &o_triangle)
+                           Triangle &o_triangle, Noise &o_noise)
     : m_pulse1(o_pulse1)
     , m_pulse2(o_pulse2)
     , m_triangle(o_triangle)
+    , m_noise(o_noise)
     , m_timer(0)
     , m_irq(false)
     , m_step5(false)
@@ -148,7 +150,7 @@ FrameCounter::tick_length_counter_and_sweep()
 
     m_triangle.tick_length_counter();
 
-    // @TODO: Other channels
+    m_noise.tick_length_counter();
 }
 
 void
@@ -160,7 +162,7 @@ FrameCounter::tick_envelope_and_linear_counter()
 
     m_triangle.tick_linear_counter();
 
-    // @TODO: Other channels
+    m_noise.tick_envelope();
 }
 
 } // namespace ln

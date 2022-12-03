@@ -62,6 +62,7 @@ list(APPEND sources apu/length_counter.cpp)
 list(APPEND sources apu/pulse.cpp)
 list(APPEND sources apu/linear_counter.cpp)
 list(APPEND sources apu/triangle.cpp)
+list(APPEND sources apu/noise.cpp)
 list(APPEND sources apu/frame_counter.cpp)
 list(APPEND sources apu/apu.cpp)
 

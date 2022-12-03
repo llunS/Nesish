@@ -6,7 +6,7 @@ namespace ln {
 
 APU::APU()
     : m_regs{}
-    , m_fc(m_pulse1, m_pulse2, m_triangle)
+    , m_fc(m_pulse1, m_pulse2, m_triangle, m_noise)
     , m_divider_cpu2(1)
     , m_pulse1(true)
     , m_pulse2(false)
@@ -44,9 +44,9 @@ APU::power_up()
     write_register(CTRL_STATUS, 0x00);
     write_register(FC, 0x00);
 
-    // @TODO: noise channel LFSR
     // All 15 bits of noise channel LFSR = $0000. The first time the LFSR
     // is clocked from the all-0s state, it will shift in a 1.
+    m_noise.reset_lfsr();
 
     // @QUIRK: 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
     // counter powers up at a value equivalent to 15)
@@ -76,6 +76,7 @@ APU::tick()
     {
         m_pulse1.tick_timer();
         m_pulse2.tick_timer();
+        m_noise.tick_timer();
     }
     m_triangle.tick_timer();
 
@@ -89,7 +90,8 @@ APU::amplitude() const
     Byte pulse1 = m_pulse1.amplitude();
     Byte pulse2 = m_pulse2.amplitude();
     Byte triangle = m_triangle.amplitude();
-    return mix(pulse1, pulse2, triangle, 0.0, 0.0);
+    Byte noise = m_noise.amplitude();
+    return mix(pulse1, pulse2, triangle, noise, 0.0);
 }
 
 float
@@ -141,10 +143,12 @@ APU::read_register(Register i_reg)
             bool p1 = m_pulse1.length_counter().value() > 0;
             bool p2 = m_pulse2.length_counter().value() > 0;
             bool tri = m_triangle.length_counter().value() > 0;
+            bool noise = m_noise.length_counter().value() > 0;
             bool frame_irq = m_fc.interrupt();
             m_fc.clear_interrupt();
 
-            return (frame_irq << 6) | (tri << 2) | (p2 << 1) | (p1 << 0);
+            return (frame_irq << 6) | (noise << 3) | (tri << 2) | (p2 << 1) |
+                   (p1 << 0);
         }
         break;
 
@@ -240,12 +244,38 @@ APU::write_register(Register i_reg, Byte i_val)
         }
         break;
 
+        case NOISE_ENVELOPE:
+        {
+            m_noise.envelope().set_loop(i_val & 0x20);
+            m_noise.length_counter().set_halt(i_val & 0x20);
+            m_noise.envelope().set_const(i_val & 0x10);
+            m_noise.envelope().set_divider_reload(i_val & 0x0F);
+            m_noise.envelope().set_const_vol(i_val & 0x0F);
+        }
+        break;
+
+        case NOISE_PERIOD:
+        {
+            m_noise.set_mode(i_val & 0x80);
+            m_noise.set_timer_reload(i_val & 0x0F);
+        }
+        break;
+
+        case NOISE_LENGTH:
+        {
+            m_noise.length_counter().check_load(i_val >> 3);
+
+            m_noise.envelope().restart();
+        }
+        break;
+
         case CTRL_STATUS:
         {
             // @TODO: Other channels.
             m_pulse1.length_counter().set_enabled(i_val & 0x01);
             m_pulse2.length_counter().set_enabled(i_val & 0x02);
             m_triangle.length_counter().set_enabled(i_val & 0x04);
+            m_noise.length_counter().set_enabled(i_val & 0x08);
         }
         break;
 

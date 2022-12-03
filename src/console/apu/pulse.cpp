@@ -20,7 +20,7 @@ Pulse::amplitude() const
     {
         return 0;
     }
-    if (!m_length_ctr.value())
+    if (!m_length.value())
     {
         return 0;
     }
@@ -51,7 +51,7 @@ Pulse::tick_sweep()
 void
 Pulse::tick_length_counter()
 {
-    m_length_ctr.tick();
+    m_length.tick();
 }
 
 Envelope &
@@ -81,7 +81,7 @@ Pulse::sequencer()
 LengthCounter &
 Pulse::length_counter()
 {
-    return m_length_ctr;
+    return m_length;
 }
 
 } // namespace ln

@@ -42,6 +42,7 @@ Sequencer::set_duty(int i_index)
     {
         // This is a development-time error.
         LN_ASSERT_FATAL("Duty index invalid: {}", i_index);
+        return;
     }
     m_duty_idx = i_index;
 }

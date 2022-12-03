@@ -7,6 +7,7 @@
 #include "console/apu/frame_counter.hpp"
 #include "console/apu/pulse.hpp"
 #include "console/apu/triangle.hpp"
+#include "console/apu/noise.hpp"
 #include "console/apu/divider.hpp"
 
 namespace ln {
@@ -96,6 +97,7 @@ struct APU {
     Pulse m_pulse1;
     Pulse m_pulse2;
     Triangle m_triangle;
+    Noise m_noise;
 };
 
 } // namespace ln
