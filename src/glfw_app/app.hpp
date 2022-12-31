@@ -9,7 +9,8 @@ namespace ln_app {
 
 enum AppOpt {
     OPT_NONE = 0,
-    OPT_PCM = 1 << 0, // Generate audio pcm file
+    OPT_DEBUG_WIN = 1 << 0, // With debug window
+    OPT_PCM = 1 << 1,       // Generate audio pcm file
 };
 
 inline AppOpt &

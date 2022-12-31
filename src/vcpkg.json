@@ -13,7 +13,8 @@
                 "glfw-binding",
                 "opengl3-binding"
             ]
-        }
+        },
+        "rtaudio"
     ],
     "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
     "overrides": [
@@ -37,6 +38,10 @@
         {
             "name": "imgui",
             "version": "1.86"
+        },
+        {
+            "name": "rtaudio",
+            "version": "2021-11-16"
         }
     ]
 }

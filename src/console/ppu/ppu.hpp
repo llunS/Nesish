@@ -2,7 +2,6 @@
 
 #include "console/types.hpp"
 #include "common/klass.hpp"
-#include "console/clock.hpp"
 #include "console/ppu/frame_buffer.hpp"
 #include "console/ppu/palette_default.hpp"
 #include "console/memory/video_memory.hpp"

@@ -6,20 +6,20 @@
 
 namespace ln_app {
 
-struct BlipBufAdapter {
+struct Resampler {
   public:
-    BlipBufAdapter(double i_clock_rate, double i_sample_rate, int i_buffer_size,
-                   short i_amp = 0);
-    ~BlipBufAdapter();
-    LN_KLZ_DELETE_COPY_MOVE(BlipBufAdapter);
+    Resampler(int i_buffer_size, short i_amp = 0);
+    ~Resampler();
+    LN_KLZ_DELETE_COPY_MOVE(Resampler);
 
   public:
+    bool
+    set_rates(double i_clock_rate, double i_sample_rate);
+
     void
     clock(short i_amp);
     bool
     samples_avail(short o_samples[], int i_count);
-    int
-    flush_samples(short o_samples[], int i_bound);
 
     void
     close();

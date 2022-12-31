@@ -3,6 +3,7 @@
 #include "common/error.hpp"
 #include "console/dllexport.h"
 #include "common/klass.hpp"
+#include "common/time.hpp"
 
 #include "console/cpu/cpu.hpp"
 #include "console/memory/memory.hpp"
@@ -17,7 +18,6 @@
 
 #include "console/apu/apu.hpp"
 
-#include "console/clock.hpp"
 #include "console/spec.hpp"
 #include "console/types.hpp"
 #include "console/debug/debug_flags.hpp"
@@ -52,10 +52,9 @@ struct Emulator {
     LN_CONSOLE_API void
     reset();
 
-    /// @brief Get ticks produced after specified time
-    /// @param i_delta In milliseconds
-    LN_CONSOLE_API Cycle
-    ticks(Time_t i_delta);
+    /// @return How many seconds have passed for input ticks
+    LN_CONSOLE_API Time_t
+    elapsed(Cycle i_ticks);
     /// @return If a new audio sample is available
     LN_CONSOLE_API bool
     tick();
@@ -124,8 +123,6 @@ struct Emulator {
 
     Byte m_ctrl_regs[CtrlReg::SIZE];
     Controller *m_ctrls[CTRL_SIZE]; // References
-
-    Clock m_cpu_clock;
 
   private:
     lnd::DebugFlags m_debug_flags;

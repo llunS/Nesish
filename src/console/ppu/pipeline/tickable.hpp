@@ -1,6 +1,6 @@
 #pragma once
 
-#include "console/clock.hpp"
+#include "console/types.hpp"
 
 namespace ln {
 

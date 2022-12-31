@@ -9,7 +9,6 @@
 #include "console/cpu/instruction.hpp"
 #include "console/cpu/operand.hpp"
 #include "common/error.hpp"
-#include "console/clock.hpp"
 #include "console/dllexport.h"
 
 namespace ln {

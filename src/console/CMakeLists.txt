@@ -18,7 +18,6 @@ target_include_directories(${module_name} PUBLIC ../)
 
 list(APPEND sources emulator.cpp)
 
-list(APPEND sources clock.cpp)
 list(APPEND sources types.cpp)
 
 list(APPEND sources cartridge/cartridge_loader.cpp)

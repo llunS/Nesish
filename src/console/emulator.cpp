@@ -16,7 +16,6 @@ Emulator::Emulator()
     , m_cart(nullptr)
     , m_ctrl_regs{}
     , m_ctrls{}
-    , m_cpu_clock(LN_CPU_HZ)
     , m_debug_flags(lnd::DBG_OFF)
 {
     hard_wire();
@@ -282,11 +281,10 @@ Emulator::reset()
     m_apu.reset();
 }
 
-Cycle
-Emulator::ticks(Time_t i_delta)
+Time_t
+Emulator::elapsed(Cycle i_ticks)
 {
-    Cycle cycles = m_cpu_clock.advance(i_delta);
-    return cycles;
+    return Time_t(i_ticks) / LN_CPU_HZ; // s
 }
 
 bool

@@ -10,6 +10,7 @@ main(int argc, char **argv)
     // -- cli options
     std::string rom_path;
     spdlog::level::level_enum log_level = LN_DEFAULT_LOG_LEVEL;
+    bool debug_win = false;
     bool log_pcm = false;
     {
         CLI::App app;
@@ -22,6 +23,8 @@ main(int argc, char **argv)
             ->option_text("<level>")
             ->check(CLI::Range(spdlog::level::trace, spdlog::level::off));
 
+        app.add_flag("-d", debug_win, "Debug window")->option_text("\x7F");
+
         app.add_flag("--pcm", log_pcm,
                      "Log audio PCM file in signed 16-bit integer format")
             ->option_text("\x7F");
@@ -32,6 +35,10 @@ main(int argc, char **argv)
     ln::init_logger(log_level);
 
     ln_app::AppOpt app_opts = ln_app::OPT_NONE;
+    if (debug_win)
+    {
+        app_opts |= ln_app::OPT_DEBUG_WIN;
+    }
     if (log_pcm)
     {
         app_opts |= ln_app::OPT_PCM;

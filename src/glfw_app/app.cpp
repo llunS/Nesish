@@ -12,19 +12,46 @@
 
 #include "console/spec.hpp"
 
-#include "glfw_app/audio/blip_buf_adapter.hpp"
+#include "glfw_app/audio/resampler.hpp"
 #include "common/path.hpp"
 #include "glfw_app/audio/pcm_writer.hpp"
+#include "glfw_app/audio/channel.hpp"
+#include "rtaudio/RtAudio.h"
 
-#define LN_APP_AUDIO_BUF_SIZE 64
-#define LN_APP_AUDIO_SAMPLE_RATE 48000
+#define LA_AUDIO_SAMPLE_RATE 48000
+#define LA_AUDIO_BUF_SIZE 1024
+#define LA_AUDIO_RESAMPLE_BUF_SIZE LA_AUDIO_SAMPLE_RATE / 10
+#define LA_AUDIO_DYN_D 0.005
 
 namespace ln_app {
 
 static constexpr double FRAME_TIME = 1.0 / 60.0;
 
+typedef Channel<LA_AUDIO_BUF_SIZE> AudioChannel;
+
 static void
 error_callback(int error, const char *description);
+
+static bool
+audio_init(RtAudio &io_dac);
+static bool
+audio_open(RtAudio &io_dac, unsigned int i_sample_rate, unsigned i_buffer_size,
+           RtAudioCallback i_callback, void *i_user_data);
+static bool
+audio_start(RtAudio &io_dac);
+static bool
+audio_stop(RtAudio &io_dac);
+static void
+audio_close(RtAudio &io_dac);
+static int
+audio_playback(void *outputBuffer, void *inputBuffer,
+               unsigned int nBufferFrames, double streamTime,
+               RtAudioStreamStatus status, void *userData);
+
+struct ChannelData {
+    AudioChannel *ch;
+    bool done;
+};
 
 int
 run_app(const std::string &i_rom_path, AppOpt i_opts)
@@ -48,11 +75,30 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     }
 
     int err = 0;
-    std::unique_ptr<EmulatorWindow> emulatorWin{new EmulatorWindow()};
-    std::unique_ptr<DebuggerWindow> debuggerWin{new DebuggerWindow()};
-    BlipBufAdapter blip{emulator->get_sample_rate(), LN_APP_AUDIO_SAMPLE_RATE,
-                        LN_APP_AUDIO_BUF_SIZE};
-    PCMWriter pcm_writer{};
+    std::unique_ptr<EmulatorWindow> emu_win{new EmulatorWindow()};
+    std::unique_ptr<DebuggerWindow> dbg_win;
+    if (i_opts & ln_app::OPT_DEBUG_WIN)
+    {
+        dbg_win.reset(new DebuggerWindow());
+    }
+    Resampler resampler{LA_AUDIO_RESAMPLE_BUF_SIZE};
+    AudioChannel audio_ch;
+    ChannelData ch_data{&audio_ch, false};
+    RtAudio dac;
+    PCMWriter pcm_writer;
+
+    /* init audio */
+    if (!audio_init(dac))
+    {
+        err = 1;
+        goto l_end;
+    }
+    if (!audio_open(dac, LA_AUDIO_SAMPLE_RATE, LA_AUDIO_BUF_SIZE,
+                    audio_playback, &ch_data))
+    {
+        err = 1;
+        goto l_end;
+    }
     if (i_opts & ln_app::OPT_PCM)
     {
         if (pcm_writer.open(ln::join_exec_rel_path("audio.pcm")))
@@ -63,109 +109,134 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     }
 
     /* init windows */
-    if (!debuggerWin->init(640, 480, true, false, "Debugger"))
+    if (dbg_win)
+    {
+        if (!dbg_win->init(640, 480, true, false, "Debugger"))
+        {
+            err = 1;
+            goto l_end;
+        }
+        dbg_win->set_pos(50 + LN_NES_WIDTH * 2 + 50, 150);
+    }
+    if (!emu_win->init(emulator.get(), LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2,
+                       !dbg_win, false, "Emulator"))
     {
         err = 1;
         goto l_end;
     }
-    debuggerWin->set_pos(50 + LN_NES_WIDTH * 2 + 50, 150);
-    if (!emulatorWin->init(emulator.get(), LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2,
-                           false, false, "Emulator"))
+    emu_win->set_pos(50, 150);
+
+    if (dbg_win)
+    {
+        dbg_win->pre_render(*emulator);
+    }
+
+    /* start audio playback */
+    if (!audio_start(dac))
     {
         err = 1;
         goto l_end;
     }
-    emulatorWin->set_pos(50, 150);
-
-    debuggerWin->pre_render(*emulator);
-
     /* Main loop */
     {
         constexpr double S_TO_US = 1000.0 * 1000.0;
-        constexpr double US_TO_MS = 1.0 / 1000.0;
         constexpr double FRAME_TIME_US = FRAME_TIME * S_TO_US;
 
         double currTimeUS = ln::get_now_micro();
-        double prevLoopTimeUS = currTimeUS;
+        double nextEmulateTimeUS = currTimeUS;
         double nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
 
-        while (emulatorWin)
+        while (emu_win)
         {
             // Dispatch events
             glfwPollEvents();
 
             /* Close window if necessary */
-            if (emulatorWin && (emulatorWin->shouldClose() ||
-                                (debuggerWin && debuggerWin->shouldQuit())))
+            if (emu_win->shouldClose() || (dbg_win && dbg_win->shouldQuit()))
             {
-                emulatorWin->release();
-                emulatorWin.reset();
+                emu_win->release();
+                emu_win.reset();
+                break;
             }
-            if (debuggerWin && debuggerWin->shouldClose())
+            if (dbg_win && dbg_win->shouldClose())
             {
-                debuggerWin->post_render(*emulator);
-                debuggerWin->release();
-                debuggerWin.reset();
-
-                /* The release of the debugger window will add overhead to this
-                 * loop, so we skip this one to make each emulation delta taking
-                 * roughly the same time (or small enough) to smooth the
-                 * emulation process */
-                prevLoopTimeUS = ln::get_now_micro();
-                continue;
+                dbg_win->post_render(*emulator);
+                dbg_win->release();
+                dbg_win.reset();
             }
 
             /* Emulate */
             currTimeUS = ln::get_now_micro();
-            auto deltaTimeMS = (currTimeUS - prevLoopTimeUS) * US_TO_MS;
-            if (!debuggerWin || !debuggerWin->isPaused())
+            if (!(dbg_win && dbg_win->isPaused()) &&
+                currTimeUS >= nextEmulateTimeUS)
             {
-                auto cycles = emulator->ticks(deltaTimeMS);
-                for (decltype(cycles) i = 0; i < cycles; ++i)
+                /* Calculate target resample ratio */
+                double resample_ratio =
+                    1. + (LA_AUDIO_BUF_SIZE - 2. * audio_ch.p_size()) /
+                             LA_AUDIO_BUF_SIZE * LA_AUDIO_DYN_D;
+                // target_bufsize > 0 holds
+                int target_bufsize = resample_ratio * LA_AUDIO_BUF_SIZE;
+                int target_sample_rate = LA_AUDIO_SAMPLE_RATE *
+                                         double(target_bufsize) /
+                                         LA_AUDIO_BUF_SIZE;
+
+                if (!resampler.set_rates(emulator->get_sample_rate(),
+                                         target_sample_rate))
                 {
-                    if (emulator->tick())
+                    err = 1;
+                    goto l_end;
+                }
+
+                /* Emulate until audio buffer of target size is met */
+                ln::Cycle cpu_ticks = 0;
+                for (int buf_idx = 0; buf_idx < target_bufsize; ++buf_idx)
+                {
+                    // Feed input samples until target count is met
+                    short buf = 0;
+                    while (!resampler.samples_avail(&buf, 1))
                     {
-                        if (pcm_writer.is_open())
+                        if (emulator->tick())
                         {
                             float sample = emulator->get_sample();
-                            // @NOTE: Once clocked, samples must be drained to
-                            // avoid buffer overflow.
+                            // @NOTE: Once clocked, samples must be drained
+                            // to avoid buffer overflow.
                             // @FIXME: Which is correct? [0, 1] or [-1, 1]
-                            blip.clock((sample * 2. - 1.) * 32767);
-                            // blip.clock(sample * 32767);
+                            resampler.clock((sample * 2. - 1.) * 32767);
+                            // resampler.clock(sample * 32767);
+                        }
+                        ++cpu_ticks;
+                    }
+                    // Drain the sample buffer
+                    {
+                        audio_ch.p_send(buf / 32767.);
 
-                            // Drain the sample buffer
-                            short buf[LN_APP_AUDIO_BUF_SIZE] = {};
-                            while (
-                                blip.samples_avail(buf, LN_APP_AUDIO_BUF_SIZE))
-                            {
-                                for (int j = 0; j < LN_APP_AUDIO_BUF_SIZE; ++j)
-                                {
-                                    pcm_writer.write_s16le(buf[j]);
-                                }
-                            }
+                        if (pcm_writer.is_open())
+                        {
+                            pcm_writer.write_s16le(buf);
                         }
                     }
                 }
-            }
-            prevLoopTimeUS = currTimeUS;
 
-            /* Render, at most at fixed rate */
+                double emualteTimeUS = emulator->elapsed(cpu_ticks) * S_TO_US;
+                nextEmulateTimeUS = currTimeUS + emualteTimeUS;
+            }
+
+            /* Render, AT MOST at fixed rate */
             if (currTimeUS >= nextRenderTimeUS)
             {
                 // Don't bother to render emulator if paused.
                 // @IMPL: Handle emulator window first anyhow to reflect latest
                 // visuals.
-                if (!debuggerWin || !debuggerWin->isPaused())
+                if (!(dbg_win && dbg_win->isPaused()))
                 {
-                    if (emulatorWin)
+                    if (emu_win)
                     {
-                        emulatorWin->render();
+                        emu_win->render();
                     }
                 }
-                if (debuggerWin)
+                if (dbg_win)
                 {
-                    debuggerWin->render(*emulator);
+                    dbg_win->render(*emulator);
                 }
 
                 nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
@@ -174,29 +245,23 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     }
 
 l_end:
-    if (pcm_writer.is_open())
-    {
-        short buf[LN_APP_AUDIO_BUF_SIZE] = {};
-        int count = blip.flush_samples(buf, LN_APP_AUDIO_BUF_SIZE);
-        for (int i = 0; i < count; ++i)
-        {
-            pcm_writer.write_s16le(buf[i]);
-        }
-    }
-    pcm_writer.close();
-    blip.close();
+    (void)pcm_writer.close();
+    ch_data.done = true;
+    (void)audio_stop(dac);
+    audio_close(dac);
+    resampler.close();
 
     // before glfw termination
-    if (emulatorWin)
+    if (emu_win)
     {
-        emulatorWin->release();
-        emulatorWin.reset();
+        emu_win->release();
+        emu_win.reset();
     }
-    if (debuggerWin)
+    if (dbg_win)
     {
-        debuggerWin->post_render(*emulator);
-        debuggerWin->release();
-        debuggerWin.reset();
+        dbg_win->post_render(*emulator);
+        dbg_win->release();
+        dbg_win.reset();
     }
     glfwTerminate();
 
@@ -207,6 +272,114 @@ void
 error_callback(int error, const char *description)
 {
     fprintf(stderr, "Error: %d, %s\n", error, description);
+}
+
+bool
+audio_init(RtAudio &io_dac)
+{
+    if (io_dac.getDeviceCount() < 1)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool
+audio_open(RtAudio &io_dac, unsigned int i_sample_rate, unsigned i_buffer_size,
+           RtAudioCallback i_callback, void *i_user_data)
+{
+    if (!i_callback)
+    {
+        return false;
+    }
+
+    RtAudio::StreamParameters parameters;
+    parameters.deviceId = io_dac.getDefaultOutputDevice();
+    parameters.nChannels = 2;
+    parameters.firstChannel = 0;
+    try
+    {
+        io_dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, i_sample_rate,
+                          &i_buffer_size, i_callback, i_user_data);
+    }
+    catch (RtAudioError &e)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool
+audio_start(RtAudio &io_dac)
+{
+    try
+    {
+        io_dac.startStream();
+    }
+    catch (RtAudioError &e)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool
+audio_stop(RtAudio &io_dac)
+{
+    try
+    {
+        if (io_dac.isStreamRunning())
+        {
+            io_dac.stopStream();
+        }
+    }
+    catch (RtAudioError &e)
+    {
+        return false;
+    }
+    return true;
+}
+
+void
+audio_close(RtAudio &io_dac)
+{
+    if (io_dac.isStreamOpen())
+    {
+        io_dac.closeStream();
+    }
+}
+
+int
+audio_playback(void *outputBuffer, void *inputBuffer,
+               unsigned int nBufferFrames, double streamTime,
+               RtAudioStreamStatus status, void *userData)
+{
+    (void)(inputBuffer);
+    (void)(streamTime);
+
+    if (status)
+    {
+        LN_LOG_INFO(ln::get_logger(), "Stream underflow of {} detected!",
+                    nBufferFrames);
+    }
+
+    float *buffer = (float *)outputBuffer;
+    ChannelData *ch_data = (ChannelData *)userData;
+    // Write interleaved audio data.
+    for (unsigned int i = 0; i < nBufferFrames; ++i)
+    {
+        float sample = 0.;
+        while (!ch_data->done && !ch_data->ch->c_try_receive(sample))
+        {
+        }
+
+        for (unsigned int j = 0; j < 2; ++j)
+        {
+            *buffer++ = sample;
+        }
+    }
+
+    return 0;
 }
 
 } // namespace ln_app

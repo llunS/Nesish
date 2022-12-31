@@ -30,7 +30,7 @@ list(APPEND sources gui/debugger_window.cpp)
 list(APPEND sources gui/rect_cut.cpp)
 
 list(APPEND sources blip_buf/blip_buf.c)
-list(APPEND sources audio/blip_buf_adapter.cpp)
+list(APPEND sources audio/resampler.cpp)
 list(APPEND sources audio/pcm_writer.cpp)
 
 target_sources(${module_name} PRIVATE ${sources})
@@ -42,6 +42,7 @@ target_sources(${module_name} PRIVATE ${sources})
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(RtAudio CONFIG REQUIRED)
 
 add_subdirectory(glad)
 
@@ -49,6 +50,7 @@ target_link_libraries(${module_name} PRIVATE
     glfw
     imgui::imgui
     glad
+    RtAudio::rtaudio
     Console
 )
 

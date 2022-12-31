@@ -1,26 +1,20 @@
-#include "blip_buf_adapter.hpp"
+#include "resampler.hpp"
 
 #include <cassert>
 
 namespace ln_app {
 
-BlipBufAdapter::BlipBufAdapter(double i_clock_rate, double i_sample_rate,
-                               int i_buffer_size, short i_amp)
+Resampler::Resampler(int i_buffer_size, short i_amp)
     : m_amp(i_amp)
     , m_blip(nullptr)
     , m_buffer_size(i_buffer_size)
     , m_clock_in_frame(0)
     , m_frame_size(1)
 {
-    int blip_buffer_size = i_sample_rate / 10;
-    if (!blip_buffer_size || i_sample_rate / i_clock_rate > blip_buffer_size)
+    int blip_buffer_size = i_buffer_size;
+    if (blip_buffer_size <= 0)
     {
         throw "invalid rate";
-    }
-
-    if (blip_buffer_size < i_buffer_size)
-    {
-        throw "invalid buffer size";
     }
 
     m_blip = blip_new(blip_buffer_size);
@@ -28,17 +22,15 @@ BlipBufAdapter::BlipBufAdapter(double i_clock_rate, double i_sample_rate,
     {
         throw "blip out of memory";
     }
-
-    blip_set_rates(m_blip, i_clock_rate, i_sample_rate);
 }
 
-BlipBufAdapter::~BlipBufAdapter()
+Resampler::~Resampler()
 {
     close();
 }
 
 void
-BlipBufAdapter::close()
+Resampler::close()
 {
     if (m_blip)
     {
@@ -47,8 +39,21 @@ BlipBufAdapter::close()
     m_blip = nullptr;
 }
 
+bool
+Resampler::set_rates(double i_clock_rate, double i_sample_rate)
+{
+    if (i_clock_rate <= 0 || i_sample_rate <= 0 ||
+        i_sample_rate / i_clock_rate > m_buffer_size)
+    {
+        return false;
+    }
+
+    blip_set_rates(m_blip, i_clock_rate, i_sample_rate);
+    return true;
+}
+
 void
-BlipBufAdapter::clock(short i_amp)
+Resampler::clock(short i_amp)
 {
     int delta = i_amp - m_amp;
     m_amp = i_amp;
@@ -59,7 +64,7 @@ BlipBufAdapter::clock(short i_amp)
 
     if (!m_clock_in_frame)
     {
-        m_frame_size = blip_clocks_needed(m_blip, m_buffer_size);
+        m_frame_size = blip_clocks_needed(m_blip, 1);
     }
 
     if (m_clock_in_frame + 1 >= m_frame_size)
@@ -74,7 +79,7 @@ BlipBufAdapter::clock(short i_amp)
 }
 
 bool
-BlipBufAdapter::samples_avail(short o_samples[], int i_count)
+Resampler::samples_avail(short o_samples[], int i_count)
 {
     if (blip_samples_avail(m_blip) >= i_count)
     {
@@ -83,16 +88,6 @@ BlipBufAdapter::samples_avail(short o_samples[], int i_count)
         return bool(count);
     }
     return false;
-}
-
-int
-BlipBufAdapter::flush_samples(short o_samples[], int i_bound)
-{
-    if (blip_samples_avail(m_blip) > 0)
-    {
-        return blip_read_samples(m_blip, o_samples, i_bound, 0);
-    }
-    return 0;
 }
 
 } // namespace ln_app
