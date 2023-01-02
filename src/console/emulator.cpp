@@ -287,6 +287,12 @@ Emulator::elapsed(Cycle i_ticks)
     return Time_t(i_ticks) / LN_CPU_HZ; // s
 }
 
+Cycle
+Emulator::ticks(Time_t i_duration)
+{
+    return LN_CPU_HZ * i_duration;
+}
+
 bool
 Emulator::tick()
 {

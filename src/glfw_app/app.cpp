@@ -86,25 +86,29 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     ChannelData ch_data{&audio_ch, false};
     RtAudio dac;
     PCMWriter pcm_writer;
+    bool enable_audio = i_opts & ln_app::OPT_AUDIO;
 
     /* init audio */
-    if (!audio_init(dac))
+    if (enable_audio)
     {
-        err = 1;
-        goto l_end;
-    }
-    if (!audio_open(dac, LA_AUDIO_SAMPLE_RATE, LA_AUDIO_BUF_SIZE,
-                    audio_playback, &ch_data))
-    {
-        err = 1;
-        goto l_end;
-    }
-    if (i_opts & ln_app::OPT_PCM)
-    {
-        if (pcm_writer.open(ln::join_exec_rel_path("audio.pcm")))
+        if (!audio_init(dac))
         {
             err = 1;
             goto l_end;
+        }
+        if (!audio_open(dac, LA_AUDIO_SAMPLE_RATE, LA_AUDIO_BUF_SIZE,
+                        audio_playback, &ch_data))
+        {
+            err = 1;
+            goto l_end;
+        }
+        if (i_opts & ln_app::OPT_PCM)
+        {
+            if (pcm_writer.open(ln::join_exec_rel_path("audio.pcm")))
+            {
+                err = 1;
+                goto l_end;
+            }
         }
     }
 
@@ -131,11 +135,14 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
         dbg_win->pre_render(*emulator);
     }
 
-    /* start audio playback */
-    if (!audio_start(dac))
+    if (enable_audio)
     {
-        err = 1;
-        goto l_end;
+        /* start audio playback */
+        if (!audio_start(dac))
+        {
+            err = 1;
+            goto l_end;
+        }
     }
     /* Main loop */
     {
@@ -170,55 +177,70 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
             if (!(dbg_win && dbg_win->isPaused()) &&
                 currTimeUS >= nextEmulateTimeUS)
             {
-                /* Calculate target resample ratio */
-                double resample_ratio =
-                    1. + (LA_AUDIO_BUF_SIZE - 2. * audio_ch.p_size()) /
-                             LA_AUDIO_BUF_SIZE * LA_AUDIO_DYN_D;
-                // target_bufsize > 0 holds
-                int target_bufsize = resample_ratio * LA_AUDIO_BUF_SIZE;
-                int target_sample_rate = LA_AUDIO_SAMPLE_RATE *
-                                         double(target_bufsize) /
-                                         LA_AUDIO_BUF_SIZE;
-
-                if (!resampler.set_rates(emulator->get_sample_rate(),
-                                         target_sample_rate))
+                if (enable_audio)
                 {
-                    err = 1;
-                    goto l_end;
-                }
+                    /* Calculate target resample ratio */
+                    double resample_ratio =
+                        1. + (LA_AUDIO_BUF_SIZE - 2. * audio_ch.p_size()) /
+                                 LA_AUDIO_BUF_SIZE * LA_AUDIO_DYN_D;
+                    // target_bufsize > 0 holds
+                    int target_bufsize = resample_ratio * LA_AUDIO_BUF_SIZE;
+                    int target_sample_rate = LA_AUDIO_SAMPLE_RATE *
+                                             double(target_bufsize) /
+                                             LA_AUDIO_BUF_SIZE;
 
-                /* Emulate until audio buffer of target size is met */
-                ln::Cycle cpu_ticks = 0;
-                for (int buf_idx = 0; buf_idx < target_bufsize; ++buf_idx)
+                    if (!resampler.set_rates(emulator->get_sample_rate(),
+                                             target_sample_rate))
+                    {
+                        err = 1;
+                        goto l_end;
+                    }
+
+                    /* Emulate until audio buffer of target size is met */
+                    ln::Cycle cpu_ticks = 0;
+                    for (int buf_idx = 0; buf_idx < target_bufsize; ++buf_idx)
+                    {
+                        // Feed input samples until target count is met
+                        short buf = 0;
+                        while (!resampler.samples_avail(&buf, 1))
+                        {
+                            if (emulator->tick())
+                            {
+                                float sample = emulator->get_sample();
+                                // @NOTE: Once clocked, samples must be drained
+                                // to avoid buffer overflow.
+                                // @FIXME: Which is correct? [0, 1] or [-1, 1]
+                                resampler.clock((sample * 2. - 1.) * 32767);
+                                // resampler.clock(sample * 32767);
+                            }
+                            ++cpu_ticks;
+                        }
+                        // Drain the sample buffer
+                        {
+                            audio_ch.p_send(buf / 32767.);
+
+                            if (pcm_writer.is_open())
+                            {
+                                pcm_writer.write_s16le(buf);
+                            }
+                        }
+                    }
+
+                    double emualteTimeUS =
+                        emulator->elapsed(cpu_ticks) * S_TO_US;
+                    nextEmulateTimeUS = currTimeUS + emualteTimeUS;
+                }
+                else
                 {
-                    // Feed input samples until target count is met
-                    short buf = 0;
-                    while (!resampler.samples_avail(&buf, 1))
+                    ln::Cycle ticks = emulator->ticks(0.002);
+                    for (decltype(ticks) i = 0; i < ticks; ++i)
                     {
-                        if (emulator->tick())
-                        {
-                            float sample = emulator->get_sample();
-                            // @NOTE: Once clocked, samples must be drained
-                            // to avoid buffer overflow.
-                            // @FIXME: Which is correct? [0, 1] or [-1, 1]
-                            resampler.clock((sample * 2. - 1.) * 32767);
-                            // resampler.clock(sample * 32767);
-                        }
-                        ++cpu_ticks;
+                        emulator->tick();
                     }
-                    // Drain the sample buffer
-                    {
-                        audio_ch.p_send(buf / 32767.);
 
-                        if (pcm_writer.is_open())
-                        {
-                            pcm_writer.write_s16le(buf);
-                        }
-                    }
+                    double emualteTimeUS = emulator->elapsed(ticks) * S_TO_US;
+                    nextEmulateTimeUS = currTimeUS + emualteTimeUS;
                 }
-
-                double emualteTimeUS = emulator->elapsed(cpu_ticks) * S_TO_US;
-                nextEmulateTimeUS = currTimeUS + emualteTimeUS;
             }
 
             /* Render, AT MOST at fixed rate */

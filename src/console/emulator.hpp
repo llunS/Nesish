@@ -55,6 +55,10 @@ struct Emulator {
     /// @return How many seconds have passed for input ticks
     LN_CONSOLE_API Time_t
     elapsed(Cycle i_ticks);
+    /// @param i_duration In seconds
+    /// @return How many ticks are generated for input duration
+    LN_CONSOLE_API Cycle
+    ticks(Time_t i_duration);
     /// @return If a new audio sample is available
     LN_CONSOLE_API bool
     tick();
