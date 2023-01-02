@@ -36,6 +36,7 @@ struct SpEvalFetch : public Tickable {
         int n, m;
         bool n_overflow;
         Byte sp_got;
+        bool sp_overflow; // in one scanline
 
         Byte sec_oam_read_idx;
         Byte sp_nt_byte;

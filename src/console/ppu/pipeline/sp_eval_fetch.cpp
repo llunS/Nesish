@@ -68,6 +68,7 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
                 m_ctx.n = m_ctx.m = 0;
                 m_ctx.n_overflow = false;
                 m_ctx.sp_got = 0;
+                m_ctx.sp_overflow = false;
 
                 // @QUIRK: Minor corruption
                 // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Notes
@@ -101,7 +102,8 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
         break;
 
 #if 1
-// Cycles 321-340+0: Read the first byte in secondary OAM
+// Cycles 321-340+0: Read the first byte in secondary OAM (while the PPU fetches
+// the first two background tiles for the next scanline)
 // We don't emulate it.
 #endif
 
@@ -244,8 +246,7 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
             // copy Y to secondary OAM
             write_sec_oam(io_accessor, io_ctx, y, false);
 
-            if (io_ctx->n_overflow ||
-                (io_accessor->get_register(PPU::PPUSTATUS) & 0x20))
+            if (io_ctx->n_overflow || io_ctx->sp_overflow)
             {
                 // try next Y
                 add_read(io_accessor, io_ctx, true, false, true);
@@ -267,6 +268,7 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
                     if (got_8_sp(io_ctx))
                     {
                         // set sprite overflow flag
+                        io_ctx->sp_overflow = true;
                         io_accessor->get_register(PPU::PPUSTATUS) |= 0x20;
                     }
                 }

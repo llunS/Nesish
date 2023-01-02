@@ -81,16 +81,16 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
             if (m_accessor->get_context().sp_pos_x[i] == 0)
             {
                 // @IMPL: Left-over sprites can get activated (if we write it
-                // this way), but their pattern data will be transparent (0x00),
-                // so they contribute to no final visuals AND won't mess up
-                // sprite 0 hit flag.
+                // this way, with X value being 0xFF), but their pattern data
+                // will be transparent (0x00), so they contribute to no final
+                // visuals AND won't mess up sprite 0 hit flag.
                 // We do this for simplicity of implementation, change it if
                 // performance issues arise.
                 m_accessor->get_context().sp_active_counter[i] =
                     LN_PATTERN_TILE_WIDTH;
             }
-            // @IMPL: decrement it for simplicity, cause it lasts only ONE
-            // 256-cycle loop.
+            // @IMPL: decrement it for simplicity, cause it gets reset every
+            // single 256-cycle loop.
             --m_accessor->get_context().sp_pos_x[i];
         }
 
