@@ -184,10 +184,11 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                         1. + (LA_AUDIO_BUF_SIZE - 2. * audio_ch.p_size()) /
                                  LA_AUDIO_BUF_SIZE * LA_AUDIO_DYN_D;
                     // target_bufsize > 0 holds
-                    int target_bufsize = resample_ratio * LA_AUDIO_BUF_SIZE;
-                    int target_sample_rate = LA_AUDIO_SAMPLE_RATE *
-                                             double(target_bufsize) /
-                                             LA_AUDIO_BUF_SIZE;
+                    int target_bufsize =
+                        int(resample_ratio * LA_AUDIO_BUF_SIZE);
+                    int target_sample_rate =
+                        int(LA_AUDIO_SAMPLE_RATE * double(target_bufsize) /
+                            LA_AUDIO_BUF_SIZE);
 
                     if (!resampler.set_rates(emulator->get_sample_rate(),
                                              target_sample_rate))
@@ -210,14 +211,16 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                                 // @NOTE: Once clocked, samples must be drained
                                 // to avoid buffer overflow.
                                 // @FIXME: Which is correct? [0, 1] or [-1, 1]
-                                resampler.clock((sample * 2. - 1.) * 32767);
+                                resampler.clock(
+                                    short((sample * 2. - 1.) * 32767));
                                 // resampler.clock(sample * 32767);
                             }
                             ++cpu_ticks;
                         }
                         // Drain the sample buffer
                         {
-                            audio_ch.p_send(buf / 32767.);
+                            audio_ch.p_send(
+                                AudioChannel::value_t(buf / 32767.));
 
                             if (pcm_writer.is_open())
                             {
@@ -324,7 +327,7 @@ audio_open(RtAudio &io_dac, unsigned int i_sample_rate, unsigned i_buffer_size,
         io_dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, i_sample_rate,
                           &i_buffer_size, i_callback, i_user_data);
     }
-    catch (RtAudioError &e)
+    catch (RtAudioError &)
     {
         return false;
     }
@@ -338,7 +341,7 @@ audio_start(RtAudio &io_dac)
     {
         io_dac.startStream();
     }
-    catch (RtAudioError &e)
+    catch (RtAudioError &)
     {
         return false;
     }
@@ -355,7 +358,7 @@ audio_stop(RtAudio &io_dac)
             io_dac.stopStream();
         }
     }
-    catch (RtAudioError &e)
+    catch (RtAudioError &)
     {
         return false;
     }

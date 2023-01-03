@@ -46,8 +46,8 @@ struct Sweep {
 
     Divider &m_ch_timer; // the channel timer.
     /* clang-format off */
-    // Pulse 1 adds the ones' complement (−c − 1). Making 20 negative produces a change amount of −21
-    // Pulse 2 adds the two's complement (−c). Making 20 negative produces a change amount of −20.
+    // Pulse 1 adds the ones' complement (-c - 1). Making 20 negative produces a change amount of -21.
+    // Pulse 2 adds the two's complement (-c). Making 20 negative produces a change amount of -20.
     /* clang-format on */
     bool m_mode_1;
 };

@@ -1,5 +1,7 @@
 #include "pcm_writer.hpp"
 
+#include "common/vc_intrinsics.hpp"
+
 namespace ln_app {
 
 PCMWriter::PCMWriter()
@@ -20,7 +22,10 @@ PCMWriter::open(const std::string &i_path)
         return 1;
     }
 
+    LN_VC_WARNING_PUSH
+    LN_VC_WARNING_DISABLE(4996)
     FILE *fp = std::fopen(i_path.c_str(), "wb");
+    LN_VC_WARNING_POP
     if (!fp)
     {
         return 1;

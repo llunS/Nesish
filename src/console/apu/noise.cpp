@@ -32,7 +32,7 @@ Noise::tick_timer()
     if (m_timer.tick())
     {
         bool other_bit = m_mode ? (m_shift & 0x0040) : (m_shift & 0x0002);
-        bool feedback = (m_shift ^ other_bit) & 0x0001;
+        bool feedback = (m_shift ^ decltype(m_shift)(other_bit)) & 0x0001;
         m_shift >>= 1;
         m_shift = (m_shift & ~0x4000) | (feedback << 14);
     }

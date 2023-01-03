@@ -125,7 +125,7 @@ APU::mix(Byte i_pulse1, Byte i_pulse2, Byte i_triangle, Byte i_noise,
     float pulse_out = 0.0;
     if (i_pulse1 || i_pulse2)
     {
-        pulse_out = 95.88 / (8128. / (i_pulse1 + i_pulse2) + 100.);
+        pulse_out = float(95.88 / (8128. / (i_pulse1 + i_pulse2) + 100.));
     }
     else
     {
@@ -135,10 +135,9 @@ APU::mix(Byte i_pulse1, Byte i_pulse2, Byte i_triangle, Byte i_noise,
     float tnd_out = 0.0;
     if (i_triangle || i_noise || i_dmc)
     {
-        tnd_out =
-            159.79 /
-            (1. / (i_triangle / 8227. + i_noise / 12241. + i_dmc / 22638.) +
-             100.);
+        tnd_out = float(159.79 / (1. / (i_triangle / 8227. + i_noise / 12241. +
+                                        i_dmc / 22638.) +
+                                  100.));
     }
     else
     {

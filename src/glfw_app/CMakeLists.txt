@@ -30,6 +30,10 @@ list(APPEND sources gui/debugger_window.cpp)
 list(APPEND sources gui/rect_cut.cpp)
 
 list(APPEND sources blip_buf/blip_buf.c)
+# 3rd-Party code
+if (MSVC)
+    set_source_files_properties(blip_buf/blip_buf.c PROPERTIES COMPILE_OPTIONS "/WX-")
+endif()
 list(APPEND sources audio/resampler.cpp)
 list(APPEND sources audio/pcm_writer.cpp)
 

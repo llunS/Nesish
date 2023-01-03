@@ -290,7 +290,7 @@ Emulator::elapsed(Cycle i_ticks)
 Cycle
 Emulator::ticks(Time_t i_duration)
 {
-    return LN_CPU_HZ * i_duration;
+    return Cycle(LN_CPU_HZ * i_duration);
 }
 
 bool

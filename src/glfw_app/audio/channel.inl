@@ -20,7 +20,7 @@ Channel<N>::p_size() const
 {
     const value_t *b = m_begin.load(std::memory_order_seq_cst);
     const value_t *e = m_end.load(std::memory_order_seq_cst);
-    return e >= b ? e - b : array_size() - (b - e);
+    return (unsigned int)(e >= b ? e - b : array_size() - (b - e));
 }
 
 template <unsigned int N>
