@@ -99,6 +99,8 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
             // @TODO: backdrop color 0
             // https://www.nesdev.org/wiki/PPU_palettes#Backdrop_color_(palette_index_0)_uses
             // @TODO: left 8 pixels clipped off
+            // @TODO: The background palette hack
+            // https://www.nesdev.org/wiki/PPU_palettes#The_background_palette_hack
             OutputColor bg_clr(Uninitialized);
             if (m_accessor->bg_enabled())
             {
@@ -179,6 +181,13 @@ pvt_bg_render(PipelineAccessor *io_accessor)
     /* 4. get palette index color */
     Address idx_color_addr =
         LN_PALETTE_ADDR_BG_OR_MASK | (palette_idx << 2) | pattern_data;
+    // @TODO: Backdrop color (palette index 0) uses
+    // @TODO: The background palette hack
+    if ((idx_color_addr & LN_PALETTE_ADDR_BACKDROP_MASK) ==
+        LN_PALETTE_ADDR_BG_BACKDROP)
+    {
+        idx_color_addr = LN_PALETTE_ADDR_BG_BACKDROP;
+    }
     Byte idx_color_byte;
     auto error =
         io_accessor->get_memory()->get_byte(idx_color_addr, idx_color_byte);
@@ -265,6 +274,13 @@ pvt_sp_render(PipelineAccessor *io_accessor)
         /* 4. get palette index color */
         Address idx_color_addr =
             LN_PALETTE_ADDR_SP_OR_MASK | (palette_idx << 2) | pattern_data;
+        // @TODO: Backdrop color (palette index 0) uses
+        // @TODO: The background palette hack
+        if ((idx_color_addr & LN_PALETTE_ADDR_BACKDROP_MASK) ==
+            LN_PALETTE_ADDR_BG_BACKDROP)
+        {
+            idx_color_addr = LN_PALETTE_ADDR_BG_BACKDROP;
+        }
         Byte idx_color_byte;
         auto error =
             io_accessor->get_memory()->get_byte(idx_color_addr, idx_color_byte);

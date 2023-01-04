@@ -49,11 +49,13 @@
 #define LN_NT_MIRROR_ADDR_MASK 0xEFFF
 
 #define LN_PALETTE_SIZE 32
+#define LN_PALETTE_ADDR_BG_BACKDROP 0x3F00
+#define LN_PALETTE_ADDR_BACKDROP_MASK 0xFFE3 // & to backdrop
 #define LN_PALETTE_ADDR_HEAD 0x3F00
 #define LN_PALETTE_ADDR_TAIL 0x3FFF
-#define LN_PALETTE_ADDR_MASK 0x001F          // rightmost 5 bits
-#define LN_PALETTE_ADDR_BACKDROP_MASK 0x0003 // rightmost 2 bits (modulo 4)
-#define LN_PALETTE_ADDR_BG_MASK 0xFF0F       // background palette prefix
+#define LN_PALETTE_ADDR_MASK 0x001F        // rightmost 5 bits
+#define LN_PALETTE_ADDR_MIRROR_MASK 0x0003 // rightmost 2 bits (modulo 4)
+#define LN_PALETTE_ADDR_BG_MASK 0xFF0F     // & to background palette
 // used to get background palette color
 #define LN_PALETTE_ADDR_BG_OR_MASK 0x3F00
 // used to get sprite palette color

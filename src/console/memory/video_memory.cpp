@@ -27,7 +27,7 @@ VideoMemory::VideoMemory()
             Address addr = (i_addr & LN_PALETTE_ADDR_MASK) | i_entry->begin;
             // Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of
             // $3F00/$3F04/$3F08/$3F0C.
-            if ((addr & LN_PALETTE_ADDR_BACKDROP_MASK) == 0)
+            if ((addr & LN_PALETTE_ADDR_MIRROR_MASK) == 0)
             {
                 addr &= LN_PALETTE_ADDR_BG_MASK;
             }

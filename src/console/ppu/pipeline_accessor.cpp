@@ -203,6 +203,15 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
         {
             auto get_palette_color = [this](int i_idx) {
                 Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i_idx);
+
+                // @TODO: Backdrop color (palette index 0) uses
+                // @TODO: The background palette hack
+                if ((color_addr & LN_PALETTE_ADDR_BACKDROP_MASK) ==
+                    LN_PALETTE_ADDR_BG_BACKDROP)
+                {
+                    color_addr = LN_PALETTE_ADDR_BG_BACKDROP;
+                }
+
                 Byte color_byte = 0;
                 // @NOTE: The address is in VRAM.
                 (void)this->m_ppu->m_memory->get_byte(color_addr, color_byte);
