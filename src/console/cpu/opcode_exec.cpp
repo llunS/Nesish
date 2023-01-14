@@ -975,9 +975,11 @@ CPU::OpcodeExec::exec_sbc_full(ln::CPU *i_cpu, Byte i_val)
     bool borrow = !i_cpu->check_flag(StatusFlag::C);
 
     Byte prev_val = i_cpu->A;
-    i_cpu->A -= (i_val + (Byte)borrow);
+    Byte2 minuend = i_cpu->A;
+    Byte2 subtrahend = i_val + (Byte2)borrow;
+    i_cpu->A = (Byte)(minuend - subtrahend);
 
-    bool no_borrow = prev_val >= i_val;
+    bool no_borrow = minuend >= subtrahend;
     bool signed_overflow = is_signed_overflow_sbc(prev_val, i_val, borrow);
 
     test_flag_n(i_cpu, i_cpu->A);

@@ -22,8 +22,9 @@ inline bool
 is_signed_overflow_adc(Byte i_lhs, Byte i_rhs, bool i_carry)
 {
     // using extra bits.
-    // int is of at least 16 bits, according to standard.
-    int result = (SignedByte)i_lhs + (SignedByte)i_rhs + (SignedByte)i_carry;
+    SignedByte2 result = (SignedByte2)(SignedByte)i_lhs +
+                         (SignedByte2)(SignedByte)i_rhs +
+                         (SignedByte2)(SignedByte)i_carry;
     return result > 127 || result < -128;
 }
 
@@ -31,8 +32,9 @@ inline bool
 is_signed_overflow_sbc(Byte i_lhs, Byte i_rhs, bool i_borrow)
 {
     // using extra bits.
-    // int is of at least 16 bits, according to standard.
-    int result = (SignedByte)i_lhs - (SignedByte)i_rhs - (SignedByte)i_borrow;
+    SignedByte2 result = (SignedByte2)(SignedByte)i_lhs -
+                         (SignedByte2)(SignedByte)i_rhs -
+                         (SignedByte2)(SignedByte)i_borrow;
     return result > 127 || result < -128;
 }
 
