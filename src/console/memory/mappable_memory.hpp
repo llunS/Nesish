@@ -37,8 +37,8 @@ struct MappableMemory {
         {
         }
 
-        const MappingEntry *v;
         EMappingPoint k;
+        const MappingEntry *v;
     };
     EntryKeyValue
     get_entry_kv(Address i_addr) const;

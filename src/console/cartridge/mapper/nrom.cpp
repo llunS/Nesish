@@ -1,4 +1,4 @@
-#include "norm.hpp"
+#include "nrom.hpp"
 
 #include "console/assert.hpp"
 
@@ -7,14 +7,15 @@
 
 namespace ln {
 
-NORM::NORM(const INES::RomAccessor *i_accessor)
+NROM::NROM(const INES::RomAccessor *i_accessor)
     : Mapper{i_accessor}
     , m_prg_ram{}
+    , m_chr_ram{}
 {
 }
 
 Error
-NORM::validate() const
+NROM::validate() const
 {
     std::size_t prg_rom_size;
     m_rom_accessor->get_prg_rom(nullptr, &prg_rom_size);
@@ -28,14 +29,14 @@ NORM::validate() const
 }
 
 void
-NORM::map_memory(const INES *i_nes, Memory *i_memory,
+NROM::map_memory(const INES *i_nes, Memory *i_memory,
                  VideoMemory *i_video_memory)
 {
     // PRG ROM
     {
         auto decode = [](const MappingEntry *i_entry,
                          Address i_addr) -> Byte * {
-            auto thiz = (NORM *)i_entry->opaque;
+            auto thiz = (NROM *)i_entry->opaque;
             auto accessor = thiz->m_rom_accessor;
 
             std::size_t rom_size;
@@ -60,7 +61,10 @@ NORM::map_memory(const INES *i_nes, Memory *i_memory,
     {
         auto decode = [](const MappingEntry *i_entry,
                          Address i_addr) -> Byte * {
-            auto thiz = (NORM *)i_entry->opaque;
+            auto thiz = (NROM *)i_entry->opaque;
+
+            // @TODO: mirror if "prg_ram_size" less than 8k,
+            // wrap "prg_ram_size" in a function to deal with 2.0 format
 
             return thiz->m_prg_ram + (i_addr - i_entry->begin);
         };
@@ -69,10 +73,11 @@ NORM::map_memory(const INES *i_nes, Memory *i_memory,
     }
 
     // CHR ROM
+    if (!m_rom_accessor->use_chr_ram())
     {
         auto decode = [](const MappingEntry *i_entry,
                          Address i_addr) -> Byte * {
-            auto thiz = (NORM *)i_entry->opaque;
+            auto thiz = (NROM *)i_entry->opaque;
             auto accessor = thiz->m_rom_accessor;
 
             Byte *rom_base;
@@ -84,12 +89,26 @@ NORM::map_memory(const INES *i_nes, Memory *i_memory,
             VideoMemoryMappingPoint::PATTERN,
             {LN_PATTERN_ADDR_HEAD, LN_PATTERN_ADDR_TAIL, true, decode, this});
     }
+    // CHR RAM
+    else
+    {
+        auto decode = [](const MappingEntry *i_entry,
+                         Address i_addr) -> Byte * {
+            auto thiz = (NROM *)i_entry->opaque;
+
+            return thiz->m_chr_ram + (i_addr - i_entry->begin);
+        };
+        i_video_memory->set_mapping(
+            VideoMemoryMappingPoint::PATTERN,
+            {LN_PATTERN_ADDR_HEAD, LN_PATTERN_ADDR_TAIL, false, decode, this});
+    }
+
     // mirroring
     i_video_memory->configure_mirror(i_nes->h_mirror());
 }
 
 void
-NORM::unmap_memory(const INES *i_nes, Memory *i_memory,
+NROM::unmap_memory(const INES *i_nes, Memory *i_memory,
                    VideoMemory *i_video_memory) const
 {
     (void)(i_nes);

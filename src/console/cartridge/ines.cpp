@@ -1,7 +1,7 @@
 #include "ines.hpp"
 
 #include "common/logger.hpp"
-#include "console/cartridge/mapper/norm.hpp"
+#include "console/cartridge/mapper/nrom.hpp"
 
 namespace ln {
 
@@ -13,6 +13,7 @@ INES::INES()
     , m_prg_rom_size(0)
     , m_chr_rom(nullptr)
     , m_chr_rom_size(0)
+    , m_use_chr_ram(false)
     , m_rom_accessor(this)
 {
 }
@@ -67,7 +68,8 @@ INES::validate() const
     }
     if (m_header.ines2 != 0)
     {
-        LN_LOG_ERROR(ln::get_logger(), "iNES invalid version.");
+        LN_LOG_ERROR(ln::get_logger(), "iNES invalid version: {}.",
+                     m_header.ines2);
         return Error::CORRUPTED;
     }
 
@@ -107,7 +109,7 @@ pvt_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor)
     switch (i_mapper_number)
     {
         case 0:
-            return new NORM(i_accessor);
+            return new NROM(i_accessor);
             break;
 
         default:
@@ -141,6 +143,12 @@ INES::RomAccessor::get_chr_rom(Byte **o_addr, std::size_t *o_size) const
         *o_addr = m_ines->m_chr_rom;
     if (o_size)
         *o_size = m_ines->m_chr_rom_size;
+}
+
+bool
+INES::RomAccessor::use_chr_ram() const
+{
+    return m_ines->m_use_chr_ram;
 }
 
 } // namespace ln

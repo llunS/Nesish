@@ -4,9 +4,9 @@
 
 namespace ln {
 
-struct NORM : public Mapper {
+struct NROM : public Mapper {
   public:
-    NORM(const INES::RomAccessor *i_accessor);
+    NROM(const INES::RomAccessor *i_accessor);
 
     Error
     validate() const override;
@@ -20,6 +20,7 @@ struct NORM : public Mapper {
 
   private:
     Byte m_prg_ram[8 * 1024]; // Just support it up to 8KB
+    Byte m_chr_ram[8 * 1024];
 };
 
 } // namespace ln

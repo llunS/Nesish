@@ -407,11 +407,6 @@ CPU::get_byte2(Address i_addr) const
 void
 CPU::push_byte(Byte i_byte)
 {
-    if (S == 0)
-    {
-        LN_ASSERT_ERROR("Stack overflow! PC: ${:04X}", PC);
-    }
-
     set_byte(Memory::STACK_PAGE_MASK | S, i_byte);
     LN_LOG_TRACE(ln::get_logger(), "Push byte: {:02X}", i_byte);
     --S;
@@ -420,11 +415,6 @@ CPU::push_byte(Byte i_byte)
 Byte
 CPU::pop_byte()
 {
-    if (S == (Byte)-1)
-    {
-        LN_ASSERT_ERROR("Stack underflow! PC: ${:04X}", PC);
-    }
-
     ++S;
     Byte byte = get_byte(Memory::STACK_PAGE_MASK | S);
     LN_LOG_TRACE(ln::get_logger(), "Pop byte: {:02X}", byte);

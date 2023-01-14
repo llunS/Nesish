@@ -227,6 +227,7 @@ CartridgeLoader::pvt_load_ines_chr_rom(std::FILE *i_file, INES *io_ines)
     // use RAM instead.
     if (!io_ines->m_header.chr_rom_size)
     {
+        io_ines->m_use_chr_ram = true;
         return Error::OK;
     }
 

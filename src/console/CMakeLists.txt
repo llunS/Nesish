@@ -23,7 +23,7 @@ list(APPEND sources types.cpp)
 list(APPEND sources cartridge/cartridge_loader.cpp)
 list(APPEND sources cartridge/ines.cpp)
 list(APPEND sources cartridge/mapper/mapper.cpp)
-list(APPEND sources cartridge/mapper/norm.cpp)
+list(APPEND sources cartridge/mapper/nrom.cpp)
 
 list(APPEND sources memory/mapping_entry.cpp)
 list(APPEND sources memory/memory.cpp)

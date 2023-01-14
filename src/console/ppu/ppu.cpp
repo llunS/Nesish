@@ -12,6 +12,7 @@ PPU::PPU(VideoMemory *i_memory, CPU *i_cpu,
          const lnd::DebugFlags &i_debug_flags)
     : m_regs{}
     , m_ppudata_buf(0xFF)
+    , m_oam{}
     , m_memory(i_memory)
     , m_cpu(i_cpu)
     , m_pipeline_accessor(nullptr)

@@ -1,5 +1,3 @@
-
-
 #include <cstring>
 #include <algorithm>
 #include <iterator>
@@ -211,7 +209,7 @@ MappableMemory<EMappingPoint, AddressableSize>::decode_addr_raw_impl(
     {
         LN_LOG_ERROR(ln::get_logger(),
                      "Registered mapping can not handle address "
-                     "decoding: {}, {}, {}, {}",
+                     "decoding: ${:04X}, {}, ${:04X}, ${:04X}",
                      i_addr, mp, entry->begin, entry->end);
     }
     return byte_ptr;

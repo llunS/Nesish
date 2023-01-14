@@ -37,6 +37,8 @@ struct INES : public Cartridge {
         get_prg_rom(Byte **o_addr, std::size_t *o_size) const;
         void
         get_chr_rom(Byte **o_addr, std::size_t *o_size) const;
+        bool
+        use_chr_ram() const;
 
       private:
         RomAccessor(const INES *i_nes);
@@ -88,6 +90,7 @@ struct INES : public Cartridge {
     std::size_t m_prg_rom_size;
     Byte *m_chr_rom;
     std::size_t m_chr_rom_size;
+    bool m_use_chr_ram;
 
     RomAccessor m_rom_accessor;
 };
