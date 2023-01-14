@@ -20,7 +20,7 @@ pvt_close_log(std::ifstream &o_file);
 static bool
 pvt_same_cpu_state(const ln::CPU *lhs, const ln::CPU *rhs);
 
-TEST(cpu_test, cpu_test)
+TEST(cpu, nestest)
 {
     ln::init_logger(spdlog::level::trace);
 
