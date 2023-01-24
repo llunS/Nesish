@@ -764,7 +764,11 @@ CPU::OpcodeExec::exec_arr(ln::CPU *i_cpu, ln::Operand i_operand,
 {
     (void)(o_branch_cycles);
 
-    // http://www.oxyron.de/html/opcodes02.html
+    // Similar to AND #i then ROR A, except sets the flags differently. N and Z
+    // are normal, but C is bit 6 and V is bit 6 xor bit 5. A fast way to
+    // perform signed division by 4 is: CMP #$80; ARR #$FF; ROR. This can be
+    // extended to larger powers of two.
+
     Byte val = i_cpu->get_operand(i_operand);
 
     // @NOTE: ROR depends on C flag, but AND doesn't affect C flag, so we can
@@ -774,7 +778,8 @@ CPU::OpcodeExec::exec_arr(ln::CPU *i_cpu, ln::Operand i_operand,
     (void)exec_ror_op(i_cpu, Operand::from_acc(), and_val);
 
     test_flag_n(i_cpu, i_cpu->A);
-    i_cpu->test_flag(StatusFlag::V, is_signed_overflow_adc(and_val, val, 0));
+    i_cpu->test_flag(StatusFlag::V,
+                     check_bit<5>(i_cpu->A) ^ check_bit<6>(i_cpu->A));
     test_flag_z(i_cpu, i_cpu->A);
     i_cpu->test_flag(StatusFlag::C, check_bit<7>(and_val));
 }

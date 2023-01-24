@@ -15,12 +15,13 @@ Memory::Memory()
 {
     // Internal RAM space mapping
     {
-        auto decode = [](const MappingEntry *i_entry,
-                         Address i_addr) -> Byte * {
+        auto decode = [](const MappingEntry *i_entry, Address i_addr,
+                         Byte *&o_addr) -> ln::Error {
             Byte *ram = (Byte *)i_entry->opaque;
 
             Address addr = i_addr & LN_RAM_ADDR_MASK;
-            return ram + addr;
+            o_addr = ram + addr;
+            return Error::OK;
         };
         set_mapping(MemoryMappingPoint::INTERNAL_RAM,
                     {LN_RAM_ADDR_HEAD, LN_RAM_ADDR_TAIL, false, decode, m_ram});

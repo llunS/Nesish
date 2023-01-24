@@ -245,8 +245,8 @@ PPU::write_register(Register i_reg, Byte i_val)
             auto err = m_memory->set_byte(vram_addr, i_val);
             if (LN_FAILED(err))
             {
-                LN_ASSERT_FATAL("Failed to write PPUDATA: {}, {}", vram_addr,
-                                i_val);
+                LN_ASSERT_FATAL("Failed to write PPUDATA: ${:04X}, 0x{:02X}",
+                                vram_addr, i_val);
             }
 
             inc_vram_addr();

@@ -63,7 +63,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     ln_err = emulator->insert_cartridge(i_rom_path);
     if (LN_FAILED(ln_err))
     {
-        LN_LOG_INFO(ln::get_logger(), "Failed to load cartridge: {}", ln_err);
+        LN_LOG_ERROR(ln::get_logger(), "Failed to load cartridge: {}", ln_err);
         return 1;
     }
 

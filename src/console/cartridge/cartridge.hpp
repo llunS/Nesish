@@ -14,9 +14,9 @@ struct Cartridge {
     validate() const = 0;
 
     virtual void
-    map_memory(Memory *i_memory, VideoMemory *i_video_memory) const = 0;
+    map_memory(Memory *o_memory, VideoMemory *o_video_memory) = 0;
     virtual void
-    unmap_memory(Memory *i_memory, VideoMemory *i_video_memory) const = 0;
+    unmap_memory(Memory *o_memory, VideoMemory *o_video_memory) = 0;
 };
 
 } // namespace ln

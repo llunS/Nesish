@@ -9,7 +9,8 @@
 namespace ln {
 
 struct MappingEntry;
-typedef std::function<Byte *(const MappingEntry *i_entry, Address i_addr)>
+typedef std::function<ln::Error(const MappingEntry *i_entry, Address i_addr,
+                                Byte *&o_addr)>
     MappingDecodeFunc;
 typedef std::function<ln::Error(const MappingEntry *i_entry, Address i_addr,
                                 Byte &o_val)>

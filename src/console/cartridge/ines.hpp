@@ -20,12 +20,9 @@ struct INES : public Cartridge {
     validate() const override;
 
     void
-    map_memory(Memory *i_memory, VideoMemory *i_video_memory) const override;
+    map_memory(Memory *o_memory, VideoMemory *o_video_memory) override;
     void
-    unmap_memory(Memory *i_memory, VideoMemory *i_video_memory) const override;
-
-    bool
-    h_mirror() const;
+    unmap_memory(Memory *o_memory, VideoMemory *o_video_memory) override;
 
   public:
     struct RomAccessor {
@@ -33,6 +30,9 @@ struct INES : public Cartridge {
         LN_KLZ_DELETE_COPY_MOVE(RomAccessor);
 
       public:
+        bool
+        h_mirror() const;
+
         void
         get_prg_rom(Byte **o_addr, std::size_t *o_size) const;
         void

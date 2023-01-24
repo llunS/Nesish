@@ -48,7 +48,12 @@ MappableMemory<EMappingPoint, AddressableSize>::get_byte(Address i_addr,
     }
     else
     {
-        Byte *byte_ptr = decode_addr_raw_impl(entry_kv, i_addr);
+        Byte *byte_ptr = nullptr;
+        auto error = decode_addr_raw_impl(entry_kv, i_addr, byte_ptr);
+        if (LN_FAILED(error))
+        {
+            return error;
+        }
         if (!byte_ptr)
         {
             return Error::SEGFAULT;
@@ -78,7 +83,7 @@ MappableMemory<EMappingPoint, AddressableSize>::set_byte(Address i_addr,
         const auto &mp = entry_kv.k;
         // Can not write to read-only memory.
         LN_LOG_ERROR(ln::get_logger(),
-                     "Attempted to write to read-only memory: {}, {}", mp,
+                     "Attempted to write to read-only memory: {}, ${:04X}", mp,
                      i_addr);
         return Error::SEGFAULT;
     }
@@ -90,7 +95,12 @@ MappableMemory<EMappingPoint, AddressableSize>::set_byte(Address i_addr,
     }
     else
     {
-        Byte *byte_ptr = decode_addr_raw_impl(entry_kv, i_addr);
+        Byte *byte_ptr = nullptr;
+        auto error = decode_addr_raw_impl(entry_kv, i_addr, byte_ptr);
+        if (LN_FAILED(error))
+        {
+            return error;
+        }
         if (!byte_ptr)
         {
             return Error::SEGFAULT;
@@ -183,28 +193,34 @@ MappableMemory<EMappingPoint, AddressableSize>::get_entry_kv(
 }
 
 template <typename EMappingPoint, std::size_t AddressableSize>
-Byte *
+Error
 MappableMemory<EMappingPoint, AddressableSize>::decode_addr_raw(
-    Address i_addr) const
+    Address i_addr, Byte *&o_addr) const
 {
     auto entry_kv = get_entry_kv(i_addr);
-    return decode_addr_raw_impl(entry_kv, i_addr);
+    return decode_addr_raw_impl(entry_kv, i_addr, o_addr);
 }
 
 template <typename EMappingPoint, std::size_t AddressableSize>
-Byte *
+Error
 MappableMemory<EMappingPoint, AddressableSize>::decode_addr_raw_impl(
-    const EntryKeyValue &i_entry_kv, Address i_addr) const
+    const EntryKeyValue &i_entry_kv, Address i_addr, Byte *&o_addr) const
 {
     const auto &mp = i_entry_kv.k;
     const auto &entry = i_entry_kv.v;
 
     if (!entry)
     {
-        return nullptr;
+        return Error::SEGFAULT;
     }
 
-    auto byte_ptr = entry->decode(entry, i_addr);
+    Byte *byte_ptr = nullptr;
+    auto error = entry->decode(entry, i_addr, byte_ptr);
+    if (LN_FAILED(error))
+    {
+        return error;
+    }
+
     if (!byte_ptr)
     {
         LN_LOG_ERROR(ln::get_logger(),
@@ -212,7 +228,8 @@ MappableMemory<EMappingPoint, AddressableSize>::decode_addr_raw_impl(
                      "decoding: ${:04X}, {}, ${:04X}, ${:04X}",
                      i_addr, mp, entry->begin, entry->end);
     }
-    return byte_ptr;
+    o_addr = byte_ptr;
+    return Error::OK;
 }
 
 } // namespace ln

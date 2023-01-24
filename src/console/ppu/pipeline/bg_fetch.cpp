@@ -288,7 +288,7 @@ pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
         auto error = io_accessor->get_memory()->get_byte(sliver_addr, byte);
         if (LN_FAILED(error))
         {
-            LN_ASSERT_FATAL("Failed to fetch pattern byte for bg: {}, {}",
+            LN_ASSERT_FATAL("Failed to fetch pattern byte for bg: ${:04X}, {}",
                             sliver_addr, i_upper);
             byte = 0xFF; // set to a consistent value.
         }

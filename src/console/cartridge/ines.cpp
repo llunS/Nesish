@@ -2,6 +2,7 @@
 
 #include "common/logger.hpp"
 #include "console/cartridge/mapper/nrom.hpp"
+#include "console/cartridge/mapper/mmc1.hpp"
 
 namespace ln {
 
@@ -68,7 +69,7 @@ INES::validate() const
     }
     if (m_header.ines2 != 0)
     {
-        LN_LOG_ERROR(ln::get_logger(), "iNES invalid version: {}.",
+        LN_LOG_ERROR(ln::get_logger(), "Support only iNES format for now, {}.",
                      m_header.ines2);
         return Error::CORRUPTED;
     }
@@ -82,25 +83,25 @@ INES::validate() const
 
     LN_LOG_INFO(ln::get_logger(), "iNES mapper {}.", m_mapper_number);
 
+    auto error = m_mapper->validate();
+    if (LN_FAILED(error))
+    {
+        return error;
+    }
+
     return Error::OK;
 }
 
 void
-INES::map_memory(Memory *i_memory, VideoMemory *i_video_memory) const
+INES::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
 {
-    m_mapper->map_memory(this, i_memory, i_video_memory);
+    m_mapper->map_memory(o_memory, o_video_memory);
 }
 
 void
-INES::unmap_memory(Memory *i_memory, VideoMemory *i_video_memory) const
+INES::unmap_memory(Memory *o_memory, VideoMemory *o_video_memory)
 {
-    m_mapper->unmap_memory(this, i_memory, i_video_memory);
-}
-
-bool
-INES::h_mirror() const
-{
-    return !m_header.mirror;
+    m_mapper->unmap_memory(o_memory, o_video_memory);
 }
 
 Mapper *
@@ -110,6 +111,10 @@ pvt_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor)
     {
         case 0:
             return new NROM(i_accessor);
+            break;
+
+        case 1:
+            return new MMC1(i_accessor, MMC1::V_B);
             break;
 
         default:
@@ -125,6 +130,12 @@ namespace ln {
 INES::RomAccessor::RomAccessor(const INES *i_nes)
     : m_ines(i_nes)
 {
+}
+
+bool
+INES::RomAccessor::h_mirror() const
+{
+    return !m_ines->m_header.mirror;
 }
 
 void

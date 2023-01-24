@@ -1,6 +1,7 @@
 #pragma once
 
 #include "console/cartridge/mapper/mapper.hpp"
+#include "console/types.hpp"
 
 namespace ln {
 
@@ -12,14 +13,12 @@ struct NROM : public Mapper {
     validate() const override;
 
     void
-    map_memory(const INES *i_nes, Memory *i_memory,
-               VideoMemory *i_video_memory) override;
+    map_memory(Memory *o_memory, VideoMemory *o_video_memory) override;
     void
-    unmap_memory(const INES *i_nes, Memory *i_memory,
-                 VideoMemory *i_video_memory) const override;
+    unmap_memory(Memory *o_memory, VideoMemory *o_video_memory) override;
 
   private:
-    Byte m_prg_ram[8 * 1024]; // Just support it up to 8KB
+    Byte m_prg_ram[8 * 1024]; // 8KB max
     Byte m_chr_ram[8 * 1024];
 };
 

@@ -4,6 +4,7 @@
 #include "common/klass.hpp"
 #include "console/spec.hpp"
 #include "console/types.hpp"
+#include <functional>
 
 namespace ln {
 
@@ -28,8 +29,20 @@ struct VideoMemory
     VideoMemory();
     LN_KLZ_DELETE_COPY_MOVE(VideoMemory);
 
+  public:
+    enum MirrorMode {
+        MI_H,
+        MI_V,
+        MI_1_LOW,
+        MI_1_HIGH,
+    };
     void
-    configure_mirror(bool i_horizontal);
+    set_mirror_fixed(MirrorMode i_mode);
+    typedef std::function<MirrorMode()> ModeCallback;
+    void
+    set_mirror_dyn(ModeCallback i_mode_cb);
+    void
+    unset_mirror();
 
   private:
     // https://www.nesdev.org/wiki/PPU_memory_map
