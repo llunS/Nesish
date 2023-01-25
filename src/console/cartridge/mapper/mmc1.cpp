@@ -18,6 +18,7 @@ MMC1::MMC1(const INES::RomAccessor *i_accessor, Variant i_var)
     , m_prg_bnk(0)
     , m_prg_ram{}
     , m_chr_ram{}
+    , m_no_prg_banking_32K(false)
 {
     clear_shift();
     reset_prg_bank_mode();
@@ -33,6 +34,30 @@ MMC1::MMC1(const INES::RomAccessor *i_accessor, Variant i_var)
 
         default:
             break;
+    }
+
+    std::size_t prg_rom_size;
+    m_rom_accessor->get_prg_rom(nullptr, &prg_rom_size);
+    if (prg_rom_size == 32 * 1024)
+    {
+        auto ram_size = m_rom_accessor->get_prg_ram_size();
+        // @NOTE: NES 2.0 format may be required to detect this,
+        // Because "ram_size" may very well be 0 for iNES format.
+        if (ram_size == 0)
+        {
+            // Don't forbid banking for this.
+            // 0 for iNES format.
+        }
+        // SIROM
+        else if (ram_size == 8 * 1024)
+        {
+        }
+        // Other no PRG banking 32KB boards
+        // SEROM, SHROM, and SH1ROM
+        else
+        {
+            m_no_prg_banking_32K = true;
+        }
     }
 }
 
@@ -102,19 +127,6 @@ MMC1::validate() const
     // @TODO: Support other board variants,
     // We can't detect them now without NES 2.0 format support.
 
-    // @TODO: Disable PRG banking for certain boards
-    // Boards designed for 32k PRG-ROM (SEROM, SHROM, and SH1ROM) do not connect
-    // PRG A14 to the MMC1, disabling PRG banking. For compatibility with these,
-    // the emulator may switch to PRG bank 0 at power-on. SIROM supports banked
-    // 32k PRG, however.
-    std::size_t prg_rom_size;
-    m_rom_accessor->get_prg_rom(nullptr, &prg_rom_size);
-    // Reject all 32KB PRG ROM boards.
-    if (prg_rom_size == 32 * 1024)
-    {
-        return Error::UNIMPLEMENTED;
-    }
-
     return Error::OK;
 }
 
@@ -153,40 +165,49 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                 // fix last bank at $C000 and switch 16 KB bank at $8000
                 case 3:
                 {
-                    Byte bank = 0;
-                    Address addr_base = i_entry->begin;
-
-                    bool lower_prg_rom_area = (i_addr & 0xC000) == 0x8000;
-                    Address fixed_cpu_addr_start = Address(prg_rom_bank_mode)
-                                                   << 14;
-                    // 0x4000 half the size of the PRG ROM area
-                    // inclusive range
-                    Address fixed_cpu_addr_end =
-                        fixed_cpu_addr_start + (0x4000 - 1);
-                    if (fixed_cpu_addr_start <= i_addr &&
-                        i_addr <= fixed_cpu_addr_end)
+                    if (thiz->m_no_prg_banking_32K)
                     {
-                        // @NOTE: Max bank count is 512KB / 16KB = 32, which
-                        // fits in a Byte;
-                        typedef Byte BankCount_t;
-                        BankCount_t bank_cnt = rom_size / (16 * 1024);
-                        if (bank_cnt <= 0)
-                        {
-                            return Error::PROGRAMMING; // or corrupted rom
-                        }
-                        BankCount_t last_bank = bank_cnt - 1;
-
-                        bank = lower_prg_rom_area ? 0 : last_bank;
-                        addr_base = fixed_cpu_addr_start;
+                        Address prg_rom_start = 0;
+                        Address addr_base = i_entry->begin;
+                        mem_idx = prg_rom_start + (i_addr - addr_base);
                     }
                     else
                     {
-                        bank = thiz->m_prg_bnk & 0x0F;
-                        addr_base = lower_prg_rom_area ? 0x8000 : 0xC000;
-                    }
+                        Byte bank = 0;
+                        Address addr_base = i_entry->begin;
 
-                    Address prg_rom_start = bank * 16 * 1024;
-                    mem_idx = prg_rom_start + (i_addr - addr_base);
+                        bool lower_prg_rom_area = (i_addr & 0xC000) == 0x8000;
+                        Address fixed_cpu_addr_start =
+                            Address(prg_rom_bank_mode) << 14;
+                        // 0x4000 half the size of the PRG ROM area
+                        // inclusive range
+                        Address fixed_cpu_addr_end =
+                            fixed_cpu_addr_start + (0x4000 - 1);
+                        if (fixed_cpu_addr_start <= i_addr &&
+                            i_addr <= fixed_cpu_addr_end)
+                        {
+                            // @NOTE: Max bank count is 512KB / 16KB = 32, which
+                            // fits in a Byte;
+                            typedef Byte BankCount_t;
+                            BankCount_t bank_cnt = rom_size / (16 * 1024);
+                            if (bank_cnt <= 0)
+                            {
+                                return Error::PROGRAMMING; // or corrupted rom
+                            }
+                            BankCount_t last_bank = bank_cnt - 1;
+
+                            bank = lower_prg_rom_area ? 0 : last_bank;
+                            addr_base = fixed_cpu_addr_start;
+                        }
+                        else
+                        {
+                            bank = thiz->m_prg_bnk & 0x0F;
+                            addr_base = lower_prg_rom_area ? 0x8000 : 0xC000;
+                        }
+
+                        Address prg_rom_start = bank * 16 * 1024;
+                        mem_idx = prg_rom_start + (i_addr - addr_base);
+                    }
                 }
                 break;
 

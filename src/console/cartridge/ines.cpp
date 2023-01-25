@@ -147,6 +147,12 @@ INES::RomAccessor::get_prg_rom(Byte **o_addr, std::size_t *o_size) const
         *o_size = m_ines->m_prg_rom_size;
 }
 
+std::size_t
+INES::RomAccessor::get_prg_ram_size() const
+{
+    return m_ines->m_header.prg_ram_size * 8 * 1024;
+}
+
 void
 INES::RomAccessor::get_chr_rom(Byte **o_addr, std::size_t *o_size) const
 {

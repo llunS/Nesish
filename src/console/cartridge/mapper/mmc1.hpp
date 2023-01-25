@@ -45,6 +45,9 @@ struct MMC1 : public Mapper {
   private:
     Byte m_prg_ram[32 * 1024]; // 32KB max
     Byte m_chr_ram[8 * 1024];
+
+  private:
+    bool m_no_prg_banking_32K;
 };
 
 } // namespace ln
