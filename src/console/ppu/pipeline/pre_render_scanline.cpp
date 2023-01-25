@@ -34,6 +34,18 @@ PreRenderScanline::on_tick(Cycle i_curr, Cycle i_total)
             /* clear flags */
             // VSO (VBLANK, Sprite 0 hit, Sprite overflow)
             m_accessor->get_register(PPU::PPUSTATUS) &= 0x1F;
+
+            // @QUIRK: Minor corruption
+            // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Notes
+            // @NOTE: Simply do this near the start of pre-render scanline.
+            Byte oam_addr = m_accessor->get_register(PPU::OAMADDR);
+            Byte oam_cpy_addr = oam_addr & 0xF8;
+            if (oam_cpy_addr)
+            {
+                // @IMPL: memcpy is ok, memmove is not needed.
+                std::memcpy(m_accessor->get_oam_addr(0),
+                            m_accessor->get_oam_addr(oam_cpy_addr), 8);
+            }
         }
         break;
 

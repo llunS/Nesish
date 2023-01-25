@@ -16,22 +16,22 @@ struct OutputColor {
     {
     }
     constexpr OutputColor(const Color &i_clr, Byte i_pattern)
-        : OutputColor(i_clr, i_pattern, false, 0)
+        : OutputColor(i_clr, i_pattern, false, false)
     {
     }
     constexpr OutputColor(const Color &i_clr, Byte i_pattern, bool i_priority,
-                          Byte i_sp_no)
+                          bool i_sp_0)
         : color(i_clr)
         , pattern(i_pattern)
         , priority(i_priority)
-        , sp_no(i_sp_no)
+        , sp_0(i_sp_0)
     {
     }
 
     Color color;
     Byte pattern;  // 2-bit;
     bool priority; // sprite only. true: behind background
-    Byte sp_no;
+    bool sp_0;     // sprite only. if this is sprite 0
 };
 
 static constexpr OutputColor ColorEmpty = {{0x00, 0x00, 0x00}, 0x00};
@@ -107,14 +107,19 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
                 bg_clr = pvt_bg_render(m_accessor);
             }
             OutputColor sp_clr(Uninitialized);
-            if (m_accessor->sp_enabled())
+            // Don't draw sprites on first visible scanline,
+            // since sprite evaluation doesn't occur on pre-render scanline
+            // and thus no valid data is available for rendering.
+            bool render_sp = m_accessor->sp_enabled() &&
+                             0 != m_accessor->get_context().scanline_no;
+            if (render_sp)
             {
                 sp_clr = pvt_sp_render(m_accessor);
             }
 
             pvt_muxer(m_accessor,
                       (m_accessor->bg_enabled() ? &bg_clr : nullptr),
-                      (m_accessor->sp_enabled() ? &sp_clr : nullptr));
+                      (render_sp ? &sp_clr : nullptr));
 
             /* @IMPL: Mark dirty after rendering to the last dot */
             if (i_curr == 257 && 239 == m_accessor->get_context().scanline_no)
@@ -298,9 +303,11 @@ pvt_sp_render(PipelineAccessor *io_accessor)
         static_assert(LN_MAX_VISIBLE_SP_NUM >= 1 &&
                           std::numeric_limits<Byte>::max() >=
                               LN_MAX_VISIBLE_SP_NUM - 1,
-                      "Invalid range for \"sp_no\"");
-        Byte sp_no = (Byte)i;
-        color = {pixel, pattern_data, (ctx.sp_attr[i] & 0x20) != 0, sp_no};
+                      "Invalid range for sprite index");
+
+        // @NOTE: If this line includes sprite 0, it must be at index 0.
+        color = {pixel, pattern_data, (ctx.sp_attr[i] & 0x20) != 0,
+                 i == 0 && io_accessor->get_context().with_sp0};
         got = true;
     }
 
@@ -325,18 +332,31 @@ pvt_muxer(PipelineAccessor *io_accessor, const OutputColor *i_bg_clr,
 
             /* Sprite 0 hit */
             // https://www.nesdev.org/wiki/PPU_OAM#Sprite_zero_hits
-            bool both_enabled = true;
-            if (!both_enabled || io_accessor->get_context().pixel_col == 255 ||
-                ((io_accessor->get_register(PPU::PPUMASK) & 0x06) &&
-                 !(io_accessor->get_context().pixel_col & ~0x07)))
+            bool either_disabled = false; // since (i_bg_clr && i_sp_clr)
+            // 1. If background or sprite rendering is disabled in PPUMASK
+            // ($2001)
+            // 2. At x=0 to x=7 if the left-side clipping window is enabled (if
+            // bit 2 or bit 1 of PPUMASK is 0)
+            // 3. At x=255, for an obscure reason related to the pixel pipeline
+            // 4. At any pixel where the background or sprite pixel is
+            // transparent
+            // 5. If sprite 0 hit has already occurred this frame
+            if (either_disabled ||
+                (((io_accessor->get_register(PPU::PPUMASK) & 0x06) != 0x06) &&
+                 !(io_accessor->get_context().pixel_col & ~0x07)) ||
+                io_accessor->get_context().pixel_col == 255 ||
+                (!i_bg_clr->pattern || !i_sp_clr->pattern) /*||
+                (io_accessor->get_register(PPU::PPUSTATUS) & 0x40)*/)
             {
             }
             else
             {
-                if (!i_sp_clr->sp_no &&
-                    (i_bg_clr->pattern && i_sp_clr->pattern))
+                if (i_sp_clr->sp_0 && (i_bg_clr->pattern && i_sp_clr->pattern))
                 {
-                    io_accessor->get_register(PPU::PPUSTATUS) |= 0x40;
+                    // if (!(io_accessor->get_register(PPU::PPUSTATUS) & 0x40))
+                    {
+                        io_accessor->get_register(PPU::PPUSTATUS) |= 0x40;
+                    }
                 }
             }
         }

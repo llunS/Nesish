@@ -514,6 +514,9 @@ CPU::poll_interrupt()
 {
     // @TODO: Detailed implementation of interrupts.
     // https://www.nesdev.org/wiki/CPU_interrupts
+    // Specifically, the delayed response.
+    // https://www.nesdev.org/wiki/CPU_interrupts#Delayed_IRQ_response_after_CLI,_SEI,_and_PLP
+    // Test that with interrupts test roms.
 
     // @NOTE: The interrupt sequences themselves do not perform interrupt
     // polling, meaning at least one instruction from the interrupt handler will

@@ -69,16 +69,8 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
                 m_ctx.n_overflow = false;
                 m_ctx.sp_got = 0;
                 m_ctx.sp_overflow = false;
-
-                // @QUIRK: Minor corruption
-                // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Notes
-                Byte oam_cpy_addr = oam_addr & 0xF8;
-                if (oam_cpy_addr)
-                {
-                    // @IMPL: memcpy is ok, no memmove needed.
-                    std::memcpy(m_accessor->get_oam_addr(0),
-                                m_accessor->get_oam_addr(oam_cpy_addr), 8);
-                }
+                m_ctx.sec_oam_written = false;
+                m_ctx.sp0_in_range = false;
             }
         }
         break;
@@ -86,6 +78,12 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
         case 257:
         {
             m_ctx.sec_oam_read_idx = 0;
+
+            // @NOTE: Pass out the flag at fetch stage (not eval stage), in case
+            // the flag is used by current scanline instead of the next one.
+            // In other words, "with_sp0" should not be overwritten in rendering
+            // stage (while it's in use).
+            m_accessor->get_context().with_sp0 = m_ctx.sp0_in_range;
         }
         // fall through
         case 265:
@@ -206,6 +204,7 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
         }
 
         io_accessor->get_context().sec_oam[io_ctx->sec_oam_write_idx] = i_val;
+        io_ctx->sec_oam_written = true;
         if (i_inc)
         {
             ++io_ctx->sec_oam_write_idx;
@@ -241,8 +240,10 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
         // Y
         if (!io_ctx->cp_counter)
         {
-            const Byte &y = io_ctx->sp_eval_bus;
+            Byte y = io_ctx->sp_eval_bus;
 
+            // Test this before "write_sec_oam"
+            bool sp_0 = !io_ctx->sec_oam_written;
             // copy Y to secondary OAM
             write_sec_oam(io_accessor, io_ctx, y, false);
 
@@ -265,6 +266,10 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
 
                     add_read(io_accessor, io_ctx, false, true, true);
 
+                    if (sp_0)
+                    {
+                        io_ctx->sp0_in_range = true;
+                    }
                     if (got_8_sp(io_ctx))
                     {
                         // set sprite overflow flag
@@ -376,18 +381,19 @@ SpEvalFetch::pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
         // forum, we are just guessing here.
         case 0:
         {
+            // @IMPL: Mark down the current processing sprite index at first
+            // tick. Do this before "read_sec_oam" since it modifies
+            // "sec_oam_read_idx".
+            io_ctx->sp_idx_reload = io_ctx->sec_oam_read_idx / LN_OAM_SP_SIZE;
+
             // Read Y.
             io_ctx->sp_pos_y = read_sec_oam(io_accessor, io_ctx);
-
-            // @IMPL: Mark down the current processing sprite index at first
-            // tick.
-            io_ctx->sp_idx_reload = io_ctx->sec_oam_read_idx / LN_OAM_SP_SIZE;
         }
         break;
 
         case 1:
         {
-            // Read tile nunmber.
+            // Read tile number.
             io_ctx->sp_nt_byte = read_sec_oam(io_accessor, io_ctx);
         }
         break;

@@ -136,6 +136,8 @@ struct PPU {
         Byte sf_sp_pattern_upper[LN_MAX_VISIBLE_SP_NUM];
         Byte sp_attr[LN_MAX_VISIBLE_SP_NUM];
         Byte sp_pos_x[LN_MAX_VISIBLE_SP_NUM];
+        // metadata
+        bool with_sp0; // sprites to render include sprite 0
         // rendering
         Byte sp_active_counter[LN_MAX_VISIBLE_SP_NUM];
 

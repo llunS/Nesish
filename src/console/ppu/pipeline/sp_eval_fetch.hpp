@@ -29,7 +29,8 @@ struct SpEvalFetch : public Tickable {
 
     struct Context {
         /* eval */
-        Byte sp_eval_bus;
+        /* some states might be used afterwards at fetch stage */
+        Byte sp_eval_bus; // temporary bus for eval stage
         Byte sec_oam_write_idx;
         int cp_counter;
         Byte init_oam_addr;
@@ -37,7 +38,10 @@ struct SpEvalFetch : public Tickable {
         bool n_overflow;
         Byte sp_got;
         bool sp_overflow; // in one scanline
+        bool sec_oam_written;
+        bool sp0_in_range;
 
+        /* fetch */
         Byte sec_oam_read_idx;
         Byte sp_nt_byte;
         Byte sp_attr_byte;
