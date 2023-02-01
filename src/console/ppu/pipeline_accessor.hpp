@@ -20,6 +20,9 @@ struct PipelineAccessor {
 
     Byte &
     get_register(PPU::Register i_reg);
+    const Byte &
+    get_register(PPU::Register i_reg) const;
+
     Byte2 &
     get_v();
     Byte2 &
@@ -41,11 +44,13 @@ struct PipelineAccessor {
     get_frame_buf();
 
     bool
-    bg_enabled();
+    bg_enabled() const;
     bool
-    sp_enabled();
+    sp_enabled() const;
     bool
-    rendering_enabled();
+    rendering_enabled() const;
+    bool
+    is_8x16_sp() const;
 
     void
     check_gen_nmi();
@@ -53,8 +58,23 @@ struct PipelineAccessor {
     void
     finish_frame();
 
+  public:
+    static Address
+    get_sliver_addr(bool i_tbl_right, Byte i_tile_idx, bool i_upper,
+                    Byte i_fine_y);
+    static ln::Error
+    get_ptn_sliver(bool i_tbl_right, Byte i_tile_idx, bool i_upper,
+                   Byte i_fine_y, const VideoMemory *i_vram, Byte &o_val);
+
+    static void
+    resolve_sp_ptn_tbl(Byte i_tile_byte, bool i_8x16, bool i_ptn_tbl_bit,
+                       bool &o_high_ptn_tbl);
+    static void
+    resolve_sp_tile(Byte i_tile_byte, bool i_8x16, bool i_flip_y,
+                    Byte i_fine_y_sp, Byte &o_tile_idx);
+
   private:
-    /*debug */
+    /* debug */
 
     bool
     capture_palette_on();

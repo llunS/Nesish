@@ -11,22 +11,21 @@ namespace ln {
 
 static constexpr int SEC_OAM_CLEAR_CYCLES = 64;
 
-SpEvalFetch::SpEvalFetch(PipelineAccessor *io_accessor, bool i_sp_fetch_only)
+SpEvalFetch::SpEvalFetch(PipelineAccessor *io_accessor, bool i_fetch_only)
     : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
-    , m_sp_fetch_only(i_sp_fetch_only)
+    , m_fetch_only(i_fetch_only)
     , m_sec_oam_clear(SEC_OAM_CLEAR_CYCLES,
                       std::bind(pvt_sec_oam_clear, std::placeholders::_1,
                                 std::placeholders::_2, io_accessor))
-    , m_sp_eval(192, std::bind(pvt_sp_eval, std::placeholders::_1,
-                               std::placeholders::_2, io_accessor, &m_ctx))
-    , m_sp_fetch_reload(8,
-                        std::bind(pvt_sp_fetch_reload, std::placeholders::_1,
+    , m_eval(192, std::bind(pvt_sp_eval, std::placeholders::_1,
+                            std::placeholders::_2, io_accessor, &m_ctx))
+    , m_fetch_reload(8, std::bind(pvt_sp_fetch_reload, std::placeholders::_1,
                                   std::placeholders::_2, io_accessor, &m_ctx))
 {
     m_sec_oam_clear.set_done();
-    m_sp_eval.set_done();
-    m_sp_fetch_reload.set_done();
+    m_eval.set_done();
+    m_fetch_reload.set_done();
 }
 
 void
@@ -35,8 +34,8 @@ SpEvalFetch::reset()
     Tickable::reset();
 
     m_sec_oam_clear.set_done();
-    m_sp_eval.set_done();
-    m_sp_fetch_reload.set_done();
+    m_eval.set_done();
+    m_fetch_reload.set_done();
 }
 
 Cycle
@@ -48,7 +47,7 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
     {
         case 1:
         {
-            if (!m_sp_fetch_only)
+            if (!m_fetch_only)
             {
                 m_sec_oam_clear.reset();
             }
@@ -57,9 +56,9 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
 
         case 65:
         {
-            if (!m_sp_fetch_only && m_accessor->rendering_enabled())
+            if (!m_fetch_only && m_accessor->rendering_enabled())
             {
-                m_sp_eval.reset();
+                m_eval.reset();
 
                 Byte oam_addr = m_accessor->get_register(PPU::OAMADDR);
                 m_ctx.sec_oam_write_idx = 0;
@@ -95,7 +94,7 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
         case 313:
         {
             // 8 cycles each for 8 sprites.
-            m_sp_fetch_reload.reset();
+            m_fetch_reload.reset();
         }
         break;
 
@@ -109,8 +108,8 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
             break;
     }
     m_sec_oam_clear.tick();
-    m_sp_eval.tick();
-    m_sp_fetch_reload.tick();
+    m_eval.tick();
+    m_fetch_reload.tick();
 
     /* do some checks */
     switch (i_curr)
@@ -254,10 +253,14 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
             }
             else
             {
-                // @TODO: 8x16 mode
+                static_assert(LN_PATTERN_TILE_HEIGHT == 8,
+                              "Invalid LN_PATTERN_TILE_HEIGHT.");
+                decltype(y) sp_h = io_accessor->is_8x16_sp()
+                                       ? LN_PATTERN_TILE_HEIGHT * 2
+                                       : LN_PATTERN_TILE_HEIGHT;
                 bool in_range =
                     (y <= io_accessor->get_context().scanline_no &&
-                     io_accessor->get_context().scanline_no < y + 8);
+                     io_accessor->get_context().scanline_no < y + sp_h);
                 if (in_range)
                 {
                     // copy the rest
@@ -331,48 +334,56 @@ SpEvalFetch::pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
     auto get_pattern_sliver = [](PipelineAccessor *io_accessor, Context *io_ctx,
                                  Byte i_sp_idx, bool i_upper) -> Byte {
         // https://www.nesdev.org/wiki/PPU_rendering#Cycles_257-320
-        // @IMPL: transparent values for left-over sprites
         // We don't emulate dummy fetch to 0xFF
         if (i_sp_idx >= io_ctx->sp_got)
         {
+            // @IMPL: transparent values for left-over sprites
             return 0x00;
         }
 
-        bool tbl_right = io_accessor->get_register(PPU::PPUCTRL) & 0x08;
+        bool tbl_right;
+        io_accessor->resolve_sp_ptn_tbl(
+            io_ctx->sp_tile_byte, io_accessor->is_8x16_sp(),
+            io_accessor->get_register(PPU::PPUCTRL) & 0x08, tbl_right);
 
-        Byte tile_idx = io_ctx->sp_nt_byte;
-
-        Byte fine_y =
-            Byte(io_accessor->get_context().scanline_no - io_ctx->sp_pos_y);
         bool flip_y = io_ctx->sp_attr_byte & 0x80;
+        Byte y_in_sp =
+            Byte(io_accessor->get_context().scanline_no - io_ctx->sp_pos_y);
+        Byte tile_idx;
+        io_accessor->resolve_sp_tile(io_ctx->sp_tile_byte,
+                                     io_accessor->is_8x16_sp(), flip_y, y_in_sp,
+                                     tile_idx);
+
+        static_assert(LN_PATTERN_TILE_HEIGHT == 8,
+                      "Invalid LN_PATTERN_TILE_HEIGHT.");
+        Byte fine_y = y_in_sp % LN_PATTERN_TILE_HEIGHT;
         if (flip_y)
         {
-            static_assert(LN_PATTERN_TILE_HEIGHT >= 1,
-                          "oops, invalid LN_PATTERN_TILE_HEIGHT.");
             fine_y = (LN_PATTERN_TILE_HEIGHT - 1) - fine_y;
         }
 
         Address sliver_addr =
-            fine_y | (i_upper << 3) | (tile_idx << 4) | (tbl_right << 12);
-
-        Byte byte;
-        auto error = io_accessor->get_memory()->get_byte(sliver_addr, byte);
-        if (LN_FAILED(error))
+            io_accessor->get_sliver_addr(tbl_right, tile_idx, i_upper, fine_y);
+        Byte ptn_byte;
         {
-            LN_ASSERT_FATAL("Failed to fetch pattern byte for sp: {}, {}",
-                            sliver_addr, i_upper);
-            byte = 0xFF; // set to a consistent value.
+            auto error =
+                io_accessor->get_memory()->get_byte(sliver_addr, ptn_byte);
+            if (LN_FAILED(error))
+            {
+                LN_ASSERT_FATAL("Failed to fetch pattern byte for sp: {}, {}",
+                                sliver_addr, i_upper);
+                ptn_byte = 0xFF; // set to apparent value.
+            }
         }
 
-        // @IMPL: We choose to reverse the bits to implement sprite horizontal
-        // flipping.
+        // @IMPL: Reverse the bits to implement horizontal flipping.
         bool flip_x = io_ctx->sp_attr_byte & 0x40;
         if (flip_x)
         {
-            byte_reverse(byte);
+            reverse_byte(ptn_byte);
         }
 
-        return byte;
+        return ptn_byte;
     };
 
     switch (i_curr)
@@ -393,8 +404,8 @@ SpEvalFetch::pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
 
         case 1:
         {
-            // Read tile number.
-            io_ctx->sp_nt_byte = read_sec_oam(io_accessor, io_ctx);
+            // Read tile.
+            io_ctx->sp_tile_byte = read_sec_oam(io_accessor, io_ctx);
         }
         break;
 

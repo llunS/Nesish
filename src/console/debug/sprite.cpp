@@ -5,7 +5,8 @@
 namespace lnd {
 
 Sprite::Sprite()
-    : m_pixels{}
+    : m_8x16(false)
+    , m_pixels{}
     , y(255)
     , tile(255)
     , attr(255)
@@ -16,21 +17,19 @@ Sprite::Sprite()
 int
 Sprite::get_width() const
 {
-    // @TODO: 8x16
     return 8;
 }
 
 int
 Sprite::get_height() const
 {
-    // @TODO: 8x16
-    return 8;
+    return m_8x16 ? 16 : 8;
 }
 
 const ln::Byte *
 Sprite::get_data() const
 {
-    static_assert(std::is_pod<ln::Color>::value, "Rework code below.");
+    static_assert(std::is_pod<ln::Color>::value, "Incorrect pointer position");
     return (ln::Byte *)(&m_pixels[0]);
 }
 
@@ -41,9 +40,9 @@ Sprite::palette_set() const
 }
 
 LN_CONSOLE_API bool
-Sprite::over_background() const
+Sprite::background() const
 {
-    return !(attr & 0x20);
+    return attr & 0x20;
 }
 
 LN_CONSOLE_API bool
@@ -59,9 +58,15 @@ Sprite::flip_y() const
 }
 
 void
+Sprite::set_mode(bool i_8x16)
+{
+    m_8x16 = i_8x16;
+}
+
+void
 Sprite::set_pixel(int i_row, int i_col, const ln::Color &i_color)
 {
-    // @TODO: 8x16
+    // Save the bound check, leave it to the user.
     m_pixels[i_row * 8 + i_col] = i_color;
 }
 

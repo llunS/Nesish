@@ -39,7 +39,7 @@ is_signed_overflow_sbc(Byte i_lhs, Byte i_rhs, bool i_borrow)
 }
 
 inline void
-byte_reverse(Byte &io_byte)
+reverse_byte(Byte &io_byte)
 {
     // Courtesy of https://stackoverflow.com/a/2602885
     io_byte = (io_byte & 0xF0) >> 4 | (io_byte & 0x0F) << 4;

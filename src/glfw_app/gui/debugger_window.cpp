@@ -191,7 +191,8 @@ DebuggerWindow::render(ln::Emulator &io_emu)
         HelpMarker("The snapshot was took at the end of the rendering.");
 
         const auto &palette = io_emu.get_palette_dbg();
-        static_assert(lnd::Palette::color_count() == 32, "Rework code below.");
+        static_assert(lnd::Palette::color_count() == 32,
+                      "Check fixed loop below");
         char const *const pa_rows[2] = {"Background", "Sprite"};
         float lock_x = 0.0;
         for (int r = 0; r < 2; ++r)
@@ -278,9 +279,10 @@ DebuggerWindow::render(ln::Emulator &io_emu)
                    "assumes OAMADDR starts with 0.");
 
         const auto &oam = io_emu.get_oam_dbg();
-        static_assert(lnd::OAM::get_sprite_count() == 64, "Rework code below.");
+        static_assert(lnd::OAM::get_sprite_count() == 64,
+                      "Check fixed loop below");
         static_assert(sizeof(m_sp_tex) / sizeof(Texture) == 64,
-                      "Rework code below.");
+                      "Check fixed loop below");
         ImGui::Spacing();
         for (int i = 0; i < 4; ++i)
         {
@@ -295,7 +297,8 @@ DebuggerWindow::render(ln::Emulator &io_emu)
                     ImGui::Image(
                         (ImTextureID)(std::intptr_t)m_sp_tex[k].texture(),
                         {float(m_sp_tex[k].get_width() * scale),
-                         float(m_sp_tex[k].get_height() * scale)});
+                         float(m_sp_tex[k].get_height() * scale)},
+                        {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
 
                     // details tooltip
                     if (ImGui::IsItemHovered())
@@ -324,8 +327,7 @@ DebuggerWindow::render(ln::Emulator &io_emu)
                         ImGui::EndGroup();
 
                         ImGui::Text("SP Palette: %u", sp.palette_set());
-                        ImGui::Text("Over Background: %u",
-                                    sp.over_background());
+                        ImGui::Text("Background: %u", sp.background());
                         ImGui::Text("Flip X: %u", sp.flip_x());
                         ImGui::Text("Flip Y: %u", sp.flip_y());
 

@@ -260,6 +260,7 @@ pvt_sp_render(PipelineAccessor *io_accessor)
         }
 
         /* 0. Get fine x */
+        // @NOTE: Flipping of both X and Y was done in the fetch stage already.
         Byte fine_x = LN_PATTERN_TILE_WIDTH - ctx.sp_active_counter[i] - 1;
 
         /* 1. Bit selection mask by finx X scroll */

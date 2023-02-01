@@ -264,7 +264,7 @@ pvt_nt_byte_fetch(PipelineAccessor *io_accessor)
     {
         LN_ASSERT_FATAL("Failed to fetch nametable byte for bg: {}, {}", v,
                         tile_addr);
-        byte = 0xFF; // set to a consistent value.
+        byte = 0xFF; // set to apparent value.
     }
 
     io_accessor->get_context().bg_nt_byte = byte;
@@ -281,16 +281,16 @@ pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
         bool tbl_right = io_accessor->get_register(PPU::PPUCTRL) & 0x10;
         Byte tile_idx = io_accessor->get_context().bg_nt_byte;
         Byte fine_y = Byte((io_accessor->get_v() >> 12) & 0x07);
-        Address sliver_addr =
-            fine_y | (i_upper << 3) | (tile_idx << 4) | (tbl_right << 12);
 
+        Address sliver_addr =
+            io_accessor->get_sliver_addr(tbl_right, tile_idx, i_upper, fine_y);
         Byte byte;
         auto error = io_accessor->get_memory()->get_byte(sliver_addr, byte);
         if (LN_FAILED(error))
         {
             LN_ASSERT_FATAL("Failed to fetch pattern byte for bg: ${:04X}, {}",
                             sliver_addr, i_upper);
-            byte = 0xFF; // set to a consistent value.
+            byte = 0xFF; // set to apparent value.
         }
 
         return byte;
@@ -323,7 +323,7 @@ pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
             {
                 LN_ASSERT_FATAL("Failed to fetch attribute byte for bg: {}, {}",
                                 v, attr_addr);
-                attr_byte = 0xFF; // set to a consistent value.
+                attr_byte = 0xFF; // set to apparent value.
             }
 
             // index of 2x2-tile block in 4x4-tile block.

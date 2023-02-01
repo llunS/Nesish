@@ -23,6 +23,12 @@ PipelineAccessor::get_register(PPU::Register i_reg)
     return m_ppu->get_register(i_reg);
 }
 
+const Byte &
+PipelineAccessor::get_register(PPU::Register i_reg) const
+{
+    return m_ppu->get_register(i_reg);
+}
+
 Byte2 &
 PipelineAccessor::get_v()
 {
@@ -73,21 +79,27 @@ PipelineAccessor::get_frame_buf()
 }
 
 bool
-PipelineAccessor::bg_enabled()
+PipelineAccessor::bg_enabled() const
 {
     return get_register(PPU::PPUMASK) & 0x08;
 }
 
 bool
-PipelineAccessor::sp_enabled()
+PipelineAccessor::sp_enabled() const
 {
     return get_register(PPU::PPUMASK) & 0x10;
 }
 
 bool
-PipelineAccessor::rendering_enabled()
+PipelineAccessor::rendering_enabled() const
 {
     return bg_enabled() || sp_enabled();
+}
+
+bool
+PipelineAccessor::is_8x16_sp() const
+{
+    return get_register(PPU::PPUCTRL) & 0x20;
 }
 
 void
@@ -111,6 +123,50 @@ PipelineAccessor::finish_frame()
     }
 
     m_ppu->m_front_buf.swap(m_ppu->m_back_buf);
+}
+
+Address
+PipelineAccessor::get_sliver_addr(bool i_tbl_right, Byte i_tile_idx,
+                                  bool i_upper, Byte i_fine_y)
+{
+    Address sliver_addr = (Address(i_tbl_right) << 12) |
+                          (Address(i_tile_idx) << 4) | (Address(i_upper) << 3) |
+                          Address(i_fine_y);
+    return sliver_addr;
+}
+
+ln::Error
+PipelineAccessor::get_ptn_sliver(bool i_tbl_right, Byte i_tile_idx,
+                                 bool i_upper, Byte i_fine_y,
+                                 const VideoMemory *i_vram, Byte &o_val)
+{
+    Address sliver_addr =
+        get_sliver_addr(i_tbl_right, i_tile_idx, i_upper, i_fine_y);
+    auto error = i_vram->get_byte(sliver_addr, o_val);
+    return error;
+}
+
+void
+PipelineAccessor::resolve_sp_ptn_tbl(Byte i_tile_byte, bool i_8x16,
+                                     bool i_ptn_tbl_bit, bool &o_high_ptn_tbl)
+{
+    o_high_ptn_tbl = i_8x16 ? (i_tile_byte & 0x01) : i_ptn_tbl_bit;
+}
+
+void
+PipelineAccessor::resolve_sp_tile(Byte i_tile_byte, bool i_8x16, bool i_flip_y,
+                                  Byte i_fine_y_sp, Byte &o_tile_idx)
+{
+    if (i_8x16)
+    {
+        Byte top_tile = ((i_tile_byte >> 1) & 0x7F) << 1;
+        bool top_half = 0 <= i_fine_y_sp && i_fine_y_sp < 8;
+        o_tile_idx = (top_half ^ !i_flip_y) ? top_tile + 1 : top_tile;
+    }
+    else
+    {
+        o_tile_idx = i_tile_byte;
+    }
 }
 
 bool
@@ -165,40 +221,61 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
 
     o_sprite.set_raw(i_y, i_tile, i_attr, i_x);
 
-    // @TODO: Support 8x16 as well.
-    // Assuming 8x8 for now.
-    bool tbl_right = get_register(PPU::PPUCTRL) & 0x08;
-    for (int fine_y = 0; fine_y < 8; ++fine_y)
+    bool mode_8x16 = this->is_8x16_sp();
+    o_sprite.set_mode(mode_8x16);
+
+    bool flip_y = i_attr & 0x80;
+    bool flip_x = i_attr & 0x40;
+
+    bool tbl_right;
+    this->resolve_sp_ptn_tbl(
+        i_tile, mode_8x16, this->get_register(PPU::PPUCTRL) & 0x08, tbl_right);
+    for (int y_in_sp = 0; y_in_sp < 16; ++y_in_sp)
     {
-        bool upper = false;
-        Address sliver_addr =
-            Byte(fine_y) | (upper << 3) | (i_tile << 4) | (tbl_right << 12);
-        Byte ptn_bit0_byte = 0;
-        (void)m_ppu->m_memory->get_byte(sliver_addr, ptn_bit0_byte);
+        if (!mode_8x16 && y_in_sp >= 8)
+        {
+            break;
+        }
 
-        upper = true;
-        sliver_addr =
-            Byte(fine_y) | (upper << 3) | (i_tile << 4) | (tbl_right << 12);
-        Byte ptn_bit1_byte = 0;
-        (void)m_ppu->m_memory->get_byte(sliver_addr, ptn_bit1_byte);
+        Byte tile_idx;
+        this->resolve_sp_tile(i_tile, mode_8x16, flip_y, y_in_sp, tile_idx);
 
-        /* flipping */
-        bool flip_y = i_attr & 0x80;
+        static_assert(LN_PATTERN_TILE_HEIGHT == 8,
+                      "Invalid LN_PATTERN_TILE_HEIGHT.");
+        Byte fine_y = y_in_sp % LN_PATTERN_TILE_HEIGHT;
         if (flip_y)
         {
-            static_assert(LN_PATTERN_TILE_HEIGHT >= 1,
-                          "oops, invalid LN_PATTERN_TILE_HEIGHT.");
             fine_y = (LN_PATTERN_TILE_HEIGHT - 1) - fine_y;
         }
-        // @IMPL: We choose to reverse the bits to implement sprite horizontal
-        // flipping.
-        bool flip_x = i_attr & 0x40;
-        if (flip_x)
+
+        Byte ptn_bit0_byte;
         {
-            byte_reverse(ptn_bit0_byte);
-            byte_reverse(ptn_bit1_byte);
+            auto error =
+                this->get_ptn_sliver(tbl_right, tile_idx, false, fine_y,
+                                     m_ppu->m_memory, ptn_bit0_byte);
+            if (LN_FAILED(error))
+            {
+                ptn_bit0_byte = 0xFF; // set to apparent value.
+            }
+        }
+        Byte ptn_bit1_byte;
+        {
+            auto error = this->get_ptn_sliver(tbl_right, tile_idx, true, fine_y,
+                                              m_ppu->m_memory, ptn_bit1_byte);
+            if (LN_FAILED(error))
+            {
+                ptn_bit1_byte = 0xFF; // set to apparent value.
+            }
         }
 
+        // @IMPL: Reverse the bits to implement horizontal flipping.
+        if (flip_x)
+        {
+            reverse_byte(ptn_bit0_byte);
+            reverse_byte(ptn_bit1_byte);
+        }
+
+        /* Now that we have a row of data available */
         for (int fine_x = 0; fine_x < 8; ++fine_x)
         {
             auto get_palette_color = [this](int i_idx) {
@@ -219,10 +296,11 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
             int ptn = (bool(ptn_bit1_byte & (0x80 >> fine_x)) << 1) |
                       (bool(ptn_bit0_byte & (0x80 >> fine_x)) << 0);
 
-            static_assert(LN_PALETTE_SIZE == 32, "Rework code below.");
+            static_assert(LN_PALETTE_SIZE == 32,
+                          "Incorrect color byte position");
             Color pixel =
                 get_palette_color(16 + addr_palette_set_offset * 4 + ptn);
-            o_sprite.set_pixel(fine_y, fine_x, pixel);
+            o_sprite.set_pixel(y_in_sp, fine_x, pixel);
         }
     }
 }

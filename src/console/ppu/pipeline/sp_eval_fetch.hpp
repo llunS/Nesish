@@ -11,7 +11,7 @@ struct PipelineAccessor;
 
 struct SpEvalFetch : public Tickable {
   public:
-    SpEvalFetch(PipelineAccessor *io_accessor, bool i_sp_fetch_only);
+    SpEvalFetch(PipelineAccessor *io_accessor, bool i_fetch_only);
     LN_KLZ_DELETE_COPY_MOVE(SpEvalFetch);
 
     void
@@ -21,11 +21,11 @@ struct SpEvalFetch : public Tickable {
 
   private:
     PipelineAccessor *m_accessor;
-    const bool m_sp_fetch_only;
+    const bool m_fetch_only;
 
     FunctorTickable m_sec_oam_clear;
-    FunctorTickable m_sp_eval;
-    FunctorTickable m_sp_fetch_reload;
+    FunctorTickable m_eval;
+    FunctorTickable m_fetch_reload;
 
     struct Context {
         /* eval */
@@ -43,7 +43,7 @@ struct SpEvalFetch : public Tickable {
 
         /* fetch */
         Byte sec_oam_read_idx;
-        Byte sp_nt_byte;
+        Byte sp_tile_byte;
         Byte sp_attr_byte;
         Byte sp_pos_y;
         Byte sp_idx_reload;
