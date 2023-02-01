@@ -13,6 +13,10 @@ struct Emulator;
 } // namespace ln
 
 namespace ln_app {
+struct Rect;
+} // namespace ln_app
+
+namespace ln_app {
 
 struct DebuggerWindow : public PlatformWindow {
   public:
@@ -26,7 +30,7 @@ struct DebuggerWindow : public PlatformWindow {
     void
     pre_render(ln::Emulator &io_emu);
     void
-    render(ln::Emulator &io_emu);
+    render(const ln::Emulator &i_emu);
     void
     post_render(ln::Emulator &io_emu);
 
@@ -44,6 +48,19 @@ struct DebuggerWindow : public PlatformWindow {
 
   private:
     ImGuiContext *m_imgui_ctx;
+
+  private:
+    void
+    draw_control(const Rect &i_layout);
+
+    void
+    draw_frame_debugger(const Rect &i_layout, const ln::Emulator &i_emu);
+    void
+    draw_fd_frame(const ln::Emulator &i_emu);
+    void
+    draw_fd_palette(const ln::Emulator &i_emu);
+    void
+    draw_fd_oam(const ln::Emulator &i_emu);
 
   private:
     bool m_paused;
