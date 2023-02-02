@@ -368,6 +368,18 @@ Emulator::get_oam_dbg() const
     return m_ppu.get_oam_dbg();
 }
 
+const lnd::PatternTable &
+Emulator::get_ptn_tbl_dbg(bool i_right) const
+{
+    return m_ppu.get_ptn_tbl_dbg(i_right);
+}
+
+void
+Emulator::set_ptn_tbl_palette_dbg(PaletteSet i_palette)
+{
+    m_ppu.set_ptn_tbl_palette_dbg((unsigned char)i_palette);
+}
+
 const CPU &
 Emulator::get_cpu() const
 {

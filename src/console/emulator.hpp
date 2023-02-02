@@ -84,6 +84,20 @@ struct Emulator {
     get_palette_dbg() const;
     LN_CONSOLE_API const lnd::OAM &
     get_oam_dbg() const;
+    LN_CONSOLE_API const lnd::PatternTable &
+    get_ptn_tbl_dbg(bool i_right) const;
+    enum PaletteSet : unsigned char {
+        BG0 = 0,
+        BG1 = 1,
+        BG2 = 2,
+        BG3 = 3,
+        SP0 = 4,
+        SP1 = 5,
+        SP2 = 6,
+        SP3 = 7,
+    };
+    LN_CONSOLE_API void
+    set_ptn_tbl_palette_dbg(PaletteSet i_palette);
 
   public:
     /* test */

@@ -71,6 +71,7 @@ list(APPEND sources debug/color.cpp)
 list(APPEND sources debug/palette.cpp)
 list(APPEND sources debug/oam.cpp)
 list(APPEND sources debug/sprite.cpp)
+list(APPEND sources debug/pattern_table.cpp)
 
 target_sources(${module_name} PRIVATE ${sources})
 

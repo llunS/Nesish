@@ -9,6 +9,7 @@ namespace ln {
 struct FrameBuffer;
 } // namespace ln
 namespace lnd {
+struct PatternTable;
 struct Sprite;
 } // namespace lnd
 
@@ -28,6 +29,8 @@ struct Texture {
   public:
     bool
     from_frame(const ln::FrameBuffer &i_frame_buf);
+    bool
+    from_ptn_tbl(const lnd::PatternTable &i_tbl);
     bool
     from_sprite(const lnd::Sprite &i_sprite);
 

@@ -115,12 +115,12 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     /* init windows */
     if (dbg_win)
     {
-        if (!dbg_win->init(640, 480, true, false, "Debugger"))
+        if (!dbg_win->init(580, 710, true, false, "Debugger"))
         {
             err = 1;
             goto l_end;
         }
-        dbg_win->set_pos(50 + LN_NES_WIDTH * 2 + 50, 150);
+        dbg_win->set_pos(50 + LN_NES_WIDTH * 2 + 50, 115);
     }
     if (!emu_win->init(emulator.get(), LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2,
                        !dbg_win, false, "Emulator"))
@@ -128,7 +128,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
         err = 1;
         goto l_end;
     }
-    emu_win->set_pos(50, 150);
+    emu_win->set_pos(50, 170);
 
     if (dbg_win)
     {

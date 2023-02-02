@@ -4,6 +4,8 @@
 
 namespace lnd {
 
+constexpr int Sprite::WIDTH;
+
 Sprite::Sprite()
     : m_8x16(false)
     , m_pixels{}
@@ -17,7 +19,7 @@ Sprite::Sprite()
 int
 Sprite::get_width() const
 {
-    return 8;
+    return WIDTH;
 }
 
 int
@@ -67,7 +69,7 @@ void
 Sprite::set_pixel(int i_row, int i_col, const ln::Color &i_color)
 {
     // Save the bound check, leave it to the user.
-    m_pixels[i_row * 8 + i_col] = i_color;
+    m_pixels[i_row * WIDTH + i_col] = i_color;
 }
 
 void

@@ -30,7 +30,7 @@ struct DebuggerWindow : public PlatformWindow {
     void
     pre_render(ln::Emulator &io_emu);
     void
-    render(const ln::Emulator &i_emu);
+    render(ln::Emulator &io_emu);
     void
     post_render(ln::Emulator &io_emu);
 
@@ -54,7 +54,9 @@ struct DebuggerWindow : public PlatformWindow {
     draw_control(const Rect &i_layout);
 
     void
-    draw_frame_debugger(const Rect &i_layout, const ln::Emulator &i_emu);
+    draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu);
+    void
+    draw_fd_pattern(const ln::Emulator &i_emu);
     void
     draw_fd_frame(const ln::Emulator &i_emu);
     void
@@ -65,8 +67,12 @@ struct DebuggerWindow : public PlatformWindow {
   private:
     bool m_paused;
     bool m_should_quit;
+
     Texture m_frame_tex;
     Texture m_sp_tex[64];
+    Texture m_ptn_tbl_texs[2];
+
+    ln::Emulator::PaletteSet m_ptn_tbl_palette;
 };
 
 } // namespace ln_app

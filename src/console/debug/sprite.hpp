@@ -20,7 +20,6 @@ struct Sprite {
     get_width() const;
     LN_CONSOLE_API int
     get_height() const;
-
     LN_CONSOLE_API const ln::Byte *
     get_data() const;
 
@@ -43,8 +42,11 @@ struct Sprite {
     set_raw(ln::Byte i_y, ln::Byte i_tile, ln::Byte i_attr, ln::Byte i_x);
 
   private:
+    static constexpr int WIDTH = 8;
+
+  private:
     bool m_8x16;
-    ln::Color m_pixels[8 * 16]; // up to 8x16
+    ln::Color m_pixels[WIDTH * 16]; // up to 8x16
 
   public:
     ln::Byte y;

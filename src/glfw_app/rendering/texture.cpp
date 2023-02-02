@@ -1,6 +1,7 @@
 #include "texture.hpp"
 
 #include "console/ppu/frame_buffer.hpp"
+#include "console/debug/pattern_table.hpp"
 #include "console/debug/sprite.hpp"
 
 namespace ln_app {
@@ -59,11 +60,30 @@ Texture::from_frame(const ln::FrameBuffer &i_frame_buf)
         return false;
     }
 
-    /* update input texture with "i_frame_buf" */
+    /* update input texture */
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, i_frame_buf.WIDTH,
                     i_frame_buf.HEIGHT, GL_RGB, GL_UNSIGNED_BYTE,
                     i_frame_buf.get_data());
+
+    return true;
+}
+
+bool
+Texture::from_ptn_tbl(const lnd::PatternTable &i_tbl)
+{
+    auto w = i_tbl.get_width();
+    auto h = i_tbl.get_height();
+
+    if (!genTexIf(w, h))
+    {
+        return false;
+    }
+
+    /* update input texture */
+    glBindTexture(GL_TEXTURE_2D, m_tex);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
+                    i_tbl.get_data());
 
     return true;
 }
@@ -79,7 +99,7 @@ Texture::from_sprite(const lnd::Sprite &i_sprite)
         return false;
     }
 
-    /* update input texture with "i_frame_buf" */
+    /* update input texture */
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
                     i_sprite.get_data());

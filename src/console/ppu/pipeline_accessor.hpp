@@ -88,6 +88,11 @@ struct PipelineAccessor {
     void
     update_oam_sprite(lnd::Sprite &o_sprite, int i_idx);
 
+    bool
+    capture_ptn_tbls_on();
+    void
+    capture_ptn_tbls();
+
   private:
     PipelineAccessor(PPU *i_ppu);
     friend struct PPU; // allow constructor access

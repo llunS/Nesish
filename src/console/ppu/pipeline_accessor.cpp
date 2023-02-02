@@ -4,6 +4,8 @@
 #include "console/spec.hpp"
 #include "console/byte_utils.hpp"
 
+#include <limits>
+
 namespace ln {
 
 PipelineAccessor::PipelineAccessor(PPU *i_ppu)
@@ -121,6 +123,10 @@ PipelineAccessor::finish_frame()
     {
         capture_oam();
     }
+    if (capture_ptn_tbls_on())
+    {
+        capture_ptn_tbls();
+    }
 
     m_ppu->m_front_buf.swap(m_ppu->m_back_buf);
 }
@@ -178,8 +184,8 @@ PipelineAccessor::capture_palette_on()
 void
 PipelineAccessor::capture_palette()
 {
-    for (decltype(m_ppu->m_palette_snapshot.color_count()) i = 0;
-         i < m_ppu->m_palette_snapshot.color_count(); ++i)
+    for (decltype(m_ppu->m_palette_snap.color_count()) i = 0;
+         i < m_ppu->m_palette_snap.color_count(); ++i)
     {
         static_assert(lnd::Palette::color_count() == 32,
                       "Might overflow below.");
@@ -189,7 +195,7 @@ PipelineAccessor::capture_palette()
         (void)m_ppu->m_memory->get_byte(color_addr, color_byte);
 
         Color clr = get_palette().to_rgb(color_byte);
-        m_ppu->m_palette_snapshot.set_color(i, color_byte, clr.r, clr.g, clr.b);
+        m_ppu->m_palette_snap.set_color(i, color_byte, clr.r, clr.g, clr.b);
     }
 }
 
@@ -202,10 +208,10 @@ PipelineAccessor::capture_oam_on()
 void
 PipelineAccessor::capture_oam()
 {
-    for (decltype(m_ppu->m_oam_snapshot.get_sprite_count()) i = 0;
-         i < m_ppu->m_oam_snapshot.get_sprite_count(); ++i)
+    for (decltype(m_ppu->m_oam_snap.get_sprite_count()) i = 0;
+         i < m_ppu->m_oam_snap.get_sprite_count(); ++i)
     {
-        update_oam_sprite(m_ppu->m_oam_snapshot.sprite_of(i), i);
+        update_oam_sprite(m_ppu->m_oam_snap.sprite_of(i), i);
     }
 }
 
@@ -295,7 +301,6 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
             int addr_palette_set_offset = i_attr & 0x03; // 4-color palette
             int ptn = (bool(ptn_bit1_byte & (0x80 >> fine_x)) << 1) |
                       (bool(ptn_bit0_byte & (0x80 >> fine_x)) << 0);
-
             static_assert(LN_PALETTE_SIZE == 32,
                           "Incorrect color byte position");
             Color pixel =
@@ -303,6 +308,86 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
             o_sprite.set_pixel(y_in_sp, fine_x, pixel);
         }
     }
+}
+
+bool
+PipelineAccessor::capture_ptn_tbls_on()
+{
+    return lnd::is_debug_on(m_ppu->m_debug_flags, lnd::DBG_PATTERN);
+}
+
+void
+PipelineAccessor::capture_ptn_tbls()
+{
+    auto cap_tbl = [this](bool i_right, lnd::PatternTable &o_tbl) -> void {
+        static_assert(lnd::PatternTable::get_tiles() == 16 * 16,
+                      "Incorrect loop count");
+        static_assert(std::numeric_limits<int>::max() >= 16 * 16,
+                      "Type of loop variable too small");
+        for (int tile_idx = 0; tile_idx < 16 * 16; ++tile_idx)
+        {
+            static_assert(lnd::PatternTable::get_tile_height() == 8,
+                          "Incorrect loop count");
+            for (int fine_y = 0; fine_y < 8; ++fine_y)
+            {
+                static_assert(std::numeric_limits<Byte>::max() >= 16 * 16 - 1,
+                              "Type of tile index incompatible for use of "
+                              "\"get_ptn_sliver\"");
+                Byte ptn_bit0_byte;
+                {
+                    auto error = this->get_ptn_sliver(
+                        i_right, Byte(tile_idx), false, fine_y, m_ppu->m_memory,
+                        ptn_bit0_byte);
+                    if (LN_FAILED(error))
+                    {
+                        ptn_bit0_byte = 0xFF; // set to apparent value.
+                    }
+                }
+                Byte ptn_bit1_byte;
+                {
+                    auto error = this->get_ptn_sliver(
+                        i_right, Byte(tile_idx), true, fine_y, m_ppu->m_memory,
+                        ptn_bit1_byte);
+                    if (LN_FAILED(error))
+                    {
+                        ptn_bit1_byte = 0xFF; // set to apparent value.
+                    }
+                }
+
+                /* Now that we have a row of data available */
+                static_assert(lnd::PatternTable::get_tile_width() == 8,
+                              "Incorrect loop count");
+                for (int fine_x = 0; fine_x < 8; ++fine_x)
+                {
+                    auto get_palette_color = [this](int i_idx) {
+                        // @NOTE: The address is in VRAM.
+                        Address color_addr =
+                            Address(LN_PALETTE_ADDR_HEAD + i_idx);
+                        Byte color_byte = 0;
+                        auto error = this->m_ppu->m_memory->get_byte(
+                            color_addr, color_byte);
+                        if (LN_FAILED(error))
+                        {
+                            color_byte =
+                                0x30; // set it to white to be apparent.
+                        }
+                        Color clr = this->get_palette().to_rgb(color_byte);
+                        return clr;
+                    };
+
+                    int ptn = (bool(ptn_bit1_byte & (0x80 >> fine_x)) << 1) |
+                              (bool(ptn_bit0_byte & (0x80 >> fine_x)) << 0);
+                    static_assert(LN_PALETTE_SIZE == 32,
+                                  "Incorrect color byte position");
+                    Color pixel = get_palette_color(
+                        this->m_ppu->m_ptn_tbl_palette_idx * 4 + ptn);
+                    o_tbl.set_pixel(tile_idx, fine_y, fine_x, pixel);
+                }
+            }
+        }
+    };
+    cap_tbl(false, m_ppu->m_ptn_tbl_l_snap);
+    cap_tbl(true, m_ppu->m_ptn_tbl_r_snap);
 }
 
 } // namespace ln

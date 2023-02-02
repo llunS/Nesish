@@ -10,6 +10,7 @@
 #include "console/debug/debug_flags.hpp"
 #include "console/debug/palette.hpp"
 #include "console/debug/oam.hpp"
+#include "console/debug/pattern_table.hpp"
 
 namespace ln {
 
@@ -78,6 +79,13 @@ struct PPU {
     friend struct Emulator;
     const lnd::OAM &
     get_oam_dbg() const;
+    friend struct Emulator;
+    const lnd::PatternTable &
+    get_ptn_tbl_dbg(bool i_right) const;
+    friend struct Emulator;
+    /// @param i_idx [0, 7]
+    void
+    set_ptn_tbl_palette_dbg(unsigned char i_idx);
 
   private:
     Byte &
@@ -158,8 +166,11 @@ struct PPU {
     /* debug */
 
     const lnd::DebugFlags &m_debug_flags;
-    lnd::Palette m_palette_snapshot;
-    lnd::OAM m_oam_snapshot;
+    lnd::Palette m_palette_snap;
+    lnd::OAM m_oam_snap;
+    lnd::PatternTable m_ptn_tbl_l_snap;
+    lnd::PatternTable m_ptn_tbl_r_snap;
+    unsigned char m_ptn_tbl_palette_idx;
 };
 
 } // namespace ln

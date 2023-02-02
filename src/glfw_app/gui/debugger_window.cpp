@@ -4,6 +4,7 @@
 #include "debugger_window.hpp"
 
 #include <cassert>
+#include <cstdio>
 
 #include "glfw_app/glad/glad.h"
 
@@ -39,6 +40,8 @@ DebuggerWindow::DebuggerWindow()
     , m_paused(false)
     , m_should_quit(false)
     , m_sp_tex{}
+    , m_ptn_tbl_texs{}
+    , m_ptn_tbl_palette(ln::Emulator::BG0)
 {
 }
 
@@ -94,8 +97,7 @@ DebuggerWindow::makeCurrent()
 void
 DebuggerWindow::pre_render(ln::Emulator &io_emu)
 {
-    io_emu.set_debug_on(lnd::DBG_PALETTE);
-    io_emu.set_debug_on(lnd::DBG_OAM);
+    io_emu.set_ptn_tbl_palette_dbg(m_ptn_tbl_palette);
 }
 
 void
@@ -103,10 +105,11 @@ DebuggerWindow::post_render(ln::Emulator &io_emu)
 {
     io_emu.set_debug_off(lnd::DBG_PALETTE);
     io_emu.set_debug_off(lnd::DBG_OAM);
+    io_emu.set_debug_off(lnd::DBG_PATTERN);
 }
 
 void
-DebuggerWindow::render(const ln::Emulator &i_emu)
+DebuggerWindow::render(ln::Emulator &io_emu)
 {
     assert(m_win);
 
@@ -116,6 +119,11 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
     {
         updateViewportSize();
     }
+
+    /* Reset states at the start */
+    io_emu.set_debug_off(lnd::DBG_PALETTE);
+    io_emu.set_debug_off(lnd::DBG_OAM);
+    io_emu.set_debug_off(lnd::DBG_PATTERN);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -133,11 +141,14 @@ DebuggerWindow::render(const ln::Emulator &i_emu)
     draw_control(layout_ctrl);
     /* Frame Debugger */
     Rect layout_fd = layout_win;
-    draw_frame_debugger(layout_fd, i_emu);
+    draw_frame_debugger(layout_fd, io_emu);
 
     // End the Dear ImGui frame
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    /* Change emulater states based on user input */
+    io_emu.set_ptn_tbl_palette_dbg(m_ptn_tbl_palette);
 
     glfwSwapBuffers(m_win);
 }
@@ -175,17 +186,25 @@ DebuggerWindow::draw_control(const Rect &i_layout)
 }
 
 void
-DebuggerWindow::draw_frame_debugger(const Rect &i_layout,
-                                    const ln::Emulator &i_emu)
+DebuggerWindow::draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu)
 {
     ImGui::SetNextWindowPos(i_layout.pos(), ImGuiCond_Once);
     ImGui::SetNextWindowSize(i_layout.size(), ImGuiCond_Once);
     if (ImGui::Begin("Frame Debugger", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
     {
-        draw_fd_frame(i_emu);
-        draw_fd_oam(i_emu);
-        draw_fd_palette(i_emu);
+        // @TODO: Turn it into nametable viewer.
+        // draw_fd_frame(io_emu);
+        // ImGui::Spacing();
+        io_emu.set_debug_on(lnd::DBG_PATTERN);
+        draw_fd_pattern(io_emu);
+        ImGui::Spacing();
+        io_emu.set_debug_on(lnd::DBG_OAM);
+        draw_fd_oam(io_emu);
+        ImGui::Spacing();
+        io_emu.set_debug_on(lnd::DBG_PALETTE);
+        draw_fd_palette(io_emu);
+        ImGui::Spacing();
     }
     ImGui::End();
 }
@@ -206,8 +225,99 @@ DebuggerWindow::draw_fd_frame(const ln::Emulator &i_emu)
     }
     else
     {
-        ImGui::Text("Failed to get frame");
+        ImGui::Text("[X]");
     }
+
+    ImGui::PopID();
+}
+
+void
+DebuggerWindow::draw_fd_pattern(const ln::Emulator &i_emu)
+{
+    ImGui::PushID("<Pattern>");
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("<Pattern>");
+
+    ImGui::SameLine();
+    constexpr int PALETTE_COUNT = 8;
+    constexpr const char *names[PALETTE_COUNT] = {"BG0", "BG1", "BG2", "BG3",
+                                                  "SP0", "SP1", "SP2", "SP3"};
+    static_assert(names[PALETTE_COUNT - 1] && PALETTE_COUNT >= 1,
+                  "Incorrect count of Palette set");
+    char buf[64];
+    (void)snprintf(buf, sizeof(buf), "%s###ptn_tbl_palette_trigger",
+                   names[m_ptn_tbl_palette]);
+    if (ImGui::Button(buf))
+    {
+        ImGui::OpenPopup("ptn_tbl_palette_popup");
+    }
+    if (ImGui::BeginPopup("ptn_tbl_palette_popup"))
+    {
+        for (int i = 0; i < PALETTE_COUNT; i++)
+        {
+            if (ImGui::Selectable(names[i]))
+            {
+                m_ptn_tbl_palette = ln::Emulator::PaletteSet(i);
+            }
+        }
+        ImGui::EndPopup();
+    }
+
+    auto draw_ptn_tbl = [](const lnd::PatternTable &i_tbl,
+                           ln_app::Texture &o_tex,
+                           const char *i_title) -> void {
+        ImGui::BeginGroup();
+
+        ImGui::TextUnformatted(i_title);
+
+        if (o_tex.from_ptn_tbl(i_tbl))
+        {
+            ImVec2 pos = ImGui::GetCursorScreenPos();
+            constexpr float scale = 2.f;
+            ImGui::Image(
+                (ImTextureID)(std::intptr_t)o_tex.texture(),
+                {i_tbl.get_width() * scale, i_tbl.get_height() * scale}, {0, 0},
+                {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::BeginTooltip();
+
+                ImGuiIO &io = ImGui::GetIO();
+                float x_in_tbl = io.MousePos.x - pos.x;
+                float y_in_tbl = io.MousePos.y - pos.y;
+                int tile_x = x_in_tbl / (i_tbl.get_tile_width() * scale);
+                int tile_y = y_in_tbl / (i_tbl.get_tile_height() * scale);
+                int tile_idx = tile_y * i_tbl.get_tiles_width() + tile_x;
+                ImGui::Text("Tile: %d (0x%02X)", tile_idx, tile_idx);
+
+                float x_delta = 1.0f / i_tbl.get_tiles_width();
+                float y_delta = 1.0f / i_tbl.get_tiles_height();
+                ImVec2 uv0 = ImVec2(tile_x * x_delta, tile_y * y_delta);
+                ImVec2 uv1 = ImVec2(uv0.x + x_delta, uv0.y + y_delta);
+                constexpr float zoom = 15.0f;
+                ImGui::Image((ImTextureID)(std::intptr_t)o_tex.texture(),
+                             ImVec2(i_tbl.get_tile_width() * zoom,
+                                    i_tbl.get_tile_height() * zoom),
+                             uv0, uv1, {1.0f, 1.0f, 1.0f, 1.0f},
+                             {1.0f, 1.0f, 1.0f, 1.0f});
+
+                ImGui::EndTooltip();
+            }
+        }
+        else
+        {
+            ImGui::Text("[X]");
+        }
+
+        ImGui::EndGroup();
+    };
+
+    static_assert(sizeof(m_ptn_tbl_texs) / sizeof(Texture) == 2,
+                  "Invalid array index");
+    draw_ptn_tbl(i_emu.get_ptn_tbl_dbg(false), m_ptn_tbl_texs[0], "[Left]");
+    ImGui::SameLine(0.0f, 20.f);
+    draw_ptn_tbl(i_emu.get_ptn_tbl_dbg(true), m_ptn_tbl_texs[1], "[Right]");
 
     ImGui::PopID();
 }
@@ -217,7 +327,6 @@ DebuggerWindow::draw_fd_palette(const ln::Emulator &i_emu)
 {
     ImGui::PushID("<Palette>");
 
-    ImGui::Spacing();
     ImGui::AlignTextToFramePadding();
     ImGui::Text("<Palette>");
     ImGui::SameLine();
@@ -307,7 +416,6 @@ DebuggerWindow::draw_fd_oam(const ln::Emulator &i_emu)
 {
     ImGui::PushID("<OAM>");
 
-    ImGui::Spacing();
     ImGui::AlignTextToFramePadding();
     ImGui::Text("<OAM>");
     ImGui::SameLine();
@@ -318,7 +426,6 @@ DebuggerWindow::draw_fd_oam(const ln::Emulator &i_emu)
     static_assert(lnd::OAM::get_sprite_count() == 64, "Check fixed loop below");
     static_assert(sizeof(m_sp_tex) / sizeof(Texture) == 64,
                   "Check fixed loop below");
-    ImGui::Spacing();
     for (int i = 0; i < 4; ++i)
     {
         for (int j = 0; j < 16; ++j)

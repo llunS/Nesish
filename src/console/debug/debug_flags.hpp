@@ -6,6 +6,7 @@ enum DebugFlags {
     DBG_OFF = 0,
     DBG_PALETTE = 1 << 0,
     DBG_OAM = 1 << 1,
+    DBG_PATTERN = 1 << 2,
 };
 
 inline bool

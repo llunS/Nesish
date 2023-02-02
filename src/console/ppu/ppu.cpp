@@ -18,6 +18,7 @@ PPU::PPU(VideoMemory *i_memory, CPU *i_cpu,
     , m_pipeline_accessor(nullptr)
     , m_pipeline(nullptr)
     , m_debug_flags(i_debug_flags)
+    , m_ptn_tbl_palette_idx(0)
 {
     m_pipeline_accessor = new PipelineAccessor(this);
     m_pipeline = new Pipeline(m_pipeline_accessor);
@@ -310,13 +311,25 @@ PPU::get_frame() const
 const lnd::Palette &
 PPU::get_palette_dbg() const
 {
-    return m_palette_snapshot;
+    return m_palette_snap;
 }
 
 const lnd::OAM &
 PPU::get_oam_dbg() const
 {
-    return m_oam_snapshot;
+    return m_oam_snap;
+}
+
+const lnd::PatternTable &
+PPU::get_ptn_tbl_dbg(bool i_right) const
+{
+    return i_right ? m_ptn_tbl_r_snap : m_ptn_tbl_l_snap;
+}
+
+void
+PPU::set_ptn_tbl_palette_dbg(unsigned char i_idx)
+{
+    m_ptn_tbl_palette_idx = i_idx;
 }
 
 Byte &
