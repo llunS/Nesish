@@ -236,7 +236,7 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
     bool tbl_right;
     this->resolve_sp_ptn_tbl(
         i_tile, mode_8x16, this->get_register(PPU::PPUCTRL) & 0x08, tbl_right);
-    for (int y_in_sp = 0; y_in_sp < 16; ++y_in_sp)
+    for (Byte y_in_sp = 0; y_in_sp < 16; ++y_in_sp)
     {
         if (!mode_8x16 && y_in_sp >= 8)
         {
@@ -328,7 +328,7 @@ PipelineAccessor::capture_ptn_tbls()
         {
             static_assert(lnd::PatternTable::get_tile_height() == 8,
                           "Incorrect loop count");
-            for (int fine_y = 0; fine_y < 8; ++fine_y)
+            for (Byte fine_y = 0; fine_y < 8; ++fine_y)
             {
                 static_assert(std::numeric_limits<Byte>::max() >= 16 * 16 - 1,
                               "Type of tile index incompatible for use of "

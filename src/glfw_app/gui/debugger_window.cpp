@@ -286,8 +286,10 @@ DebuggerWindow::draw_fd_pattern(const ln::Emulator &i_emu)
                 ImGuiIO &io = ImGui::GetIO();
                 float x_in_tbl = io.MousePos.x - pos.x;
                 float y_in_tbl = io.MousePos.y - pos.y;
-                int tile_x = x_in_tbl / (i_tbl.get_tile_width() * scale);
-                int tile_y = y_in_tbl / (i_tbl.get_tile_height() * scale);
+                int tile_x = static_cast<int>(x_in_tbl /
+                                              (i_tbl.get_tile_width() * scale));
+                int tile_y = static_cast<int>(
+                    y_in_tbl / (i_tbl.get_tile_height() * scale));
                 int tile_idx = tile_y * i_tbl.get_tiles_width() + tile_x;
                 ImGui::Text("Tile: %d (0x%02X)", tile_idx, tile_idx);
 

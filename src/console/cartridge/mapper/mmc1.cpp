@@ -189,7 +189,8 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                             // @NOTE: Max bank count is 512KB / 16KB = 32, which
                             // fits in a Byte;
                             typedef Byte BankCount_t;
-                            BankCount_t bank_cnt = rom_size / (16 * 1024);
+                            BankCount_t bank_cnt = static_cast<BankCount_t>(
+                                rom_size / (16 * 1024));
                             if (bank_cnt <= 0)
                             {
                                 return Error::PROGRAMMING; // or corrupted rom
