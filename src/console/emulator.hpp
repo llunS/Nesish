@@ -59,9 +59,11 @@ struct Emulator {
     /// @return How many ticks are generated for input duration
     LN_CONSOLE_API Cycle
     ticks(Time_t i_duration);
+    /// @brief Advance 1 CPU tick
+    /// @param o_cpu_instr If a CPU instruction has completed
     /// @return If a new audio sample is available
     LN_CONSOLE_API bool
-    tick();
+    tick(bool *o_cpu_instr = nullptr);
 
     LN_CONSOLE_API const FrameBuffer &
     get_frame() const;
@@ -103,14 +105,11 @@ struct Emulator {
     /* test */
 
     LN_CONSOLE_API const CPU &
-    get_cpu() const;
+    get_cpu_test() const;
 
-    typedef bool (*TestExitFunc)(const ln::CPU *i_cpu, std::size_t i_instr,
-                                 void *i_context);
+    typedef void (*TestInitFunc)(ln::CPU *io_cpu, void *i_context);
     LN_CONSOLE_API void
-    run_test(Address i_entry, TestExitFunc i_exit_func, void *i_context);
-    LN_CONSOLE_API Cycle
-    tick_cpu_test();
+    init_test(TestInitFunc i_init_func, void *i_context);
 
   private:
     void

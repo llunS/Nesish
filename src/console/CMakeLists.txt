@@ -31,11 +31,8 @@ list(APPEND sources memory/memory.cpp)
 list(APPEND sources memory/video_memory.cpp)
 
 list(APPEND sources cpu/cpu.cpp)
-list(APPEND sources cpu/opcode_exec.cpp)
-list(APPEND sources cpu/address_mode_parse.cpp)
-list(APPEND sources cpu/instr_map.cpp)
-list(APPEND sources cpu/address_mode_map.cpp)
-list(APPEND sources cpu/operand.cpp)
+list(APPEND sources cpu/instr_impl.cpp)
+list(APPEND sources cpu/instr_table.cpp)
 
 list(APPEND sources ppu/ppu.cpp)
 list(APPEND sources ppu/pipeline_accessor.cpp)

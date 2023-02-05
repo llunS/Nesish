@@ -5,7 +5,7 @@
 namespace ln {
 
 inline Byte2
-byte2_from_bytes(Byte i_higher, Byte i_lower)
+to_byte2(Byte i_higher, Byte i_lower)
 {
     return ((Byte2)i_higher << 8) + i_lower;
 }

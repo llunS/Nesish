@@ -15,8 +15,9 @@ CPU::CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu)
     , m_cycle(0)
     , m_halted(false)
     , m_nmi(false)
-    , m_next_stage(Stage::DECODE)
-    , m_next_stage_cycle(0)
+    , m_addr_bus(0)
+    , m_data_bus(0)
+    , m_instr_ctx{0, nullptr}
 {
     m_oam_dma_ctx.ongoing = false;
 }
@@ -27,8 +28,7 @@ CPU::power_up()
     // @TODO: powerup test
 
     // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
-    // P = 0x34; // (IRQ disabled)
-    P = 0x24; // according to nestest.log (IRQ disabled still)
+    P = 0x34; // (IRQ disabled)
     A = X = Y = 0;
     S = 0xFD;
 
@@ -56,9 +56,6 @@ CPU::reset()
 
     m_nmi = false;
 
-    m_next_stage = Stage::DECODE;
-    m_next_stage_cycle = 0;
-
     m_oam_dma_ctx.ongoing = false;
 }
 
@@ -68,17 +65,21 @@ CPU::set_entry_test(Address i_entry)
     PC = i_entry;
 }
 
-Cycle
+void
+CPU::set_p_test(Byte i_val)
+{
+    P = i_val;
+}
+
+bool
 CPU::tick()
 {
-    // @TODO: Support real cycle-level emulation?
-
     if (m_halted)
     {
-        return 1;
+        return false;
     }
 
-    Cycle instr_cycles = 0;
+    bool instr_done = false;
     Cycle curr_cycle = m_cycle;
     /* OAM DMA transfer */
     if (m_oam_dma_ctx.ongoing)
@@ -99,7 +100,7 @@ CPU::tick()
                 LN_ASSERT_FATAL(
                     "Invalid numeric value, programming error: {}, {}",
                     m_oam_dma_ctx.counter, m_oam_dma_ctx.start_counter);
-                return 1;
+                return false;
             }
             Byte byte_idx = Byte(dma_counter / 2);
 
@@ -121,142 +122,37 @@ CPU::tick()
             }
         }
         ++m_oam_dma_ctx.counter;
-
-        instr_cycles = 1;
-        ++m_next_stage_cycle;
     }
-    /* Normal execution flow */
+    /* Instruction execution */
     else
     {
-        if (curr_cycle >= m_next_stage_cycle)
+        // Fetch opcode
+        if (!m_instr_ctx.instr)
         {
-            if (curr_cycle > m_next_stage_cycle)
-            {
-                LN_ASSERT_FATAL("Wrong CPU cycle management: {}, {}",
-                                curr_cycle, m_next_stage_cycle);
-                return 1;
-            }
-
-            switch (m_next_stage)
-            {
-                case Stage::DECODE:
-                {
-                    Byte opcode_byte = get_byte(PC++);
-                    Opcode opcode = {opcode_byte};
-                    InstructionDesc instr_desc = get_instr_desc(opcode);
-
-                    m_stage_ctx.opcode = opcode;
-                    m_stage_ctx.instr_desc = instr_desc;
-                    if (instr_desc.cycle_base <= 1)
-                    {
-                        LN_ASSERT_FATAL("Invalid cycle base for {}",
-                                        opcode_byte);
-                        return 1;
-                    }
-                    m_stage_ctx.instr_cycles = instr_desc.cycle_base;
-
-                    m_next_stage = Stage::FETCH_EXEC;
-                    // postpone the rest of the work at the last cycle.
-                    m_next_stage_cycle += instr_desc.cycle_base - 1;
-                }
-                break;
-
-                case Stage::FETCH_EXEC:
-                {
-                    const auto &opcode = m_stage_ctx.opcode;
-                    const auto &instr_desc = m_stage_ctx.instr_desc;
-
-                    ParseFunc parse = get_address_parse(opcode);
-                    bool read_page_crossing = false;
-                    Byte operand_bytes;
-                    Operand operand = parse(this, operand_bytes,
-                                            instr_desc.cycle_page_dependent
-                                                ? &read_page_crossing
-                                                : nullptr);
-                    PC += operand_bytes;
-
-                    Cycle extra_branch_cycles = 0;
-                    ExecFunc exec = get_opcode_exec(opcode);
-                    exec(this, operand, extra_branch_cycles);
-
-                    Cycle extra_cycles =
-                        (Cycle)read_page_crossing + extra_branch_cycles;
-                    m_stage_ctx.instr_cycles += extra_cycles;
-
-                    if (!extra_cycles)
-                    {
-                        instr_cycles = m_stage_ctx.instr_cycles;
-
-                        m_next_stage = Stage::DECODE;
-                        m_next_stage_cycle += 1;
-                    }
-                    else
-                    {
-                        m_next_stage = Stage::LAST_CYCLE;
-                        m_next_stage_cycle += extra_cycles;
-                    }
-                }
-                break;
-
-                case Stage::LAST_CYCLE:
-                {
-                    instr_cycles = m_stage_ctx.instr_cycles;
-
-                    m_next_stage = Stage::DECODE;
-                    m_next_stage_cycle += 1;
-                }
-                break;
-
-                default:
-                {
-                    LN_ASSERT_FATAL("Undefined CPU stage: {}", m_next_stage);
-                    return 1;
-                }
-                break;
-            }
+            Byte opcode = get_byte(PC++);
+            m_instr_ctx.instr = &s_instr_table[opcode];
+            m_instr_ctx.cycle_plus1 = 0;
         }
-
-        /* Check interrupts at the last cycle of each normal instruction */
-        // @TEST: Don't count PPU DMA.
-        if (instr_cycles)
+        // Rest of the instruction
+        else
         {
-            poll_interrupt();
+            m_instr_ctx.instr->frm(m_instr_ctx.cycle_plus1, this,
+                                   m_instr_ctx.instr->core, instr_done);
+            ++m_instr_ctx.cycle_plus1;
+            if (instr_done)
+            {
+                // So that next instruction can continue afterwards.
+                m_instr_ctx.instr = nullptr;
+
+                /* Check interrupts at the last cycle of each instruction */
+                // @TEST: Don't count PPU DMA.
+                poll_interrupt();
+            }
         }
     }
     ++m_cycle;
 
-    return instr_cycles;
-}
-
-bool
-CPU::step_test()
-{
-    if (m_halted)
-    {
-        return false;
-    }
-
-    Byte opcode_byte = get_byte(PC++);
-    Opcode opcode = {opcode_byte};
-    InstructionDesc instr_desc = get_instr_desc(opcode);
-
-    ParseFunc parse = get_address_parse(opcode);
-    bool read_page_crossing = false;
-    Byte operand_bytes;
-    Operand operand =
-        parse(this, operand_bytes,
-              instr_desc.cycle_page_dependent ? &read_page_crossing : nullptr);
-    PC += operand_bytes;
-
-    Cycle extra_branch_cycles = 0;
-    ExecFunc exec = get_opcode_exec(opcode);
-    exec(this, operand, extra_branch_cycles);
-
-    Cycle cycles_spent =
-        instr_desc.cycle_base + (Cycle)read_page_crossing + extra_branch_cycles;
-    m_cycle += cycles_spent;
-
-    return true;
+    return instr_done;
 }
 
 Cycle
@@ -307,19 +203,50 @@ CPU::get_instr_bytes(Address i_addr) const
     std::vector<Byte> bytes;
     bytes.reserve(3);
 
-    Byte opcode_byte = get_byte(i_addr);
-    Opcode opcode = {opcode_byte};
-    bytes.push_back(opcode_byte);
+    Byte opcode = get_byte(i_addr);
+    bytes.push_back(opcode);
 
-    ParseFunc parse = get_address_parse(opcode);
-    Byte operand_bytes;
-    (void)parse(this, operand_bytes, nullptr);
-    for (Byte i = 0; i < operand_bytes; ++i)
+    Byte operand_bytes = get_operand_bytes(opcode);
+    for (decltype(operand_bytes) i = 0; i < operand_bytes; ++i)
     {
         bytes.push_back(get_byte((i_addr + 1) + i));
     }
 
     return bytes;
+}
+
+Byte
+CPU::get_operand_bytes(Byte i_opcode)
+{
+    AddrMode addr_mode = s_instr_table[i_opcode].addr_mode;
+    switch (addr_mode)
+    {
+        case IMP:
+        case ACC:
+            return 0;
+            break;
+
+        case IMM:
+        case ZP0:
+        case ZPX:
+        case ZPY:
+        case IZX:
+        case IZY:
+        case REL:
+            return 1;
+            break;
+
+        case ABS:
+        case ABX:
+        case ABY:
+        case IND:
+            return 2;
+            break;
+
+        default:
+            return 0; // absurd value
+            break;
+    }
 }
 
 void
@@ -340,42 +267,6 @@ void
 CPU::set_nmi(bool i_flag)
 {
     m_nmi = i_flag;
-}
-
-auto
-CPU::get_opcode_exec(Opcode i_opcode) -> ExecFunc
-{
-    auto ret = s_instr_map[i_opcode].exec_func;
-    LN_ASSERT_FATAL_COND(
-        ret, "Config error, empty ExecFunc for instruction: {}", i_opcode);
-    return ret;
-}
-
-auto
-CPU::get_address_parse(Opcode i_opcode) -> ParseFunc
-{
-    auto ret = s_address_mode_map[get_address_mode(i_opcode)].parse_func;
-    LN_ASSERT_FATAL_COND(
-        ret, "Config error, empty ParseFunc for instruction: {}", i_opcode);
-    return ret;
-}
-
-auto
-CPU::get_instr_desc(Opcode i_opcode) -> InstructionDesc
-{
-    return s_instr_map[i_opcode];
-}
-
-OpcodeType
-CPU::get_op_code(Opcode i_opcode)
-{
-    return s_instr_map[i_opcode].op_code;
-}
-
-AddressMode
-CPU::get_address_mode(Opcode i_opcode)
-{
-    return s_instr_map[i_opcode].address_mode;
 }
 
 Byte
@@ -401,7 +292,7 @@ CPU::get_byte2(Address i_addr) const
 {
     auto lower = get_byte(i_addr);
     auto higher = get_byte(i_addr + 1);
-    return byte2_from_bytes(higher, lower);
+    return to_byte2(higher, lower);
 }
 
 void
@@ -415,7 +306,19 @@ CPU::push_byte(Byte i_byte)
 Byte
 CPU::pop_byte()
 {
+    pre_pop_byte();
+    return post_pop_byte();
+}
+
+void
+CPU::pre_pop_byte()
+{
     ++S;
+}
+
+Byte
+CPU::post_pop_byte()
+{
     Byte byte = get_byte(Memory::STACK_PAGE_MASK | S);
     LN_LOG_TRACE(ln::get_logger(), "Pop byte: {:02X}", byte);
     return byte;
@@ -435,7 +338,7 @@ CPU::pop_byte2()
     // see push_byte2() for details.
     auto lower = pop_byte();
     auto higher = pop_byte();
-    return byte2_from_bytes(higher, lower);
+    return to_byte2(higher, lower);
 }
 
 bool
@@ -460,45 +363,6 @@ void
 CPU::test_flag(StatusFlag i_flag, bool i_cond)
 {
     i_cond ? set_flag(i_flag) : unset_flag(i_flag);
-}
-
-Byte
-CPU::get_operand(Operand i_operand) const
-{
-    switch (i_operand.type)
-    {
-        case OperandType::VALUE:
-            return i_operand.value;
-            break;
-        case OperandType::ADDRESS:
-            return get_byte(i_operand.address);
-            break;
-        case OperandType::ACC:
-            return this->A;
-            break;
-        default:
-            LN_ASSERT_ERROR("Unsupported operand type: {}", i_operand.type);
-            return (Byte)-1;
-            break;
-    }
-}
-
-Error
-CPU::set_operand(Operand i_operand, Byte i_byte)
-{
-    switch (i_operand.type)
-    {
-        case OperandType::ADDRESS:
-            set_byte(i_operand.address, i_byte);
-            break;
-        case OperandType::ACC:
-            A = i_byte;
-            break;
-        default:
-            return Error::INVALID_ARGUMENT;
-            break;
-    }
-    return Error::OK;
 }
 
 void

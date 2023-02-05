@@ -294,30 +294,29 @@ Emulator::ticks(Time_t i_duration)
 }
 
 bool
-Emulator::tick()
+Emulator::tick(bool *o_cpu_instr)
 {
-    ln::Cycle instr_cycles = 0;
+    constexpr int cpu_ticks = 1;
+    bool instr_done = false;
     if (m_apu.fetching())
     {
-        // Stall CPU only, let PPU run.
-        instr_cycles = 1;
+        // Stall CPU.
     }
     else
     {
-        instr_cycles = m_cpu.tick();
+        instr_done = m_cpu.tick();
+    }
+    if (o_cpu_instr)
+    {
+        *o_cpu_instr = instr_done;
     }
 
-    // @NOTE: Emulate PPU after CPU makes progress.
-    // @FIXME: Tick PPU independently of CPU?
-    // an instruction is complete
-    if (instr_cycles)
+    // @NOTE: Emulate PPU after CPU.
+    constexpr int TICK_CPU_TO_PPU = 3; // NTSC version
+    for (decltype(TICK_CPU_TO_PPU * cpu_ticks) j = 0;
+         j < TICK_CPU_TO_PPU * cpu_ticks; ++j)
     {
-        constexpr int TICK_CPU_TO_PPU = 3; // NTSC version
-        for (decltype(TICK_CPU_TO_PPU * instr_cycles) j = 0;
-             j < TICK_CPU_TO_PPU * instr_cycles; ++j)
-        {
-            m_ppu.tick();
-        }
+        m_ppu.tick();
     }
 
     m_apu.tick(m_memory);
@@ -381,30 +380,15 @@ Emulator::set_ptn_tbl_palette_dbg(PaletteSet i_palette)
 }
 
 const CPU &
-Emulator::get_cpu() const
+Emulator::get_cpu_test() const
 {
     return m_cpu;
 }
 
 void
-Emulator::run_test(Address i_entry, TestExitFunc i_exit_func, void *i_context)
+Emulator::init_test(TestInitFunc i_init_func, void *i_context)
 {
-    m_cpu.set_entry_test(i_entry);
-
-    std::size_t idx_exec_instrs = 0;
-    while (i_exit_func && !i_exit_func(&m_cpu, idx_exec_instrs, i_context))
-    {
-        if (m_cpu.step_test())
-        {
-            ++idx_exec_instrs;
-        }
-    }
-}
-
-Cycle
-Emulator::tick_cpu_test()
-{
-    return m_cpu.tick();
+    i_init_func(&m_cpu, i_context);
 }
 
 } // namespace ln

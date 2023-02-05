@@ -6,10 +6,9 @@
 #include "console/memory/memory.hpp"
 #include "common/klass.hpp"
 #include "console/types.hpp"
-#include "console/cpu/instruction.hpp"
-#include "console/cpu/operand.hpp"
 #include "common/error.hpp"
 #include "console/dllexport.h"
+#include "console/cpu/addr_mode.hpp"
 
 namespace ln {
 
@@ -27,9 +26,8 @@ struct CPU {
     void
     reset();
 
-    /// @return Cycles of the executed instruction. Return 0 if the instruction
-    /// is not complete yet.
-    Cycle
+    /// @return Whether an instruction has completed.
+    bool
     tick();
 
   public:
@@ -54,12 +52,17 @@ struct CPU {
     LN_CONSOLE_API std::vector<Byte>
     get_instr_bytes(Address i_addr) const;
 
+  private:
+    static Byte
+    get_operand_bytes(Byte i_opcode);
+
+  public:
     /* For test only */
 
-    void
+    LN_CONSOLE_API void
     set_entry_test(Address i_entry);
-    bool
-    step_test();
+    LN_CONSOLE_API void
+    set_p_test(Byte i_val);
 
   private:
     /* allow access from other internal components */
@@ -73,43 +76,6 @@ struct CPU {
     set_nmi(bool i_flag);
 
   private:
-    typedef void (*ExecFunc)(ln::CPU *i_cpu, ln::Operand i_operand,
-                             Cycle &o_branch_cycles);
-    struct OpcodeExec;
-    typedef ln::Operand (*ParseFunc)(const ln::CPU *i_cpu,
-                                     Byte &o_operand_bytes,
-                                     bool *o_page_crossing);
-    struct AddressModeParse;
-
-    struct InstructionDesc {
-        OpcodeType op_code;
-        AddressMode address_mode;
-        ExecFunc exec_func;
-        Cycle cycle_base;
-        bool cycle_page_dependent; // excluding branch crossing, it's considered
-                                   // elsewhere.
-    };
-
-    static InstructionDesc s_instr_map[256];
-
-    struct AddressModeParseEntry {
-        AddressMode address_mode;
-        ParseFunc parse_func;
-    };
-    static AddressModeParseEntry s_address_mode_map[AddressMode::COUNT];
-
-  private:
-    static InstructionDesc
-    get_instr_desc(Opcode i_opcode);
-    static OpcodeType
-    get_op_code(Opcode i_opcode);
-    static AddressMode
-    get_address_mode(Opcode i_opcode);
-    static ExecFunc
-    get_opcode_exec(Opcode i_opcode);
-    static ParseFunc
-    get_address_parse(Opcode i_opcode);
-
     // ----- memory operations
 
     Byte
@@ -129,6 +95,11 @@ struct CPU {
     push_byte2(Byte2 i_byte2);
     Byte2
     pop_byte2();
+
+    void
+    pre_pop_byte();
+    Byte
+    post_pop_byte();
 
   private:
     // @NOTE: Same underlying type as "this->P", so the enumerators can be
@@ -157,11 +128,6 @@ struct CPU {
     unset_flag(StatusFlag i_flag);
     void
     test_flag(StatusFlag i_flag, bool i_cond);
-
-    Byte
-    get_operand(Operand i_operand) const;
-    Error
-    set_operand(Operand i_operand, Byte i_byte);
 
   private:
     void
@@ -198,6 +164,33 @@ struct CPU {
     bool m_nmi;
 
   private:
+    struct InstrImpl;
+    typedef void (*InstrCore)(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    typedef void (*InstrFrame)(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+                               bool &io_done);
+
+    /* @NOTE: Used in execution of instruction, not to be confused with the
+     * real-time status of the hardware bus (not considered) */
+    Address m_addr_bus;
+    Byte m_data_bus;
+    /* Set and used in instruction */
+    Byte m_page_offset;
+    /* Set in instruction and used in core */
+    Address m_i_eff_addr;
+
+    struct InstrDesc {
+        InstrCore core;
+        AddrMode addr_mode;
+        InstrFrame frm;
+    };
+    static InstrDesc s_instr_table[256];
+
+    struct InstrContext {
+        int cycle_plus1;
+        InstrDesc *instr;
+    } m_instr_ctx;
+
+  private:
     struct OAMDMAContext {
         bool ongoing;
         Byte upper;
@@ -206,20 +199,6 @@ struct CPU {
         bool write;
         Byte tmp;
     } m_oam_dma_ctx;
-
-  private:
-    enum class Stage {
-        DECODE,
-        FETCH_EXEC,
-        LAST_CYCLE,
-    } m_next_stage;
-    Cycle m_next_stage_cycle;
-
-    struct StageContext {
-        Opcode opcode;
-        InstructionDesc instr_desc;
-        Cycle instr_cycles;
-    } m_stage_ctx;
 };
 
 } // namespace ln
