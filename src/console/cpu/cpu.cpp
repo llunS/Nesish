@@ -283,8 +283,8 @@ void
 CPU::set_byte(Address i_addr, Byte i_byte)
 {
     auto err = m_memory->set_byte(i_addr, i_byte);
-    LN_ASSERT_ERROR_COND(!LN_FAILED(err), "Invalid memory write: ${:04X}, {}",
-                         i_addr, err);
+    LN_ASSERT_ERROR_COND(!LN_FAILED(err) || err == Error::READ_ONLY,
+                         "Invalid memory write: ${:04X}, {}", i_addr, err);
 }
 
 Byte2

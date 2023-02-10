@@ -80,12 +80,8 @@ MappableMemory<EMappingPoint, AddressableSize>::set_byte(Address i_addr,
 
     if (entry->readonly)
     {
-        const auto &mp = entry_kv.k;
-        // Can not write to read-only memory.
-        LN_LOG_ERROR(ln::get_logger(),
-                     "Attempted to write to read-only memory: {}, ${:04X}", mp,
-                     i_addr);
-        return Error::SEGFAULT;
+        // @NOTE: Simply ignore the write to read-only memory
+        return Error::READ_ONLY;
     }
 
     if (entry->set_byte)

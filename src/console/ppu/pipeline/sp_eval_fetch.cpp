@@ -56,9 +56,12 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
 
         case 65:
         {
-            if (!m_fetch_only && m_accessor->rendering_enabled())
+            if (!m_fetch_only)
             {
-                m_eval.reset();
+                if (m_accessor->rendering_enabled())
+                {
+                    m_eval.reset();
+                }
 
                 Byte oam_addr = m_accessor->get_register(PPU::OAMADDR);
                 m_ctx.sec_oam_write_idx = 0;
@@ -93,8 +96,11 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
         case 305:
         case 313:
         {
-            // 8 cycles each for 8 sprites.
-            m_fetch_reload.reset();
+            if (m_accessor->rendering_enabled())
+            {
+                // 8 cycles each for 8 sprites.
+                m_fetch_reload.reset();
+            }
         }
         break;
 
@@ -116,9 +122,10 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
     {
         case 320:
         {
-            if (m_ctx.sec_oam_read_idx != LN_SEC_OAM_SIZE)
+            if (m_accessor->rendering_enabled() &&
+                m_ctx.sec_oam_read_idx != LN_SEC_OAM_SIZE)
             {
-                LN_ASSERT_FATAL("Wrong secondary OAM read index: {}",
+                LN_ASSERT_ERROR("Wrong secondary OAM read index: {}",
                                 m_ctx.sec_oam_read_idx);
             }
         }
