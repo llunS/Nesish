@@ -274,8 +274,22 @@ CPU::get_byte(Address i_addr) const
 {
     Byte byte;
     auto err = m_memory->get_byte(i_addr, byte);
-    LN_ASSERT_ERROR_COND(!LN_FAILED(err), "Invalid memory read: ${:04X}, {}",
-                         i_addr, err);
+
+    if (LN_FAILED(err))
+    {
+        if (err == Error::UNAVAILABLE)
+        {
+            // @TODO: Open bus?
+            byte = 0xFF;
+        }
+        else
+        {
+            LN_ASSERT_ERROR_COND(false, "Invalid memory read: ${:04X}, {}",
+                                 i_addr, err);
+            byte = 0xFF; // Apparent value
+        }
+    }
+
     return byte;
 }
 
@@ -283,7 +297,8 @@ void
 CPU::set_byte(Address i_addr, Byte i_byte)
 {
     auto err = m_memory->set_byte(i_addr, i_byte);
-    LN_ASSERT_ERROR_COND(!LN_FAILED(err) || err == Error::READ_ONLY,
+    LN_ASSERT_ERROR_COND(!LN_FAILED(err) || err == Error::READ_ONLY ||
+                             err == Error::UNAVAILABLE,
                          "Invalid memory write: ${:04X}, {}", i_addr, err);
 }
 
