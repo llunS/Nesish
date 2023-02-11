@@ -6,7 +6,6 @@ enum class Error {
     OK = 0,
 
     UNINITIALIZED,    // Uninitialized.
-    SEGFAULT,         // Segmentation fault.
     INVALID_ARGUMENT, // Invalid argument.
     CORRUPTED,        // Invalid or corrupted resource.
     UNAVAILABLE,      // Requested resource is unavailable.

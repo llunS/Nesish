@@ -26,7 +26,7 @@ struct MappableMemory {
 
   protected:
     Error
-    decode_addr_raw(Address i_addr, Byte *&o_addr) const;
+    decode_addr(Address i_addr, Byte *&o_addr) const;
 
   private:
     struct EntryKeyValue {
@@ -43,8 +43,8 @@ struct MappableMemory {
     EntryKeyValue
     get_entry_kv(Address i_addr) const;
     Error
-    decode_addr_raw_impl(const EntryKeyValue &i_entry_kv, Address i_addr,
-                         Byte *&o_addr) const;
+    decode_addr_impl(const EntryKeyValue &i_entry_kv, Address i_addr,
+                     Byte *&o_addr) const;
 
   private:
     EMappingPoint m_mapping_registry[AddressableSize];

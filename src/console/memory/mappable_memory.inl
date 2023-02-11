@@ -36,9 +36,8 @@ MappableMemory<EMappingPoint, AddressableSize>::get_byte(Address i_addr,
     const auto &entry = entry_kv.v;
     if (!entry)
     {
-        LN_LOG_ERROR(ln::get_logger(),
-                     "Programming error: corrupted mapping state.");
-        return Error::SEGFAULT;
+        // No device active with this address
+        return Error::UNAVAILABLE;
     }
 
     if (entry->get_byte)
@@ -49,14 +48,14 @@ MappableMemory<EMappingPoint, AddressableSize>::get_byte(Address i_addr,
     else
     {
         Byte *byte_ptr = nullptr;
-        auto error = decode_addr_raw_impl(entry_kv, i_addr, byte_ptr);
+        auto error = decode_addr_impl(entry_kv, i_addr, byte_ptr);
         if (LN_FAILED(error))
         {
             return error;
         }
         if (!byte_ptr)
         {
-            return Error::SEGFAULT;
+            return Error::PROGRAMMING;
         }
 
         o_val = *byte_ptr;
@@ -73,9 +72,8 @@ MappableMemory<EMappingPoint, AddressableSize>::set_byte(Address i_addr,
     const auto &entry = entry_kv.v;
     if (!entry)
     {
-        LN_LOG_ERROR(ln::get_logger(),
-                     "Programming error: corrupted mapping state.");
-        return Error::SEGFAULT;
+        // No device active with this address
+        return Error::UNAVAILABLE;
     }
 
     if (entry->readonly)
@@ -92,14 +90,14 @@ MappableMemory<EMappingPoint, AddressableSize>::set_byte(Address i_addr,
     else
     {
         Byte *byte_ptr = nullptr;
-        auto error = decode_addr_raw_impl(entry_kv, i_addr, byte_ptr);
+        auto error = decode_addr_impl(entry_kv, i_addr, byte_ptr);
         if (LN_FAILED(error))
         {
             return error;
         }
         if (!byte_ptr)
         {
-            return Error::SEGFAULT;
+            return Error::PROGRAMMING;
         }
         *byte_ptr = i_val;
         return Error::OK;
@@ -190,16 +188,16 @@ MappableMemory<EMappingPoint, AddressableSize>::get_entry_kv(
 
 template <typename EMappingPoint, std::size_t AddressableSize>
 Error
-MappableMemory<EMappingPoint, AddressableSize>::decode_addr_raw(
-    Address i_addr, Byte *&o_addr) const
+MappableMemory<EMappingPoint, AddressableSize>::decode_addr(Address i_addr,
+                                                            Byte *&o_addr) const
 {
     auto entry_kv = get_entry_kv(i_addr);
-    return decode_addr_raw_impl(entry_kv, i_addr, o_addr);
+    return decode_addr_impl(entry_kv, i_addr, o_addr);
 }
 
 template <typename EMappingPoint, std::size_t AddressableSize>
 Error
-MappableMemory<EMappingPoint, AddressableSize>::decode_addr_raw_impl(
+MappableMemory<EMappingPoint, AddressableSize>::decode_addr_impl(
     const EntryKeyValue &i_entry_kv, Address i_addr, Byte *&o_addr) const
 {
     const auto &mp = i_entry_kv.k;
@@ -207,7 +205,7 @@ MappableMemory<EMappingPoint, AddressableSize>::decode_addr_raw_impl(
 
     if (!entry)
     {
-        return Error::SEGFAULT;
+        return Error::UNAVAILABLE;
     }
 
     Byte *byte_ptr = nullptr;

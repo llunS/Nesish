@@ -1,5 +1,7 @@
 #include "video_memory.hpp"
 
+#define BASE MappableMemory<VideoMemoryMappingPoint, LN_ADDRESSABLE_SIZE>
+
 namespace ln {
 
 VideoMemory::VideoMemory()
@@ -12,8 +14,7 @@ VideoMemory::VideoMemory()
                          Byte *&o_addr) -> ln::Error {
             VideoMemory *thiz = (VideoMemory *)i_entry->opaque;
 
-            return thiz->decode_addr_raw(i_addr & LN_NT_MIRROR_ADDR_MASK,
-                                         o_addr);
+            return thiz->decode_addr(i_addr & LN_NT_MIRROR_ADDR_MASK, o_addr);
         };
         set_mapping(VideoMemoryMappingPoint::NAMETABLE_MIRROR,
                     {LN_NT_MIRROR_ADDR_HEAD, LN_NT_MIRROR_ADDR_TAIL, false,
@@ -49,8 +50,7 @@ VideoMemory::VideoMemory()
 
             // Valid addresses are $0000-$3FFF; higher addresses will be
             // mirrored down.
-            return thiz->decode_addr_raw(i_addr & LN_PPU_INVALID_ADDR_MASK,
-                                         o_addr);
+            return thiz->decode_addr(i_addr & LN_PPU_INVALID_ADDR_MASK, o_addr);
         };
         set_mapping(VideoMemoryMappingPoint::INVALID_REST,
                     {LN_PPU_INVALID_ADDR_HEAD, LN_PPU_INVALID_ADDR_TAIL, false,
@@ -142,6 +142,19 @@ void
 VideoMemory::unset_mirror()
 {
     unset_mapping(VideoMemoryMappingPoint::NAMETABLE);
+}
+
+Error
+VideoMemory::get_byte(Address i_addr, Byte &o_val) const
+{
+    // https://www.nesdev.org/wiki/Open_bus_behavior#PPU_open_bus
+    auto err = BASE::get_byte(i_addr, o_val);
+    if (err == Error::UNAVAILABLE)
+    {
+        o_val = i_addr & 0x00FF;
+        err = Error::OK;
+    }
+    return err;
 }
 
 } // namespace ln

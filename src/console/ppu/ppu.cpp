@@ -19,6 +19,7 @@ PPU::PPU(VideoMemory *i_memory, CPU *i_cpu,
     , m_pipeline(nullptr)
     , m_debug_flags(i_debug_flags)
     , m_ptn_tbl_palette_idx(0)
+    , m_io_db(0)
 {
     m_pipeline_accessor = new PipelineAccessor(this);
     m_pipeline = new Pipeline(m_pipeline_accessor);
@@ -85,9 +86,16 @@ PPU::read_register(Register i_reg)
 {
     if (reg_wrtie_only(i_reg))
     {
-        // @NOTE: We should return what's left in the bus, but we didn't emulate
-        // that, so forget about it.
-        return 0xFF;
+        if (i_reg == OAMDMA)
+        {
+            // @TODO: Open bus behavior for this?
+            return 0xFF;
+        }
+        else
+        {
+            // @IMPL: Open bus
+            return m_io_db;
+        }
     }
 
     auto val = m_regs[i_reg];
@@ -96,9 +104,12 @@ PPU::read_register(Register i_reg)
     {
         case PPUSTATUS:
         {
+            // Other 5 bits open bus behavior.
+            val = (val & 0xE0) | (m_io_db & ~0xE0);
+
             m_regs[i_reg] &= 0x7F; // clear VBLANK flag
             this->w = 0;
-            // @TODO/@TOTEST:
+            // @TODO @TEST:
             // https://www.nesdev.org/wiki/PPU_frame_timing#VBL_Flag_Timing
         }
         break;
@@ -153,12 +164,24 @@ PPU::read_register(Register i_reg)
             break;
     }
 
+    // fill the latch
+    m_io_db = val;
     return val;
 }
 
 void
 PPU::write_register(Register i_reg, Byte i_val)
 {
+    if (i_reg != OAMDMA)
+    {
+        // fill the latch
+        m_io_db = i_val;
+    }
+    else
+    {
+        // @TODO: Open bus behavior for this?
+    }
+
     if (reg_read_only(i_reg))
     {
         return;
@@ -292,6 +315,9 @@ PPU::reg_wrtie_only(Register i_reg)
         case OAMADDR:
         case PPUSCROLL:
         case PPUADDR:
+            return true;
+            break;
+
         case OAMDMA:
             return true;
             break;

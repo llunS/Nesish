@@ -44,6 +44,10 @@ struct VideoMemory
     void
     unset_mirror();
 
+  public:
+    Error
+    get_byte(Address i_addr, Byte &o_val) const;
+
   private:
     // https://www.nesdev.org/wiki/PPU_memory_map
     Byte m_ram[LN_PPU_INTERNAL_RAM_SIZE];

@@ -162,6 +162,12 @@ struct PPU {
 
     PaletteDefault m_palette;
 
+    // The data bus used to communicate with CPU, to implement open bus
+    // behavior
+    // https://www.nesdev.org/wiki/PPU_registers#Ports
+    // https://www.nesdev.org/wiki/Open_bus_behavior#PPU_open_bus
+    Byte m_io_db;
+
   private:
     /* debug */
 
