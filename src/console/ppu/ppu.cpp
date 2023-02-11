@@ -86,16 +86,8 @@ PPU::read_register(Register i_reg)
 {
     if (reg_wrtie_only(i_reg))
     {
-        if (i_reg == OAMDMA)
-        {
-            // @TODO: Open bus behavior for this?
-            return 0xFF;
-        }
-        else
-        {
-            // @IMPL: Open bus
-            return m_io_db;
-        }
+        // @IMPL: Open bus
+        return m_io_db;
     }
 
     auto val = m_regs[i_reg];
@@ -172,15 +164,8 @@ PPU::read_register(Register i_reg)
 void
 PPU::write_register(Register i_reg, Byte i_val)
 {
-    if (i_reg != OAMDMA)
-    {
-        // fill the latch
-        m_io_db = i_val;
-    }
-    else
-    {
-        // @TODO: Open bus behavior for this?
-    }
+    // fill the latch
+    m_io_db = i_val;
 
     if (reg_read_only(i_reg))
     {
@@ -280,11 +265,6 @@ PPU::write_register(Register i_reg, Byte i_val)
         }
         break;
 
-        case OAMDMA:
-        {
-            m_cpu->init_oam_dma(i_val);
-        }
-
         default:
             break;
     }
@@ -315,10 +295,6 @@ PPU::reg_wrtie_only(Register i_reg)
         case OAMADDR:
         case PPUSCROLL:
         case PPUADDR:
-            return true;
-            break;
-
-        case OAMDMA:
             return true;
             break;
 

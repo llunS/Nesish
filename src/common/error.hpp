@@ -12,6 +12,7 @@ enum class Error {
     UNIMPLEMENTED,    // TODO marker, shouldn't be exposed to production code.
     PROGRAMMING,      // Someone wrote a bug, an unexpected behavior.
     READ_ONLY,        // Attempted to write to read only area.
+    WRITE_ONLY,       // Attempted to read from write only area.
 
     RENDERING_API, // Rendering API error.
 };

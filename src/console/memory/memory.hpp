@@ -36,6 +36,14 @@ struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
     static constexpr Address RESET_VECTOR_ADDR = 0xFFFC;
     static constexpr Address IRQ_VECTOR_ADDR = 0xFFFE; // IRQ/BRK vector
 
+  public:
+    Error
+    get_byte(Address i_addr, Byte &o_val) const;
+
+    Byte
+    get_latch() const;
+
+  public:
     Error
     set_bulk(Address i_begin, Address i_end, Byte i_byte);
 
@@ -45,6 +53,8 @@ struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
 
     // On-board RAM
     Byte m_ram[LN_INTERNAL_RAM_SIZE];
+    // @FIXME: Move the latch out somewhere?
+    mutable Byte m_read_latch;
 };
 
 } // namespace ln

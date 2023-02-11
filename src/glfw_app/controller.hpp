@@ -32,6 +32,8 @@ struct Controller : public ln::Controller {
     bool m_strobing;
     unsigned int m_strobe_idx; // valid only if "m_strobing" == false.
     bool m_key_state[ln::KEY_SIZE];
+
+    bool m_8_bits_read;
 };
 
 struct ControllerP1 : public Controller {

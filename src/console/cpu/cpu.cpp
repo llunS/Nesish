@@ -274,22 +274,12 @@ CPU::get_byte(Address i_addr) const
 {
     Byte byte;
     auto err = m_memory->get_byte(i_addr, byte);
-
     if (LN_FAILED(err))
     {
-        if (err == Error::UNAVAILABLE)
-        {
-            // @TODO: Open bus?
-            byte = 0xFF;
-        }
-        else
-        {
-            LN_ASSERT_ERROR_COND(false, "Invalid memory read: ${:04X}, {}",
-                                 i_addr, err);
-            byte = 0xFF; // Apparent value
-        }
+        LN_ASSERT_ERROR_COND(false, "Invalid memory read: ${:04X}, {}", i_addr,
+                             err);
+        byte = 0xFF; // Apparent value
     }
-
     return byte;
 }
 

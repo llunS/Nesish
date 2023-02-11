@@ -48,8 +48,6 @@ struct PPU {
         PPUADDR, // PPU read/write address (two writes: most significant byte, least significant byte)
         PPUDATA, // PPU data read/write
 
-        OAMDMA, // OAM DMA high address (this port is actually located on the CPU)
-
         SIZE,
         /* clang-format on */
     };

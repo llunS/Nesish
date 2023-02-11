@@ -65,9 +65,9 @@ struct CPU {
     set_p_test(Byte i_val);
 
   private:
-    /* allow access from other internal components */
+    /* allow access from other components */
 
-    friend struct PPU;
+    friend struct Emulator;
     void
     init_oam_dma(Byte i_val);
 

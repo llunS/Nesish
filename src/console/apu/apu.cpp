@@ -148,8 +148,8 @@ APU::mix(Byte i_pulse1, Byte i_pulse2, Byte i_triangle, Byte i_noise,
     return output;
 }
 
-Byte
-APU::read_register(Register i_reg)
+Error
+APU::read_register(Register i_reg, Byte &o_val)
 {
     switch (i_reg)
     {
@@ -173,15 +173,16 @@ APU::read_register(Register i_reg)
             m_fc.clear_interrupt();
             bool I = m_dmc.interrupt();
 
-            return (I << 7) | (F << 6) | (D << 4) | (noise << 3) | (tri << 2) |
-                   (p2 << 1) | (p1 << 0);
+            o_val = (I << 7) | (F << 6) | (D << 4) | (noise << 3) | (tri << 2) |
+                    (p2 << 1) | (p1 << 0);
+            return Error::OK;
         }
         break;
 
         default:
+            return Error::WRITE_ONLY;
             break;
     }
-    return 0xFF; // distinct error
 }
 
 void
@@ -347,7 +348,6 @@ APU::write_register(Register i_reg, Byte i_val)
         break;
 
         default:
-            // @TODO: Other channels.
             break;
     }
 }

@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#define BASE MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE>
+
 namespace ln {
 
 constexpr Address Memory::STACK_PAGE_MASK;
@@ -12,6 +14,7 @@ constexpr Address Memory::IRQ_VECTOR_ADDR;
 
 Memory::Memory()
     : m_ram{}
+    , m_read_latch(0)
 {
     // Internal RAM space mapping
     {
@@ -26,6 +29,32 @@ Memory::Memory()
         set_mapping(MemoryMappingPoint::INTERNAL_RAM,
                     {LN_RAM_ADDR_HEAD, LN_RAM_ADDR_TAIL, false, decode, m_ram});
     }
+}
+
+Error
+Memory::get_byte(Address i_addr, Byte &o_val) const
+{
+    // https://www.nesdev.org/wiki/Open_bus_behavior
+    auto err = BASE::get_byte(i_addr, o_val);
+    if (!LN_FAILED(err))
+    {
+        m_read_latch = o_val;
+    }
+    else
+    {
+        if (err == Error::UNAVAILABLE || err == Error::WRITE_ONLY)
+        {
+            o_val = m_read_latch;
+            err = Error::OK;
+        }
+    }
+    return err;
+}
+
+Byte
+Memory::get_latch() const
+{
+    return m_read_latch;
 }
 
 Error

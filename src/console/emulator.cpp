@@ -71,15 +71,17 @@ Emulator::hard_wire()
             // OAM DMA
             if (LN_OAMDMA_ADDR == i_addr)
             {
-                o_val = thiz->m_ppu.read_register(PPU::OAMDMA);
-                return Error::OK;
+                return Error::WRITE_ONLY;
             }
             // Controller registers.
             else if (LN_CTRL1_REG_ADDR == i_addr || LN_CTRL2_REG_ADDR == i_addr)
             {
-                o_val = thiz->read_ctrl_reg(LN_CTRL1_REG_ADDR == i_addr
-                                                ? CtrlReg::REG_4016
-                                                : CtrlReg::REG_4017);
+                Byte val = thiz->read_ctrl_reg(LN_CTRL1_REG_ADDR == i_addr
+                                                   ? CtrlReg::REG_4016
+                                                   : CtrlReg::REG_4017);
+                // @IMPL: Partial open bus
+                // https://www.nesdev.org/wiki/Open_bus_behavior#CPU_open_bus
+                o_val = (val & 0x1F) | (thiz->m_memory.get_latch() & ~0x1F);
                 return Error::OK;
             }
             // Left with APU registers
@@ -91,7 +93,15 @@ Emulator::hard_wire()
                     o_val = 0xFF;
                     return Error::PROGRAMMING;
                 }
-                o_val = thiz->m_apu.read_register(reg);
+                // @IMPL: APU Status doesn't require partial open bus as it
+                // seems according to cpu_exec_space/test_cpu_exec_space_apu.nes
+                Byte val;
+                auto err = thiz->m_apu.read_register(reg, val);
+                if (LN_FAILED(err))
+                {
+                    return err;
+                }
+                o_val = val;
                 return Error::OK;
             }
         };
@@ -101,7 +111,8 @@ Emulator::hard_wire()
 
             if (LN_OAMDMA_ADDR == i_addr)
             {
-                thiz->m_ppu.write_register(PPU::OAMDMA, i_val);
+                // OAM DMA high address (this port is located on the CPU)
+                thiz->m_cpu.init_oam_dma(i_val);
                 return Error::OK;
             }
             else if (LN_CTRL1_REG_ADDR == i_addr)
@@ -157,6 +168,7 @@ Emulator::read_ctrl_reg(CtrlReg i_reg)
                 {
                     primaryBit = ctrl->report();
                 }
+                // @IMPL: Other bits are 0 as initialized.
                 val = (val & 0xFE) | primaryBit;
             }
         }

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "common/klass.hpp"
+#include "common/error.hpp"
 
 #include "console/types.hpp"
-
 #include "console/apu/frame_counter.hpp"
 #include "console/apu/divider.hpp"
 #include "console/apu/pulse.hpp"
@@ -82,8 +82,8 @@ struct APU {
         /* clang-format on */
     };
 
-    Byte
-    read_register(Register i_reg);
+    Error
+    read_register(Register i_reg, Byte &o_val);
     void
     write_register(Register i_reg, Byte i_val);
 

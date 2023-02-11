@@ -6,6 +6,7 @@ Controller::Controller(GLFWwindow *window)
     : m_window(window)
     , m_strobing(false)
     , m_strobe_idx(ln::KEY_END)
+    , m_8_bits_read(false)
 {
 }
 
@@ -18,6 +19,7 @@ Controller::strobe(bool i_on)
     {
         reload_states();
         m_strobe_idx = ln::KEY_BEGIN;
+        m_8_bits_read = false;
     }
 }
 
@@ -33,6 +35,10 @@ Controller::report()
     {
         if (m_strobe_idx < ln::KEY_END)
         {
+            if (m_strobe_idx + 1 >= ln::KEY_END)
+            {
+                m_8_bits_read = true;
+            }
             return m_key_state[m_strobe_idx++];
         }
         else
@@ -41,7 +47,10 @@ Controller::report()
             // "All subsequent reads will return 1 on official Nintendo brand
             // controllers but may return 0 on third party controllers such as
             // the U-Force."
-            return true;
+
+            // @TEST: Is this logic necessary? Or the test itself
+            // (cpu_exec_space/test_cpu_exec_space_apu.nes) is defected?
+            return m_8_bits_read ? true : false;
         }
     }
 }
