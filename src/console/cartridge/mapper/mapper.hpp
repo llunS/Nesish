@@ -21,6 +21,12 @@ struct Mapper {
     unmap_memory(Memory *o_memory, VideoMemory *o_video_memory) = 0;
 
   protected:
+    void
+    set_fixed_vh_mirror(VideoMemory *o_video_memory);
+    void
+    unset_fixed_vh_mirror(VideoMemory *o_video_memory);
+
+  protected:
     const INES::RomAccessor *m_rom_accessor;
 };
 

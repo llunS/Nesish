@@ -135,14 +135,12 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
 {
     // PRG ROM
     {
-        auto get = [](const MappingEntry *i_entry, Address i_addr,
-                      Byte &o_val) -> Error {
+        Byte *mem_base;
+        std::size_t mem_size;
+        m_rom_accessor->get_prg_rom(&mem_base, &mem_size);
+        auto get = [mem_base, mem_size](const MappingEntry *i_entry,
+                                        Address i_addr, Byte &o_val) -> Error {
             auto thiz = (MMC1 *)i_entry->opaque;
-            auto accessor = thiz->m_rom_accessor;
-
-            Byte *rom_base;
-            std::size_t rom_size;
-            accessor->get_prg_rom(&rom_base, &rom_size);
 
             Address mem_idx = 0;
             Byte prg_rom_bank_mode = (thiz->m_ctrl >> 2) & 0x03;
@@ -153,8 +151,8 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                 case 1:
                 {
                     Byte bank = (thiz->m_prg_bnk >> 1) & 0x07;
+                    // 32KB window
                     Address prg_rom_start = bank * 32 * 1024;
-                    // PRG ROM area is of 32KB size
                     Address addr_base = i_entry->begin;
                     mem_idx = prg_rom_start + (i_addr - addr_base);
                 }
@@ -190,7 +188,7 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                             // fits in a Byte;
                             typedef Byte BankCount_t;
                             BankCount_t bank_cnt = static_cast<BankCount_t>(
-                                rom_size / (16 * 1024));
+                                mem_size / (16 * 1024));
                             if (bank_cnt <= 0)
                             {
                                 return Error::PROGRAMMING; // or corrupted rom
@@ -218,11 +216,11 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
             }
 
             // @IMPL: Mirror as necessary in case things go wrong.
-            // Asummeing "rom_size" not 0 and "rom_base" not nullptr.
+            // Asummeing "mem_size" not 0 and "mem_base" not nullptr.
             {
-                mem_idx = mem_idx % rom_size;
+                mem_idx = mem_idx % mem_size;
             }
-            o_val = *(rom_base + mem_idx);
+            o_val = *(mem_base + mem_idx);
             return Error::OK;
         };
         auto set = [](const MappingEntry *i_entry, Address i_addr,

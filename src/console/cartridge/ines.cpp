@@ -3,6 +3,7 @@
 #include "common/logger.hpp"
 #include "console/cartridge/mapper/nrom.hpp"
 #include "console/cartridge/mapper/mmc1.hpp"
+#include "console/cartridge/mapper/cnrom.hpp"
 
 namespace ln {
 
@@ -115,6 +116,10 @@ pvt_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor)
 
         case 1:
             return new MMC1(i_accessor, MMC1::V_B);
+            break;
+
+        case 3:
+            return new CNROM(i_accessor);
             break;
 
         default:
