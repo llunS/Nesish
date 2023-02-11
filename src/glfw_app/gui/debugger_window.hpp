@@ -51,7 +51,7 @@ struct DebuggerWindow : public PlatformWindow {
 
   private:
     void
-    draw_control(const Rect &i_layout);
+    draw_control(const Rect &i_layout, ln::Emulator &io_emu);
 
     void
     draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu);

@@ -22,6 +22,12 @@ Triangle::amplitude() const
 }
 
 void
+Triangle::reset()
+{
+    m_seq_idx = 0;
+}
+
+void
 Triangle::tick_timer()
 {
     if (m_timer.tick())

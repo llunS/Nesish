@@ -12,51 +12,33 @@ CPU::CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu)
     : m_memory(i_memory)
     , m_ppu(i_ppu)
     , m_apu(i_apu)
-    , m_cycle(0)
-    , m_halted(false)
-    , m_nmi(false)
-    , m_addr_bus(0)
-    , m_data_bus(0)
-    , m_instr_ctx{0, nullptr}
 {
-    m_oam_dma_ctx.ongoing = false;
 }
 
 void
 CPU::power_up()
 {
-    // @TODO: powerup test
-
     // https://wiki.nesdev.org/w/index.php?title=CPU_power_up_state
     P = 0x34; // (IRQ disabled)
     A = X = Y = 0;
     S = 0xFD;
 
-    // consistent RAM startup state
-    m_memory->set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
-                       0xFF);
+    reset_internal();
 
-    /* implementation state */
-    // set program entry point
+    // program entry point
     this->PC = this->get_byte2(Memory::RESET_VECTOR_ADDR);
 }
 
 void
 CPU::reset()
 {
-    // @TODO: reset test
-
     S -= 3;
     set_flag(StatusFlag::I); // The I (IRQ disable) flag was set to true
 
-    /* implementation state */
-    // @TODO: Go through these when implementing reset.
-    m_cycle = 0;
-    m_halted = false;
+    reset_internal();
 
-    m_nmi = false;
-
-    m_oam_dma_ctx.ongoing = false;
+    // program entry point
+    this->PC = this->get_byte2(Memory::RESET_VECTOR_ADDR);
 }
 
 void
@@ -426,10 +408,16 @@ CPU::poll_interrupt()
 }
 
 void
-CPU::report_exec_error(const std::string &i_msg)
+CPU::reset_internal()
 {
-    // @TODO: Current executing instruction?
-    LN_ASSERT_ERROR(i_msg);
+    m_cycle = 0;
+    m_halted = false;
+
+    m_nmi = false;
+
+    m_instr_ctx = {0, nullptr};
+
+    m_oam_dma_ctx.ongoing = false;
 }
 
 } // namespace ln

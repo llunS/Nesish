@@ -94,6 +94,18 @@ INES::validate() const
 }
 
 void
+INES::power_up()
+{
+    m_mapper->power_up();
+}
+
+void
+INES::reset()
+{
+    m_mapper->reset();
+}
+
+void
 INES::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
 {
     m_mapper->map_memory(o_memory, o_video_memory);

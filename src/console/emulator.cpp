@@ -281,16 +281,49 @@ Emulator::power_up()
     }
 
     m_cpu.power_up();
+    // consistent RAM startup state
+    m_memory.set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
+                      0xFF);
     m_ppu.power_up();
     m_apu.power_up();
+    m_cart->power_up();
+
+    reset_internal();
 }
 
 void
 Emulator::reset()
 {
+    if (!m_cart)
+    {
+        LN_LOG_ERROR(ln::get_logger(), "Reset without cartridge inserted");
+        return;
+    }
+
     m_cpu.reset();
+    // The internal memory was unchanged
+    // i.e. "m_memory" is not changed
     m_ppu.reset();
     m_apu.reset();
+    m_cart->reset();
+
+    reset_internal();
+}
+
+void
+Emulator::reset_internal()
+{
+    for (std::underlying_type<CtrlReg>::type i = 0; i < CtrlReg::SIZE; ++i)
+    {
+        m_ctrl_regs[i] = 0;
+    }
+    for (std::underlying_type<CtrlSlot>::type i = 0; i < CTRL_SIZE; ++i)
+    {
+        if (m_ctrls[i])
+        {
+            m_ctrls[i]->reset();
+        }
+    }
 }
 
 Time_t

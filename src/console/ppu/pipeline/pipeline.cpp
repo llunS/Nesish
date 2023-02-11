@@ -55,6 +55,7 @@ Pipeline::reset_context()
     auto &ctx = m_accessor->get_context();
     ctx.is_odd_frame = false;
     ctx.scanline_no = -1;
+    ctx.pixel_row = ctx.pixel_col = 0;
 }
 
 Cycle

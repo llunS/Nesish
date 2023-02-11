@@ -136,8 +136,9 @@ struct CPU {
     void
     poll_interrupt();
 
+  private:
     void
-    report_exec_error(const std::string &i_msg);
+    reset_internal();
 
   private:
     // ---- Registers
@@ -157,6 +158,8 @@ struct CPU {
     const APU *m_apu;
 
   private:
+    // @NOTE: This may wrap around back to 0, which is fine, since current
+    // implementation doesn't assume infinite range.
     Cycle m_cycle;
     bool m_halted;
 
@@ -169,8 +172,8 @@ struct CPU {
     typedef void (*InstrFrame)(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
                                bool &io_done);
 
-    /* @NOTE: Used in execution of instruction, not to be confused with the
-     * real-time status of the hardware bus (not considered) */
+    /* @NOTE: Set and used in execution of instruction, not to be confused with
+     * the real-time status of the hardware bus (not considered) */
     Address m_addr_bus;
     Byte m_data_bus;
     /* Set and used in instruction */
@@ -196,7 +199,6 @@ struct CPU {
         Byte upper;
         Cycle counter;
         Cycle start_counter;
-        bool write;
         Byte tmp;
     } m_oam_dma_ctx;
 };

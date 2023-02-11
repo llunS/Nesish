@@ -22,6 +22,9 @@ struct Triangle {
     amplitude() const;
 
     void
+    reset();
+
+    void
     tick_timer();
     void
     tick_linear_counter();

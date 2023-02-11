@@ -53,6 +53,9 @@ DMC::tick_timer(const Memory &i_memory)
     // cycle of the playback if the silence check and the sample fetch occur at
     // the same tick.
 
+    // @TODO: A DMC DMA may also alter the last value read if it interrupts an
+    // instruction
+
     /* 1. Check if there is timed fetch */
     if (m_fetch_timer > 0)
     {

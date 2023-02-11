@@ -123,9 +123,9 @@ FrameCounter::set_irq_inhibit(bool i_set)
 }
 
 void
-FrameCounter::reset()
+FrameCounter::reset(unsigned int i_val)
 {
-    m_timer = 0;
+    m_timer = i_val;
     if (m_step5)
     {
         tick_envelope_and_linear_counter();

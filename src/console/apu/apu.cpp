@@ -16,8 +16,6 @@ APU::APU()
 void
 APU::power_up()
 {
-    // @TODO: powerup test
-
     // https://www.nesdev.org/wiki/CPU_power_up_state
     // @IMPL: We want all the side effects applied, so we use write_register().
     write_register(PULSE1_DUTY, 0x00);
@@ -43,11 +41,15 @@ APU::power_up()
     write_register(DMC_SAMPLE_ADDR, 0x00);
     write_register(DMC_SAMPLE_LENGTH, 0x00);
 
+    // all channels disabled
     write_register(CTRL_STATUS, 0x00);
+    // frame irq enabled
     write_register(FC, 0x00);
 
-    // All 15 bits of noise channel LFSR = $0000. The first time the LFSR
-    // is clocked from the all-0s state, it will shift in a 1.
+    // All 15 bits of noise channel LFSR = $0000.
+    // The first time the LFSR is clocked from the all-0s state, it will shift
+    // in a 1
+    // (how is bit 1 shifted in? all zeros should shift in a 0).
     m_noise.reset_lfsr();
 
     // https://www.nesdev.org/wiki/APU_DMC#Overview
@@ -55,21 +57,23 @@ APU::power_up()
 
     // @QUIRK: 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
     // counter powers up at a value equivalent to 15)
-    m_fc.reset();
+    m_fc.reset(15);
 }
 
 void
 APU::reset()
 {
-    // @TODO: reset test
-
+    // APU was silenced
     write_register(CTRL_STATUS, 0x00);
-    // @TODO: APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
+    // APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
     // first step of its waveform)
-    // @TODO: APU DPCM output ANDed with 1 (upper 6 bits cleared)
+    m_triangle.reset();
+
+    // APU DPCM output ANDed with 1 (upper 6 bits cleared)
+    // Since we are not running in parallel, ignore this
+
     // @QUIRK: 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
     // counter retains old value)
-    m_fc.reset();
 }
 
 void
@@ -343,7 +347,7 @@ APU::write_register(Register i_reg, Byte i_val)
             // @IMPL: We don't emulate the delay of the reset, because
             // 1. Unclear about the delay amount (2/3 or 3/4).
             // 2. Games should get by although we don't emulate this.
-            m_fc.reset();
+            m_fc.reset(0);
         }
         break;
 

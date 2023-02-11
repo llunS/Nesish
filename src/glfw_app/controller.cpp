@@ -4,10 +4,8 @@ namespace ln_app {
 
 Controller::Controller(GLFWwindow *window)
     : m_window(window)
-    , m_strobing(false)
-    , m_strobe_idx(ln::KEY_END)
-    , m_8_bits_read(false)
 {
+    reset();
 }
 
 void
@@ -53,6 +51,19 @@ Controller::report()
             return m_8_bits_read ? true : false;
         }
     }
+}
+
+void
+Controller::reset()
+{
+    m_strobing = false;
+    m_strobe_idx = ln::KEY_END;
+    for (ln::KeyIt it = ln::KEY_BEGIN; it < ln::KEY_END; ++it)
+    {
+        m_key_state[it] = false;
+    }
+
+    m_8_bits_read = false;
 }
 
 void

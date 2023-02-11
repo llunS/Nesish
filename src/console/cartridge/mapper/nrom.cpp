@@ -27,6 +27,16 @@ NROM::validate() const
 }
 
 void
+NROM::power_up()
+{
+}
+
+void
+NROM::reset()
+{
+}
+
+void
 NROM::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
 {
     // PRG ROM

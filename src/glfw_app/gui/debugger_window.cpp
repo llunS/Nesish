@@ -138,7 +138,7 @@ DebuggerWindow::render(ln::Emulator &io_emu)
 
     /* Control */
     Rect layout_ctrl = cut_top(layout_win, 55);
-    draw_control(layout_ctrl);
+    draw_control(layout_ctrl, io_emu);
     /* Frame Debugger */
     Rect layout_fd = layout_win;
     draw_frame_debugger(layout_fd, io_emu);
@@ -154,13 +154,24 @@ DebuggerWindow::render(ln::Emulator &io_emu)
 }
 
 void
-DebuggerWindow::draw_control(const Rect &i_layout)
+DebuggerWindow::draw_control(const Rect &i_layout, ln::Emulator &io_emu)
 {
     ImGui::SetNextWindowPos(i_layout.pos(), ImGuiCond_Once);
     ImGui::SetNextWindowSize(i_layout.size(), ImGuiCond_Once);
     if (ImGui::Begin("Control", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
     {
+        if (ImGui::Button("Power"))
+        {
+            io_emu.power_up();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset"))
+        {
+            io_emu.reset();
+        }
+
+        ImGui::SameLine(0.0f, 15.f);
         if (m_paused)
         {
             if (ImGui::Button("Play"))
@@ -175,7 +186,6 @@ DebuggerWindow::draw_control(const Rect &i_layout)
                 m_paused = !m_paused;
             }
         }
-
         ImGui::SameLine();
         if (ImGui::Button("Quit"))
         {

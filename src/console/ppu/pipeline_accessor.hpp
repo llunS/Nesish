@@ -10,7 +10,7 @@ struct Sprite;
 
 namespace ln {
 
-struct PipelineAccessor {
+struct PipelineAccessor final {
   public:
     LN_KLZ_DELETE_COPY_MOVE(PipelineAccessor);
 

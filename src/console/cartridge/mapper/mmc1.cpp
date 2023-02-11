@@ -11,31 +11,10 @@ namespace ln {
 MMC1::MMC1(const INES::RomAccessor *i_accessor, Variant i_var)
     : Mapper{i_accessor}
     , m_variant(i_var)
-    , m_shift(0)
-    , m_ctrl(0)
-    , m_chr0_bnk(0)
-    , m_chr1_bnk(0)
-    , m_prg_bnk(0)
     , m_prg_ram{}
     , m_chr_ram{}
     , m_no_prg_banking_32K(false)
 {
-    clear_shift();
-    reset_prg_bank_mode();
-
-    switch (m_variant)
-    {
-        case V_B:
-        {
-            // PRG RAM is enabled by default
-            m_prg_bnk &= 0xEF;
-        }
-        break;
-
-        default:
-            break;
-    }
-
     std::size_t prg_rom_size;
     m_rom_accessor->get_prg_rom(nullptr, &prg_rom_size);
     if (prg_rom_size == 32 * 1024)
@@ -128,6 +107,40 @@ MMC1::validate() const
     // We can't detect them now without NES 2.0 format support.
 
     return Error::OK;
+}
+
+void
+MMC1::power_up()
+{
+    clear_shift();
+
+    m_ctrl = 0;
+    reset_prg_bank_mode();
+
+    m_chr0_bnk = 0;
+    m_chr1_bnk = 0;
+
+    switch (m_variant)
+    {
+        case V_B:
+        {
+            // PRG RAM is enabled by default
+            m_prg_bnk &= 0xEF;
+        }
+        break;
+
+        default:
+        {
+            m_prg_bnk = 0;
+        }
+        break;
+    }
+}
+
+void
+MMC1::reset()
+{
+    power_up();
 }
 
 void

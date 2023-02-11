@@ -28,7 +28,7 @@ struct FrameCounter {
     void
     set_irq_inhibit(bool i_set);
     void
-    reset();
+    reset(unsigned int i_val);
     void
     clear_interrupt();
 
@@ -45,7 +45,7 @@ struct FrameCounter {
     Noise &m_noise;
 
   private:
-    int m_timer;
+    unsigned int m_timer;
     bool m_irq;
 
     bool m_step5;

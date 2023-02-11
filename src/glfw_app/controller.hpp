@@ -18,6 +18,9 @@ struct Controller : public ln::Controller {
     bool
     report() override;
 
+    void
+    reset() override;
+
   private:
     void
     reload_states();

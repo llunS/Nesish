@@ -31,6 +31,9 @@ struct Controller {
     strobe(bool i_on) = 0;
     virtual bool
     report() = 0;
+
+    virtual void
+    reset() = 0;
 };
 
 } // namespace ln

@@ -7,7 +7,6 @@ namespace ln {
 
 CNROM::CNROM(const INES::RomAccessor *i_accessor)
     : Mapper{i_accessor}
-    , m_chr_bnk(0)
 {
 }
 
@@ -28,6 +27,18 @@ CNROM::validate() const
     }
 
     return Error::OK;
+}
+
+void
+CNROM::power_up()
+{
+    m_chr_bnk = 0;
+}
+
+void
+CNROM::reset()
+{
+    power_up();
 }
 
 void

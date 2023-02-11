@@ -120,7 +120,6 @@ struct Emulator {
     enum CtrlReg {
         REG_4016 = 0,
         REG_4017,
-
         SIZE,
     };
 
@@ -128,6 +127,10 @@ struct Emulator {
     read_ctrl_reg(CtrlReg i_reg);
     void
     write_ctrl_reg(CtrlReg i_reg, Byte i_val);
+
+  private:
+    void
+    reset_internal();
 
   private:
     CPU m_cpu;

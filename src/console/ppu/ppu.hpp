@@ -96,6 +96,10 @@ struct PPU {
     check_gen_nmi();
 
   private:
+    void
+    reset_internal();
+
+  private:
     Byte m_regs[Register::SIZE];
     Byte m_ppudata_buf;
 
@@ -117,7 +121,13 @@ struct PPU {
     Byte w;
 
     struct PipelineContext {
-        // ------ Background related storage
+        // ------ Shared pipeline states
+        bool is_odd_frame;
+        int scanline_no; // [-1, 260], i.e. 261 == -1.
+        int pixel_row;
+        int pixel_col;
+
+        // ------ Background
         // fetch
         Byte bg_nt_byte;          // intermediate to get pattern
         Byte bg_attr_palette_idx; // 2-bit
@@ -134,24 +144,17 @@ struct PPU {
         Byte2 sf_bg_palette_idx_lower;
         Byte2 sf_bg_palette_idx_upper;
 
-        // ------ Sprite related storage
+        // ------ Sprite
+        // pre-fetch
         Byte sec_oam[LN_SEC_OAM_SIZE];
-
-        // rendering preparation
+        bool with_sp0; // sprites to render include sprite 0
+        // fetch
         Byte sf_sp_pattern_lower[LN_MAX_VISIBLE_SP_NUM];
         Byte sf_sp_pattern_upper[LN_MAX_VISIBLE_SP_NUM];
         Byte sp_attr[LN_MAX_VISIBLE_SP_NUM];
         Byte sp_pos_x[LN_MAX_VISIBLE_SP_NUM];
-        // metadata
-        bool with_sp0; // sprites to render include sprite 0
         // rendering
         Byte sp_active_counter[LN_MAX_VISIBLE_SP_NUM];
-
-        // ------ Other shared pipeline states
-        bool is_odd_frame;
-        int scanline_no; // [-1, 260], i.e. 261 == -1.
-        int pixel_row;
-        int pixel_col;
     } m_pipeline_ctx;
     Pipeline *m_pipeline;
 
