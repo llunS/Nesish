@@ -368,7 +368,7 @@ PPU::check_gen_nmi()
 {
     if ((get_register(PPUCTRL) & 0x80) && (get_register(PPUSTATUS) & 0x80))
     {
-        m_cpu->set_nmi(true);
+        m_cpu->assert_nmi();
     }
 }
 

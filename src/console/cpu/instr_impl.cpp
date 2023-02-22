@@ -17,42 +17,92 @@ CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
         default:
         case 0:
         {
-            throw_away(io_cpu, io_cpu->get_byte(io_cpu->PC++));
+            throw_away(io_cpu, io_cpu->get_byte(io_cpu->PC));
+            if (!io_cpu->m_irq_pc_no_inc)
+            {
+                ++io_cpu->PC;
+            }
         }
         break;
 
         case 1:
         {
-            io_cpu->push_byte(get_high(io_cpu->PC));
+            // @NOTE: Actually at hardware, this is done by setting to line to
+            // read instead of write
+            if (!io_cpu->m_irq_no_mem_write)
+            {
+                io_cpu->pre_push_byte(get_high(io_cpu->PC));
+            }
+            io_cpu->post_push_byte();
         }
         break;
 
         case 2:
         {
-            io_cpu->push_byte(get_low(io_cpu->PC));
+            if (!io_cpu->m_irq_no_mem_write)
+            {
+                io_cpu->pre_push_byte(get_low(io_cpu->PC));
+            }
+            io_cpu->post_push_byte();
         }
         break;
 
         case 3:
         {
             // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
-            // @QUIRK: Push the status register with the B flag set
-            io_cpu->push_byte(io_cpu->P | StatusFlag::B);
+            // @QUIRK: Push B flag differently
+            Byte pushed = io_cpu->P;
+            if (io_cpu->hardware_interrupts())
+            {
+                pushed &= Byte(~StatusFlag::B);
+            }
+            else
+            {
+                pushed |= Byte(StatusFlag::B);
+            }
+            if (!io_cpu->m_irq_no_mem_write)
+            {
+                io_cpu->pre_push_byte(pushed);
+            }
+            io_cpu->post_push_byte();
 
-            // @TODO: Which cycle should we set this flag?
-            io_cpu->set_flag(CPU::StatusFlag::I);
+            // @QUIRK: Interrupt hijacking
+            // Determine vector address at this cycle
+            // Priority: RESET(?)>NMI>IRQ>BRK
+            // @NOTE: Check using the signal status, instead of which initiate
+            // the interrupt sequence.
+            // The hijacking doesn't lose the B flag
+            // RESET
+            if (io_cpu->m_reset_sig)
+            {
+                io_cpu->m_addr_bus = Memory::RESET_VECTOR_ADDR;
+            }
+            // NMI
+            else if (io_cpu->m_nmi_sig)
+            {
+                io_cpu->m_addr_bus = Memory::NMI_VECTOR_ADDR;
+            }
+            // Since IRQ and BRK use the same vector, don't bother to check
+            else
+            {
+                io_cpu->m_addr_bus = Memory::IRQ_VECTOR_ADDR;
+            }
         }
         break;
 
         case 4:
         {
-            set_low(io_cpu->PC, io_cpu->get_byte(Memory::IRQ_VECTOR_ADDR));
+            set_low(io_cpu->PC, io_cpu->get_byte(io_cpu->m_addr_bus));
+            // Set I flag at this cycle according to doc:
+            // https://www.nesdev.org/wiki/CPU_interrupts#Interrupt_hijacking
+            io_cpu->set_flag(CPU::StatusFlag::I);
         }
         break;
 
         case 5:
         {
-            set_high(io_cpu->PC, io_cpu->get_byte(Memory::IRQ_VECTOR_ADDR + 1));
+            ++io_cpu->m_addr_bus;
+            set_high(io_cpu->PC, io_cpu->get_byte(io_cpu->m_addr_bus));
 
             io_done = true;
         }
@@ -943,6 +993,11 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             {
                 io_done = true;
             }
+            // @NOTE: This is polled regardless of branching or not
+            io_cpu->poll_interrupt();
+            // @NOTE: Even if interrupt is detected, it is delayed until this
+            // instruction is complete, or else the taken branch could be missed
+            // after the handler returns.
         }
         break;
 
@@ -969,6 +1024,8 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             {
                 io_done = true;
             }
+            // @NOTE: A taken non-page-crossing doesn't poll so it may delay the
+            // interrupt by one instruction.
         }
         break;
 
@@ -987,6 +1044,7 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             }
 
             io_done = true;
+            io_cpu->poll_interrupt();
         }
         break;
     }

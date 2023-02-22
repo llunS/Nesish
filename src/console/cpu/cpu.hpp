@@ -73,7 +73,7 @@ struct CPU {
 
     friend struct PPU;
     void
-    set_nmi(bool i_flag);
+    assert_nmi();
 
   private:
     // ----- memory operations
@@ -96,6 +96,10 @@ struct CPU {
     Byte2
     pop_byte2();
 
+    void
+    pre_push_byte(Byte i_byte);
+    void
+    post_push_byte();
     void
     pre_pop_byte();
     Byte
@@ -133,12 +137,15 @@ struct CPU {
     void
     halt();
 
+    bool
+    hardware_interrupts() const;
+    bool
+    is_nmi() const;
+    bool
+    is_reset() const;
+
     void
     poll_interrupt();
-
-  private:
-    void
-    reset_internal();
 
   private:
     // ---- Registers
@@ -161,10 +168,18 @@ struct CPU {
     // @NOTE: This may wrap around back to 0, which is fine, since current
     // implementation doesn't assume infinite range.
     Cycle m_cycle;
-    bool m_halted;
+    bool m_halted_instr; // halt caused by instructions
 
     // ---- interrupt lines
-    bool m_nmi;
+    bool m_nmi_asserted;
+    bool m_nmi_sig; // pending NMI
+    bool m_irq_asserted;
+    bool m_irq_sig; // pending IRQ this cycle
+    bool m_reset_sig;
+    // ---- interrupts implementation flags
+    bool m_irq_pc_no_inc;
+    bool m_irq_no_mem_write;
+    bool m_is_nmi;
 
   private:
     struct InstrImpl;
@@ -189,6 +204,7 @@ struct CPU {
     static InstrDesc s_instr_table[256];
 
     struct InstrContext {
+        Byte opcode;
         int cycle_plus1;
         InstrDesc *instr;
     } m_instr_ctx;

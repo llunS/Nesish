@@ -6,6 +6,8 @@
 #include "console/ppu/ppu.hpp"
 #include "console/apu/apu.hpp"
 
+#define LN_BRK_OPCODE 0
+
 namespace ln {
 
 CPU::CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu)
@@ -23,7 +25,23 @@ CPU::power_up()
     A = X = Y = 0;
     S = 0xFD;
 
-    reset_internal();
+    {
+        m_cycle = 0;
+        m_halted_instr = false;
+
+        m_nmi_asserted = false;
+        m_nmi_sig = false;
+        m_irq_asserted = false;
+        m_irq_sig = false;
+        m_reset_sig = false;
+        m_irq_pc_no_inc = false;
+        m_irq_no_mem_write = false;
+        m_is_nmi = false;
+
+        m_instr_ctx = {0x00, 0, nullptr};
+
+        m_oam_dma_ctx.ongoing = false;
+    }
 
     // program entry point
     this->PC = this->get_byte2(Memory::RESET_VECTOR_ADDR);
@@ -32,13 +50,7 @@ CPU::power_up()
 void
 CPU::reset()
 {
-    S -= 3;
-    set_flag(StatusFlag::I); // The I (IRQ disable) flag was set to true
-
-    reset_internal();
-
-    // program entry point
-    this->PC = this->get_byte2(Memory::RESET_VECTOR_ADDR);
+    m_reset_sig = true;
 }
 
 void
@@ -56,9 +68,36 @@ CPU::set_p_test(Byte i_val)
 bool
 CPU::tick()
 {
-    if (m_halted)
+    if (m_halted_instr)
     {
         return false;
+    }
+
+    // @NOTE: Set up interrupts (IRQ or NMI) input internal signals before
+    // polling interrupts (poll_interrupt).
+    // @TEST: Whether it is right to check internal signal even when the CPU is
+    // being halted by DMA. The good side is that the check happens across
+    // adjacent cycles.
+    if (m_nmi_asserted)
+    {
+        m_nmi_sig = true; // raise an internal signal
+        m_nmi_asserted = false;
+    }
+    // set this cycle based on previous cycle
+    if (m_irq_asserted)
+    {
+        // @IMPL: Check I flag prior to instruction to enable delayed IRQ
+        // response.
+        if (!check_flag(StatusFlag::I))
+        {
+            m_irq_sig = true; // raise an internal signal
+        }
+        m_irq_asserted = false;
+    }
+    // set up next cycle based on IRQ sources
+    if (m_apu->interrupt())
+    {
+        m_irq_asserted = true;
     }
 
     bool instr_done = false;
@@ -105,33 +144,93 @@ CPU::tick()
         }
         ++m_oam_dma_ctx.counter;
     }
-    /* Instruction execution */
+    /* CPU is not halted so it can execute instruction or handle interrupts */
     else
     {
         // Fetch opcode
         if (!m_instr_ctx.instr)
         {
-            Byte opcode = get_byte(PC++);
+            Byte opcode = get_byte(PC);
+            // IRQ/RESET/NMI/BRK all use the same behavior.
+            if (hardware_interrupts())
+            {
+                // Force the instruction register to $00 and discard the fetch
+                // opcode
+                opcode = LN_BRK_OPCODE;
+            }
+            if (!m_irq_pc_no_inc)
+            {
+                ++PC;
+            }
+
+            m_instr_ctx.opcode = opcode;
             m_instr_ctx.instr = &s_instr_table[opcode];
             m_instr_ctx.cycle_plus1 = 0;
         }
-        // Rest of the instruction
+        // Rest cycles of the instruction
         else
         {
             m_instr_ctx.instr->frm(m_instr_ctx.cycle_plus1, this,
                                    m_instr_ctx.instr->core, instr_done);
             ++m_instr_ctx.cycle_plus1;
+
             if (instr_done)
             {
+                // @NOTE: Use is_reset() before clearing relevant flags
+                if (is_reset())
+                {
+                    // Indicating RESET is handled.
+                    m_reset_sig = false;
+
+                    // Some work specific to RESET
+                    // @TEST: Is this necessary?
+                    m_cycle = 0;
+                }
+                // @NOTE: Use is_nmi() before clearing relevant flags
+                if (is_nmi())
+                {
+                    // Indicating NMI is handled.
+                    // @TEST: Is this done at last cycle?
+                    m_nmi_sig = false;
+                }
+                /* Clear flags which last for one instruction */
+                // @NOTE: Do this before poll_interrupt() as it may set these
+                // flags.
+                m_irq_pc_no_inc = false;
+                m_irq_no_mem_write = false;
+                m_is_nmi = false;
+
+                /* Poll interrupts */
+                // @TODO: Deal with DMA
+                // For most instructions, poll interrupts at the last cycle,
+                // Special cases are listed.
+                if (m_instr_ctx.opcode == LN_BRK_OPCODE ||
+                    m_instr_ctx.instr->addr_mode == AddrMode::REL)
+                {
+                    // The interrupt sequences themselves do not perform
+                    // interrupt polling, meaning at least one instruction from
+                    // the interrupt handler will execute before another
+                    // interrupt is serviced
+                    // https://www.nesdev.org/wiki/CPU_interrupts#Detailed_interrupt_behavior
+                    // All types of interrupts mostly reuse the same logic as
+                    // BRK.
+
+                    // Branch instructions are also special, we handle it
+                    // in its implementation. They are identified by address
+                    // mode.
+                }
+                else
+                {
+                    // Poll interrupts at the last cycle
+                    poll_interrupt();
+                }
+
                 // So that next instruction can continue afterwards.
                 m_instr_ctx.instr = nullptr;
-
-                /* Check interrupts at the last cycle of each instruction */
-                // @TEST: Don't count PPU DMA.
-                poll_interrupt();
             }
         }
     }
+    m_irq_sig = false; // This signal lasts only one cycle
     ++m_cycle;
 
     return instr_done;
@@ -246,9 +345,9 @@ CPU::init_oam_dma(Byte i_val)
 }
 
 void
-CPU::set_nmi(bool i_flag)
+CPU::assert_nmi()
 {
-    m_nmi = i_flag;
+    m_nmi_asserted = true;
 }
 
 Byte
@@ -285,8 +384,20 @@ CPU::get_byte2(Address i_addr) const
 void
 CPU::push_byte(Byte i_byte)
 {
+    pre_push_byte(i_byte);
+    post_push_byte();
+}
+
+void
+CPU::pre_push_byte(Byte i_byte)
+{
     set_byte(Memory::STACK_PAGE_MASK | S, i_byte);
     LN_LOG_TRACE(ln::get_logger(), "Push byte: {:02X}", i_byte);
+}
+
+void
+CPU::post_push_byte()
+{
     --S;
 }
 
@@ -357,67 +468,59 @@ CPU::halt()
 {
     LN_LOG_INFO(ln::get_logger(), "Halting...");
 
-    m_halted = true;
+    m_halted_instr = true;
 }
 
 void
 CPU::poll_interrupt()
 {
-    // @TODO: Detailed implementation of interrupts.
-    // https://www.nesdev.org/wiki/CPU_interrupts
-    // Specifically, the delayed response.
-    // https://www.nesdev.org/wiki/CPU_interrupts#Delayed_IRQ_response_after_CLI,_SEI,_and_PLP
-    // Test that with interrupts test roms.
+    /* It may be polled multiple times during an instruction.
+     * e.g. Branch instructions may poll 2 times if branch is taken and page is
+     * crossed.
+     */
+    if (hardware_interrupts())
+    {
+        return;
+    }
 
-    // @NOTE: The interrupt sequences themselves do not perform interrupt
-    // polling, meaning at least one instruction from the interrupt handler will
-    // execute before another interrupt is serviced.
-    // @IMPL: "interrupt sequences" should refer to the pushes and jumps, etc.
-    // And this should be implemented already by polling only at the end of
-    // the instruction.
-
+    // @TEST: RESET has highest priority?
+    // @TEST: RESET is like others, polled only at certain points?
+    if (m_reset_sig)
+    {
+        m_irq_pc_no_inc = true;
+        m_irq_no_mem_write = true;
+    }
     // NMI has higher precedence than IRQ
     // https://www.nesdev.org/wiki/NMI
-    if (m_nmi)
+    else if (m_nmi_sig)
     {
-        push_byte2(this->PC);
-
-        // @QUIRK: https://www.nesdev.org/wiki/Status_flags#The_B_flag
-        push_byte((this->P & ~StatusFlag::B) | StatusFlag::U);
-        set_flag(StatusFlag::I);
-
-        // Jump to interrupt handler.
-        this->PC = get_byte2(Memory::NMI_VECTOR_ADDR);
-
-        // Clear the flag
-        m_nmi = false;
+        m_irq_pc_no_inc = true;
+        m_is_nmi = true;
     }
-    // https://www.nesdev.org/wiki/IRQ
-    // @TEST: Test this
-    else if (!check_flag(StatusFlag::I) && m_apu->interrupt())
+    else if (m_irq_sig)
     {
-        push_byte2(this->PC);
-
-        // @QUIRK: https://www.nesdev.org/wiki/Status_flags#The_B_flag
-        push_byte((this->P & ~StatusFlag::B) | StatusFlag::U);
-        set_flag(StatusFlag::I);
-
-        // Jump to interrupt handler.
-        this->PC = get_byte2(Memory::IRQ_VECTOR_ADDR);
+        m_irq_pc_no_inc = true;
     }
 }
 
-void
-CPU::reset_internal()
+/// @brief Is running (or to run) hardware interrupts (IRQ/RESET/NMI)
+bool
+CPU::hardware_interrupts() const
 {
-    m_cycle = 0;
-    m_halted = false;
+    return m_irq_pc_no_inc;
+}
 
-    m_nmi = false;
+/// @brief Is running (or to run) NMI interrupt sequence
+bool
+CPU::is_nmi() const
+{
+    return m_is_nmi;
+}
 
-    m_instr_ctx = {0, nullptr};
-
-    m_oam_dma_ctx.ongoing = false;
+bool
+CPU::is_reset() const
+{
+    return /*hardware_interrupts() &&*/ m_irq_no_mem_write;
 }
 
 } // namespace ln
