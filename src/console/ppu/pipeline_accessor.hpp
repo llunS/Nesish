@@ -38,8 +38,11 @@ struct PipelineAccessor final {
     VideoMemory *
     get_memory();
 
+    ln::Error
+    get_color_byte(Address i_addr, Byte &o_val);
     const Palette &
     get_palette();
+
     FrameBuffer &
     get_frame_buf();
 

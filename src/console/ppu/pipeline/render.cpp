@@ -98,7 +98,7 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
 
             auto get_backdrop_clr = [](PipelineAccessor *io_accessor) -> Color {
                 Byte backdrop_byte = 0;
-                auto error = io_accessor->get_memory()->get_byte(
+                auto error = io_accessor->get_color_byte(
                     LN_PALETTE_ADDR_BG_BACKDROP, backdrop_byte);
                 if (LN_FAILED(error))
                 {
@@ -206,8 +206,7 @@ pvt_bg_render(PipelineAccessor *io_accessor)
         idx_color_addr = LN_PALETTE_ADDR_BG_BACKDROP;
     }
     Byte idx_color_byte;
-    auto error =
-        io_accessor->get_memory()->get_byte(idx_color_addr, idx_color_byte);
+    auto error = io_accessor->get_color_byte(idx_color_addr, idx_color_byte);
     if (LN_FAILED(error))
     {
         LN_ASSERT_FATAL("Failed to fetch palette color byte for bg: {}",
@@ -300,7 +299,7 @@ pvt_sp_render(PipelineAccessor *io_accessor)
         }
         Byte idx_color_byte;
         auto error =
-            io_accessor->get_memory()->get_byte(idx_color_addr, idx_color_byte);
+            io_accessor->get_color_byte(idx_color_addr, idx_color_byte);
         if (LN_FAILED(error))
         {
             LN_ASSERT_FATAL("Failed to fetch palette color byte for sp: {}",

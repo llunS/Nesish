@@ -68,6 +68,20 @@ PipelineAccessor::get_memory()
     return m_ppu->m_memory;
 }
 
+ln::Error
+PipelineAccessor::get_color_byte(Address i_addr, Byte &o_val)
+{
+    auto error = get_memory()->get_byte(i_addr, o_val);
+    if (!LN_FAILED(error))
+    {
+        if (get_register(PPU::PPUMASK) & 0x01)
+        {
+            o_val &= 0x30;
+        }
+    }
+    return error;
+}
+
 const Palette &
 PipelineAccessor::get_palette()
 {
@@ -192,7 +206,7 @@ PipelineAccessor::capture_palette()
         Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i);
         Byte color_byte = 0;
         // @NOTE: The address is in VRAM.
-        (void)m_ppu->m_memory->get_byte(color_addr, color_byte);
+        (void)get_color_byte(color_addr, color_byte);
 
         Color clr = get_palette().to_rgb(color_byte);
         m_ppu->m_palette_snap.set_color(i, color_byte, clr.r, clr.g, clr.b);
@@ -288,8 +302,7 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
                 // @NOTE: The address is in VRAM.
                 Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i_idx);
                 Byte color_byte = 0;
-                auto error =
-                    this->m_ppu->m_memory->get_byte(color_addr, color_byte);
+                auto error = this->get_color_byte(color_addr, color_byte);
                 if (LN_FAILED(error))
                 {
                     color_byte = 0x30; // set it to white to be apparent.
@@ -364,8 +377,8 @@ PipelineAccessor::capture_ptn_tbls()
                         Address color_addr =
                             Address(LN_PALETTE_ADDR_HEAD + i_idx);
                         Byte color_byte = 0;
-                        auto error = this->m_ppu->m_memory->get_byte(
-                            color_addr, color_byte);
+                        auto error =
+                            this->get_color_byte(color_addr, color_byte);
                         if (LN_FAILED(error))
                         {
                             color_byte =
