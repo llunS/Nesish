@@ -26,9 +26,12 @@ struct CPU {
     void
     reset();
 
+    /// @param o_2002_read Whether $2002 was read at this tick
     /// @return Whether an instruction has completed.
     bool
-    tick();
+    pre_tick(bool &o_2002_read);
+    void
+    post_tick();
 
   public:
     /* Query */
@@ -70,10 +73,6 @@ struct CPU {
     friend struct Emulator;
     void
     init_oam_dma(Byte i_val);
-
-    friend struct PPU;
-    void
-    assert_nmi();
 
   private:
     // ----- memory operations
@@ -170,11 +169,14 @@ struct CPU {
     Cycle m_cycle;
     bool m_halted_instr; // halt caused by instructions
 
-    // ---- interrupt lines
+    // ---- temporaries for one tick
+    mutable bool m_2002_read;
+
+    // ---- interrupt lines poll cache
     bool m_nmi_asserted;
+    // ---- interrupt signals
     bool m_nmi_sig; // pending NMI
-    bool m_irq_asserted;
-    bool m_irq_sig; // pending IRQ this cycle
+    bool m_irq_sig; // pending IRQ
     bool m_reset_sig;
     // ---- interrupts implementation flags
     bool m_irq_pc_no_inc;

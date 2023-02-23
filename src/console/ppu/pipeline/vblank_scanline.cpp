@@ -22,10 +22,11 @@ VBlankScanline::on_tick(Cycle i_curr, Cycle i_total)
         {
             if (241 == m_accessor->get_context().scanline_no)
             {
-                /* Set NMI_occurred in PPU to true. */
-                m_accessor->get_register(PPU::PPUSTATUS) |= 0x80;
-
-                m_accessor->check_gen_nmi();
+                if (!m_accessor->no_nmi())
+                {
+                    /* Set NMI_occurred in PPU to true */
+                    m_accessor->get_register(PPU::PPUSTATUS) |= 0x80;
+                }
             }
         }
         break;

@@ -90,11 +90,21 @@ PPU::reset_internal()
 }
 
 void
-PPU::tick()
+PPU::tick(bool i_no_nmi)
 {
     // @TODO: impl warm-up period
 
+    m_no_nmi = i_no_nmi;
+
     m_pipeline->tick();
+
+    m_no_nmi = false;
+}
+
+bool
+PPU::nmi() const
+{
+    return (get_register(PPUCTRL) & 0x80) && (get_register(PPUSTATUS) & 0x80);
 }
 
 Byte
@@ -195,8 +205,6 @@ PPU::write_register(Register i_reg, Byte i_val)
         case PPUCTRL:
         {
             this->t = (this->t & ~0x0C00) | ((Byte2)(i_val & 0x03) << 10);
-
-            check_gen_nmi();
         }
         break;
 
@@ -356,20 +364,17 @@ PPU::get_register(PPU::Register i_reg)
     return m_regs[i_reg];
 }
 
+const Byte &
+PPU::get_register(PPU::Register i_reg) const
+{
+    return m_regs[i_reg];
+}
+
 void
 PPU::inc_vram_addr()
 {
     Byte offset = (get_register(PPUCTRL) & 0x04) ? 32 : 1;
     this->v += offset;
-}
-
-void
-PPU::check_gen_nmi()
-{
-    if ((get_register(PPUCTRL) & 0x80) && (get_register(PPUSTATUS) & 0x80))
-    {
-        m_cpu->assert_nmi();
-    }
 }
 
 } // namespace ln

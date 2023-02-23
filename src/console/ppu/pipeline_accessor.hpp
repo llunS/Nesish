@@ -52,8 +52,8 @@ struct PipelineAccessor final {
     bool
     is_8x16_sp() const;
 
-    void
-    check_gen_nmi();
+    bool
+    no_nmi() const;
 
     void
     finish_frame();

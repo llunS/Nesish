@@ -28,6 +28,7 @@
 #define LN_PPU_REG_ADDR_HEAD 0x2000
 #define LN_PPU_REG_ADDR_TAIL 0x3FFF // including mirror
 #define LN_PPU_REG_ADDR_MASK 0x0007 // rightmost 3 bits 1
+#define LN_PPUSTATUS_ADDR 0x2002
 #define LN_OAMDMA_ADDR 0x4014
 
 #define LN_PATTERN_TILE_WIDTH 8

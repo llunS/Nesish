@@ -104,10 +104,10 @@ PipelineAccessor::is_8x16_sp() const
     return get_register(PPU::PPUCTRL) & 0x20;
 }
 
-void
-PipelineAccessor::check_gen_nmi()
+bool
+PipelineAccessor::no_nmi() const
 {
-    m_ppu->check_gen_nmi();
+    return m_ppu->m_no_nmi;
 }
 
 void

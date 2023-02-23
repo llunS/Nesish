@@ -341,28 +341,41 @@ Emulator::ticks(Time_t i_duration)
 bool
 Emulator::tick(bool *o_cpu_instr)
 {
-    constexpr int cpu_ticks = 1;
+    // @IMPL: NTSC version ticks PPU 3 times per CPU tick
+    // @IMPL: The tick order between CPU and PPU has to do with VBL timing.
+    // Order: P->C(pre)->P->C(post)->P, plus one special case of Reading $2002
+    // one PPU clock before VBL is set.
+    // Test rom: vbl_nmi_timing/2.vbl_timing.nes, etc.
+    // https://www.nesdev.org/wiki/PPU_frame_timing#VBL_Flag_Timing
+    /* Reading $2002 within a few PPU clocks of when VBL is set results in
+     * special-case behavior. Reading one PPU clock before reads it as clear and
+     * never sets the flag or generates NMI for that frame. Reading on the same
+     * PPU clock or one later reads it as set, clears it, and suppresses the NMI
+     * for that frame. Reading two or more PPU clocks before/after it's set
+     * behaves normally (reads flag's value, clears it, and doesn't affect NMI
+     * operation). This suppression behavior is due to the $2002 read pulling
+     * the NMI line back up too quickly after it drops (NMI is active low) for
+     * the CPU to see it. (CPU inputs like NMI are sampled each clock.) */
+    m_ppu.tick();
+
     bool instr_done = false;
+    bool read_2002 = false;
     if (m_apu.fetching())
     {
         // Stall CPU.
     }
     else
     {
-        instr_done = m_cpu.tick();
+        instr_done = m_cpu.pre_tick(read_2002);
     }
     if (o_cpu_instr)
     {
         *o_cpu_instr = instr_done;
     }
 
-    // @NOTE: Emulate PPU after CPU.
-    constexpr int TICK_CPU_TO_PPU = 3; // NTSC version
-    for (decltype(TICK_CPU_TO_PPU * cpu_ticks) j = 0;
-         j < TICK_CPU_TO_PPU * cpu_ticks; ++j)
-    {
-        m_ppu.tick();
-    }
+    m_ppu.tick(read_2002);
+    m_cpu.post_tick();
+    m_ppu.tick();
 
     m_apu.tick(m_memory);
     // APU generates a sample every CPU cycle.

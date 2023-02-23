@@ -32,7 +32,10 @@ struct PPU {
     reset();
 
     void
-    tick();
+    tick(bool i_no_nmi = false);
+
+    bool
+    nmi() const;
 
   public:
     // https://wiki.nesdev.org/w/index.php?title=PPU_registers
@@ -88,6 +91,8 @@ struct PPU {
   private:
     Byte &
     get_register(PPU::Register i_reg);
+    const Byte &
+    get_register(PPU::Register i_reg) const;
 
     void
     inc_vram_addr();
@@ -168,6 +173,9 @@ struct PPU {
     // https://www.nesdev.org/wiki/PPU_registers#Ports
     // https://www.nesdev.org/wiki/Open_bus_behavior#PPU_open_bus
     Byte m_io_db;
+
+    // ---- temporaries for one tick
+    bool m_no_nmi;
 
   private:
     /* debug */

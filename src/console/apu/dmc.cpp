@@ -239,6 +239,7 @@ void
 DMC::fetch_sample(const Memory &i_memory)
 {
     Byte sample = 0xFF;
+    // @TODO: Open bus
     ln::Error err = i_memory.get_byte(m_sample_curr, sample);
     if (LN_FAILED(err))
     {

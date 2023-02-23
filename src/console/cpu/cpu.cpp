@@ -31,7 +31,6 @@ CPU::power_up()
 
         m_nmi_asserted = false;
         m_nmi_sig = false;
-        m_irq_asserted = false;
         m_irq_sig = false;
         m_reset_sig = false;
         m_irq_pc_no_inc = false;
@@ -66,42 +65,20 @@ CPU::set_p_test(Byte i_val)
 }
 
 bool
-CPU::tick()
+CPU::pre_tick(bool &o_2002_read)
 {
+    this->m_2002_read = false;
+    auto write_out = [&o_2002_read, this]() {
+        o_2002_read = this->m_2002_read;
+    };
+
     if (m_halted_instr)
     {
+        write_out();
         return false;
     }
 
-    // @NOTE: Set up interrupts (IRQ or NMI) input internal signals before
-    // polling interrupts (poll_interrupt).
-    // @TEST: Whether it is right to check internal signal even when the CPU is
-    // being halted by DMA. The good side is that the check happens across
-    // adjacent cycles.
-    if (m_nmi_asserted)
-    {
-        m_nmi_sig = true; // raise an internal signal
-        m_nmi_asserted = false;
-    }
-    // set this cycle based on previous cycle
-    if (m_irq_asserted)
-    {
-        // @IMPL: Check I flag prior to instruction to enable delayed IRQ
-        // response.
-        if (!check_flag(StatusFlag::I))
-        {
-            m_irq_sig = true; // raise an internal signal
-        }
-        m_irq_asserted = false;
-    }
-    // set up next cycle based on IRQ sources
-    if (m_apu->interrupt())
-    {
-        m_irq_asserted = true;
-    }
-
     bool instr_done = false;
-    Cycle curr_cycle = m_cycle;
     /* OAM DMA transfer */
     if (m_oam_dma_ctx.ongoing)
     {
@@ -110,7 +87,7 @@ CPU::tick()
             // @IMPL: 1 wait state cycle while waiting for writes to complete,
             // +1 if on an odd CPU cycle
             // @TODO: What wait state cycle?
-            m_oam_dma_ctx.start_counter = curr_cycle % 2 == 0 ? 1 : 2;
+            m_oam_dma_ctx.start_counter = m_cycle % 2 == 0 ? 1 : 2;
         }
         if (m_oam_dma_ctx.counter >= m_oam_dma_ctx.start_counter)
         {
@@ -121,6 +98,7 @@ CPU::tick()
                 LN_ASSERT_FATAL(
                     "Invalid numeric value, programming error: {}, {}",
                     m_oam_dma_ctx.counter, m_oam_dma_ctx.start_counter);
+                write_out();
                 return false;
             }
             Byte byte_idx = Byte(dma_counter / 2);
@@ -230,10 +208,41 @@ CPU::tick()
             }
         }
     }
-    m_irq_sig = false; // This signal lasts only one cycle
     ++m_cycle;
 
+    write_out();
     return instr_done;
+}
+
+void
+CPU::post_tick()
+{
+    if (m_halted_instr)
+    {
+        return;
+    }
+
+    // @NOTE: Edge/Level detector polls lines during φ2 of each CPU cycle.
+    // So this sets up signals for NEXT cycle.
+    // @TEST: Whether we still polls lines even when the CPU is
+    // being halted by DMA. If we do, the good side is that the poll happens
+    // across adjacent cycles.
+    // --- NMI
+    if (!m_nmi_asserted && m_ppu->nmi())
+    {
+        m_nmi_sig = true; // raise an internal signal
+    }
+    m_nmi_asserted = m_ppu->nmi();
+    // --- IRQ
+    m_irq_sig = false; // inactive unless keep asserting.
+    if (m_apu->interrupt())
+    {
+        // @IMPL: The cause of delayed IRQ response for some instructions.
+        if (!check_flag(StatusFlag::I))
+        {
+            m_irq_sig = true; // raise an internal signal
+        }
+    }
 }
 
 Cycle
@@ -344,15 +353,14 @@ CPU::init_oam_dma(Byte i_val)
     m_oam_dma_ctx.counter = 0;
 }
 
-void
-CPU::assert_nmi()
-{
-    m_nmi_asserted = true;
-}
-
 Byte
 CPU::get_byte(Address i_addr) const
 {
+    if (LN_PPUSTATUS_ADDR == i_addr)
+    {
+        m_2002_read = true;
+    }
+
     Byte byte;
     auto err = m_memory->get_byte(i_addr, byte);
     if (LN_FAILED(err))
