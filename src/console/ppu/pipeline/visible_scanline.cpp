@@ -40,12 +40,9 @@ VisibleScanline::on_tick(Cycle i_curr, Cycle i_total)
 
     /* Skip 1 cycle on first scanline, if current frame is odd and rendering is
      * enabled */
-    // @TEST: Need test rom to verify this.
     if (i_curr == 0 && 0 == m_accessor->get_context().scanline_no)
     {
-        bool skip = m_accessor->get_context().is_odd_frame &&
-                    m_accessor->rendering_enabled();
-        if (skip)
+        if (m_accessor->get_context().skip_cycle)
         {
             // Advance to counter by skip count
             ++steps;

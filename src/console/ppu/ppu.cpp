@@ -44,7 +44,7 @@ PPU::power_up()
     get_register(PPUSCROLL) = 0x00;
     get_register(PPUADDR) = 0x00;
     m_ppudata_buf = 0x00;
-    m_pipeline_ctx.is_odd_frame = false;
+    m_pipeline_ctx.odd_frame = false;
 
     /* Unspecified:
      * OAM
@@ -65,7 +65,7 @@ PPU::reset()
     w = 0;
     get_register(PPUSCROLL) = 0x00;
     m_ppudata_buf = 0x00;
-    m_pipeline_ctx.is_odd_frame = false;
+    m_pipeline_ctx.odd_frame = false;
 
     /* Unchanged:
      * OAM

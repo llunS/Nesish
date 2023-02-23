@@ -127,7 +127,8 @@ struct PPU {
 
     struct PipelineContext {
         // ------ Shared pipeline states
-        bool is_odd_frame;
+        bool odd_frame;
+        bool skip_cycle; // skip last cycle at pre-render scanline
         int scanline_no; // [-1, 260], i.e. 261 == -1.
         int pixel_row;
         int pixel_col;

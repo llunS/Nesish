@@ -90,6 +90,19 @@ PreRenderScanline::on_tick(Cycle i_curr, Cycle i_total)
         }
         break;
 
+        case 338:
+        {
+            // @IMPL: Think of it as between the end of 338 and the start of
+            // 339. We don't support true parallelism yet. We determine whether
+            // to skip here, to pass the test
+            // ppu_vbl_nmi/rom_singles/10-even_odd_timing.nes
+            if (m_accessor->get_context().odd_frame && m_accessor->bg_enabled())
+            {
+                m_accessor->get_context().skip_cycle = true;
+            }
+        }
+        break;
+
         default:
             break;
     }
