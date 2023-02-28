@@ -16,6 +16,17 @@ APU::APU()
 void
 APU::power_up()
 {
+    // @NOTE: These should be done before the following register writes since
+    // register writes may further alter the states.
+    {
+        m_pulse1.length_counter().power_up();
+        m_pulse2.length_counter().power_up();
+        m_triangle.length_counter().power_up();
+        m_noise.length_counter().power_up();
+
+        m_fc.power_up();
+    }
+
     // https://www.nesdev.org/wiki/CPU_power_up_state
     // @IMPL: We want all the side effects applied, so we use write_register().
     write_register(PULSE1_DUTY, 0x00);
@@ -43,8 +54,21 @@ APU::power_up()
 
     // all channels disabled
     write_register(CTRL_STATUS, 0x00);
+
     // frame irq enabled
     write_register(FC, 0x00);
+    // 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
+    // counter powers up at a value equivalent to 15)
+    // We want 2A03 behavior, but the value being referred to means exactly
+    // which storage is ambiguous, so we reset it to 0.
+    m_fc.reset_timer();
+    // @QUIRK: After reset or power-up, APU acts as if $4017 were written with
+    // $00 from 9 to 12 clocks before first instruction begins.
+    // So we tick it 9 times already at powerup
+    for (int i = 0; i < 9; ++i)
+    {
+        m_fc.tick();
+    }
 
     // All 15 bits of noise channel LFSR = $0000.
     // The first time the LFSR is clocked from the all-0s state, it will shift
@@ -55,9 +79,9 @@ APU::power_up()
     // https://www.nesdev.org/wiki/APU_DMC#Overview
     m_dmc.load(0);
 
-    // @QUIRK: 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
-    // counter powers up at a value equivalent to 15)
-    m_fc.reset(15);
+    {
+        m_cycle = 0;
+    }
 }
 
 void
@@ -65,15 +89,18 @@ APU::reset()
 {
     // APU was silenced
     write_register(CTRL_STATUS, 0x00);
-    // APU triangle phase is reset to 0 (i.e. outputs a value of 15, the
-    // first step of its waveform)
+    // APU triangle phase is reset to 0
     m_triangle.reset();
 
     // APU DPCM output ANDed with 1 (upper 6 bits cleared)
     // Since we are not running in parallel, ignore this
 
-    // @QUIRK: 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
+    // 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
     // counter retains old value)
+
+    {
+        m_cycle = 0;
+    }
 }
 
 void
@@ -81,8 +108,20 @@ APU::tick(const Memory &i_memory)
 {
     // Clock frame counter to apply parameter changes first.
     m_fc.tick();
+    // @NOTE: Changes to length counter halt occur after clocking length.
+    // This is based on the assumption that APU is ticked after CPU.
+    m_pulse1.length_counter().flush_halt_set();
+    m_pulse2.length_counter().flush_halt_set();
+    m_noise.length_counter().flush_halt_set();
+    // @NOTE: Write to length counter reload should be ignored when made during
+    // length counter clocking and the length counter is not zero.
+    // This is based on the assumption that APU is ticked after CPU.
+    m_pulse1.length_counter().flush_load_set();
+    m_pulse2.length_counter().flush_load_set();
+    m_triangle.length_counter().flush_load_set();
+    m_noise.length_counter().flush_load_set();
 
-    // Every second CPU cycle
+    // Every other CPU cycle
     if (m_divider_cpu2.tick())
     {
         m_pulse1.tick_timer();
@@ -94,6 +133,8 @@ APU::tick(const Memory &i_memory)
     m_triangle.tick_timer();
 
     // @TODO: Other channels
+
+    ++m_cycle;
 }
 
 float
@@ -204,7 +245,8 @@ APU::write_register(Register i_reg, Byte i_val)
             Pulse *pulse = PULSE1_DUTY == i_reg ? &m_pulse1 : &m_pulse2;
             pulse->sequencer().set_duty(i_val >> 6);
             pulse->envelope().set_loop(i_val & 0x20);
-            pulse->length_counter().set_halt(i_val & 0x20);
+            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            pulse->length_counter().post_set_halt(i_val & 0x20);
             pulse->envelope().set_const(i_val & 0x10);
             pulse->envelope().set_divider_reload(i_val & 0x0F);
             pulse->envelope().set_const_vol(i_val & 0x0F);
@@ -244,7 +286,8 @@ APU::write_register(Register i_reg, Byte i_val)
                                                     : m_regs[PULSE2_TIMER_LOW];
             Byte2 timer = ((i_val & 0x07) << 8) | timer_low;
             pulse->timer().set_reload(timer);
-            pulse->length_counter().check_load(i_val >> 3);
+            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            pulse->length_counter().post_set_load(i_val >> 3);
 
             pulse->sequencer().reset();
             pulse->envelope().restart();
@@ -269,7 +312,8 @@ APU::write_register(Register i_reg, Byte i_val)
         {
             Byte2 timer = ((i_val & 0x07) << 8) | m_regs[TRI_TIMER_LOW];
             m_triangle.timer().set_reload(timer);
-            m_triangle.length_counter().check_load(i_val >> 3);
+            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            m_triangle.length_counter().post_set_load(i_val >> 3);
 
             m_triangle.linear_counter().set_reload();
         }
@@ -278,7 +322,8 @@ APU::write_register(Register i_reg, Byte i_val)
         case NOISE_ENVELOPE:
         {
             m_noise.envelope().set_loop(i_val & 0x20);
-            m_noise.length_counter().set_halt(i_val & 0x20);
+            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            m_noise.length_counter().post_set_halt(i_val & 0x20);
             m_noise.envelope().set_const(i_val & 0x10);
             m_noise.envelope().set_divider_reload(i_val & 0x0F);
             m_noise.envelope().set_const_vol(i_val & 0x0F);
@@ -294,7 +339,8 @@ APU::write_register(Register i_reg, Byte i_val)
 
         case NOISE_LENGTH:
         {
-            m_noise.length_counter().check_load(i_val >> 3);
+            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            m_noise.length_counter().post_set_load(i_val >> 3);
 
             m_noise.envelope().restart();
         }
@@ -344,10 +390,9 @@ APU::write_register(Register i_reg, Byte i_val)
             m_fc.set_mode(i_val & 0x80);
             m_fc.set_irq_inhibit(i_val & 0x40);
 
-            // @IMPL: We don't emulate the delay of the reset, because
-            // 1. Unclear about the delay amount (2/3 or 3/4).
-            // 2. Games should get by although we don't emulate this.
-            m_fc.reset(0);
+            // @IMPL: If the write occurs at odd APU internal cycle, based on
+            // the assumption that APU is ticked after CPU
+            m_fc.delay_reset(m_cycle % 2 != 0);
         }
         break;
 

@@ -29,13 +29,36 @@ LengthCounter::tick()
     if (m_counter > 0)
     {
         --m_counter;
+        // @NOTE: Length reload is completely ignored if written during length
+        // clocking and length counter is non-zero before clocking
+        m_to_load = false;
     }
 }
 
+/// @brief Reset some states only required in implementation rather than in
+/// hardware
 void
-LengthCounter::set_halt(bool i_set)
+LengthCounter::power_up()
 {
-    m_halt = i_set;
+    m_to_set_halt = false;
+    m_to_load = false;
+}
+
+void
+LengthCounter::post_set_halt(bool i_set)
+{
+    m_to_set_halt = true;
+    m_halt_val = i_set;
+}
+
+void
+LengthCounter::flush_halt_set()
+{
+    if (m_to_set_halt)
+    {
+        m_halt = m_halt_val;
+        m_to_set_halt = false;
+    }
 }
 
 void
@@ -45,6 +68,23 @@ LengthCounter::set_enabled(bool i_set)
     if (!i_set)
     {
         m_counter = 0;
+    }
+}
+
+void
+LengthCounter::post_set_load(Byte i_index)
+{
+    m_to_load = true;
+    m_load_val = i_index;
+}
+
+void
+LengthCounter::flush_load_set()
+{
+    if (m_to_load)
+    {
+        check_load(m_load_val);
+        m_to_load = false;
     }
 }
 

@@ -21,16 +21,29 @@ FrameCounter::FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2,
 {
 }
 
+/// @brief  Reset some states only required in implementation rather than in
+/// hardware
+void
+FrameCounter::power_up()
+{
+    m_irq = false;
+
+    m_first_loop = true;
+    m_reset_counter = 0;
+}
+
 void
 FrameCounter::tick()
 {
-    if ((!m_step5 && m_timer >= 29830 - 1) || (m_step5 && m_timer >= 37282 - 1))
+    /* delay reset logic */
+    if (m_reset_counter)
     {
-        m_timer = 0;
-    }
-    else
-    {
-        ++m_timer;
+        --m_reset_counter;
+        if (!m_reset_counter)
+        {
+            m_timer = 0;
+            m_first_loop = true;
+        }
     }
 
     auto check_set_irq = [this]() {
@@ -40,63 +53,85 @@ FrameCounter::tick()
         }
     };
 
+    // @NOTE: Check details of the following timing on
+    // blargg_apu_2005.07.30/readme.txt
     switch (m_timer)
     {
-        case 7457:
+        case 7458:
         {
             tick_envelope_and_linear_counter();
         }
         break;
 
-        case 14913:
+        case 14914:
         {
             tick_envelope_and_linear_counter();
             tick_length_counter_and_sweep();
         }
         break;
 
-        case 22371:
+        case 22372:
         {
             tick_envelope_and_linear_counter();
         }
         break;
 
-        case 29828:
-        {
-            check_set_irq();
-        }
-        break;
-
         case 29829:
         {
-            if (!m_step5)
-            {
-                tick_envelope_and_linear_counter();
-                tick_length_counter_and_sweep();
-            }
-
             check_set_irq();
-        }
-        break;
-
-        case 37281:
-        {
-            if (m_step5)
-            {
-                tick_envelope_and_linear_counter();
-                tick_length_counter_and_sweep();
-            }
         }
         break;
 
         case 0:
         {
-            check_set_irq();
+            if (!m_first_loop)
+            {
+                tick_envelope_and_linear_counter();
+                tick_length_counter_and_sweep();
+
+                check_set_irq();
+            }
+            else
+            {
+                // Tick both even it's not first loop for 5-step mode
+                if (m_step5)
+                {
+                    tick_envelope_and_linear_counter();
+                    tick_length_counter_and_sweep();
+                }
+            }
+        }
+        break;
+        case 1:
+        {
+            if (!m_first_loop)
+            {
+                check_set_irq();
+            }
         }
         break;
 
         default:
             break;
+    }
+
+    // Update timer to next value
+    ++m_timer;
+    if (!m_step5)
+    {
+        if (m_timer >= 29830)
+        {
+            m_timer = 0;
+            m_first_loop = false;
+        }
+    }
+    else
+    {
+        if (m_timer >= 37282)
+        {
+            m_timer = 0;
+            m_first_loop = false;
+        }
     }
 }
 
@@ -104,6 +139,12 @@ bool
 FrameCounter::interrupt() const
 {
     return m_irq;
+}
+
+void
+FrameCounter::reset_timer()
+{
+    m_timer = 0;
 }
 
 void
@@ -123,13 +164,18 @@ FrameCounter::set_irq_inhibit(bool i_set)
 }
 
 void
-FrameCounter::reset(unsigned int i_val)
+FrameCounter::delay_reset(bool i_delay)
 {
-    m_timer = i_val;
-    if (m_step5)
+    // @IMPL: The value set is based on
+    // the assumption that APU is ticked after CPU
+    if (i_delay)
     {
-        tick_envelope_and_linear_counter();
-        tick_length_counter_and_sweep();
+        // delay by one clock
+        m_reset_counter = 3;
+    }
+    else
+    {
+        m_reset_counter = 2;
     }
 }
 

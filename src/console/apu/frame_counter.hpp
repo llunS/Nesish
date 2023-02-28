@@ -16,6 +16,9 @@ struct FrameCounter {
     LN_KLZ_DELETE_COPY_MOVE(FrameCounter);
 
   public:
+    void
+    power_up();
+
     /// @brief Tick this every CPU cycle
     void
     tick();
@@ -24,11 +27,14 @@ struct FrameCounter {
     interrupt() const;
 
     void
+    reset_timer();
+
+    void
     set_mode(bool i_step5);
     void
     set_irq_inhibit(bool i_set);
     void
-    reset(unsigned int i_val);
+    delay_reset(bool i_delay);
     void
     clear_interrupt();
 
@@ -50,6 +56,9 @@ struct FrameCounter {
 
     bool m_step5;
     bool m_irq_inhibit;
+
+    bool m_first_loop;
+    unsigned char m_reset_counter;
 };
 
 } // namespace ln

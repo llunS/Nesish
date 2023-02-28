@@ -106,6 +106,10 @@ struct APU {
     Triangle m_triangle;
     Noise m_noise;
     DMC m_dmc;
+
+    // @NOTE: This may wrap around back to 0, which is fine, since current
+    // implementation doesn't assume infinite range.
+    Cycle m_cycle;
 };
 
 } // namespace ln

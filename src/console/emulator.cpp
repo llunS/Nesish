@@ -360,9 +360,9 @@ Emulator::tick(bool *o_cpu_instr)
 
     bool instr_done = false;
     bool read_2002 = false;
+    // Stall CPU
     if (m_apu.fetching())
     {
-        // Stall CPU.
     }
     else
     {
@@ -377,7 +377,16 @@ Emulator::tick(bool *o_cpu_instr)
     m_cpu.post_tick();
     m_ppu.tick();
 
+    // @IMPL: Tick after CPU pre_tick(), frame counter reset relys on this.
+    // blargg_apu_2005.07.30/04.clock_jitter.nes
+    // @IMPL: Tick after CPU pre_tick(), length counter halt delay relys on
+    // this. blargg_apu_2005.07.30/10.len_halt_timing.nes
+    // @IMPL: Tick after CPU pre_tick(), length counter reload during ticking
+    // relys on this. blargg_apu_2005.07.30/11.len_reload_timing.nes
+    // @IMPL: Tick after CPU post_tick() as well, according to
+    // blargg_apu_2005.07.30/08.irq_timing.nes
     m_apu.tick(m_memory);
+
     // APU generates a sample every CPU cycle.
     return true;
 }
