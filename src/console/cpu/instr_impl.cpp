@@ -998,6 +998,7 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             // @NOTE: Even if interrupt is detected, it is delayed until this
             // instruction is complete, or else the taken branch could be missed
             // after the handler returns.
+            // So it's fine we poll in the middle of an instruction.
         }
         break;
 

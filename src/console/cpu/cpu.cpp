@@ -171,17 +171,25 @@ CPU::pre_tick(bool &o_2002_read)
                     // @TEST: Is this done at last cycle?
                     m_nmi_sig = false;
                 }
-                /* Clear flags which last for one instruction */
+                /* Clear flags which last for one instruction and are used for
+                 * interrupt sequence */
                 // @NOTE: Do this before poll_interrupt() as it may set these
                 // flags.
-                m_irq_pc_no_inc = false;
-                m_irq_no_mem_write = false;
-                m_is_nmi = false;
+                // If was executing interrupt sequence.
+                // Don't clear otherwise, since branch instruction may poll
+                // interrupts and thus sets these flags in the middle of the
+                // instruction.
+                if (m_instr_ctx.opcode == LN_BRK_OPCODE)
+                {
+                    m_irq_pc_no_inc = false;
+                    m_irq_no_mem_write = false;
+                    m_is_nmi = false;
+                }
 
                 /* Poll interrupts */
                 // @TODO: Deal with DMA
-                // For most instructions, poll interrupts at the last cycle,
-                // Special cases are listed.
+                // Most instructions poll interrupts at the last cycle.
+                // Special cases are listed and handled on thier own.
                 if (m_instr_ctx.opcode == LN_BRK_OPCODE ||
                     m_instr_ctx.instr->addr_mode == AddrMode::REL)
                 {
@@ -190,8 +198,8 @@ CPU::pre_tick(bool &o_2002_read)
                     // the interrupt handler will execute before another
                     // interrupt is serviced
                     // https://www.nesdev.org/wiki/CPU_interrupts#Detailed_interrupt_behavior
-                    // All types of interrupts mostly reuse the same logic as
-                    // BRK.
+                    // All types of interrupts reuse the same logic as BRK for
+                    // the most part.
 
                     // Branch instructions are also special, we handle it
                     // in its implementation. They are identified by address
