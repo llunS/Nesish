@@ -5,7 +5,6 @@
 
 #include "console/types.hpp"
 #include "console/apu/frame_counter.hpp"
-#include "console/apu/divider.hpp"
 #include "console/apu/pulse.hpp"
 #include "console/apu/triangle.hpp"
 #include "console/apu/noise.hpp"
@@ -13,11 +12,12 @@
 
 namespace ln {
 
-struct Memory;
+struct APUClock;
+struct DMCDMA;
 
 struct APU {
   public:
-    APU();
+    APU(const APUClock &i_clock, DMCDMA &o_dmc_dma);
     ~APU() = default;
     LN_KLZ_DELETE_COPY_MOVE(APU);
 
@@ -29,14 +29,15 @@ struct APU {
 
     /// @brief Call this every CPU cycle
     void
-    tick(const Memory &i_memory);
+    tick();
     /// @return Amplitude in range [0, 1]
     float
     amplitude() const;
     bool
     interrupt() const;
-    bool
-    fetching() const;
+
+    void
+    put_dmc_sample(Address i_sample_addr, Byte i_sample);
 
   public:
     // They are write-only except $4015 (CTRL_STATUS) which is read/write.
@@ -99,17 +100,13 @@ struct APU {
     Byte m_regs[Register::SIZE];
 
     FrameCounter m_fc;
-    Divider m_divider_cpu2; // Hypothetical divider to tick timer every second
-                            // CPU cycle.
     Pulse m_pulse1;
     Pulse m_pulse2;
     Triangle m_triangle;
     Noise m_noise;
     DMC m_dmc;
 
-    // @NOTE: This may wrap around back to 0, which is fine, since current
-    // implementation doesn't assume infinite range.
-    Cycle m_cycle;
+    const APUClock &m_clock;
 };
 
 } // namespace ln

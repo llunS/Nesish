@@ -14,10 +14,6 @@ FrameCounter::FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2,
     , m_pulse2(o_pulse2)
     , m_triangle(o_triangle)
     , m_noise(o_noise)
-    , m_timer(0)
-    , m_irq(false)
-    , m_step5(false)
-    , m_irq_inhibit(false)
 {
 }
 
@@ -26,10 +22,15 @@ FrameCounter::FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2,
 void
 FrameCounter::power_up()
 {
+    m_timer = 0; // set again later due to register write powerup
     m_irq = false;
+
+    m_mode = false;        // set again later due to register write powerup
+    m_irq_inhibit = false; // set again later due to register write powerup
 
     m_first_loop = true;
     m_reset_counter = 0;
+    // m_mode_tmp: doesn't matter
 }
 
 void
@@ -41,13 +42,14 @@ FrameCounter::tick()
         --m_reset_counter;
         if (!m_reset_counter)
         {
+            m_mode = m_mode_tmp;
             m_timer = 0;
             m_first_loop = true;
         }
     }
 
     auto check_set_irq = [this]() {
-        if (!this->m_step5 && !this->m_irq_inhibit)
+        if (!this->m_mode && !this->m_irq_inhibit)
         {
             this->m_irq = true;
         }
@@ -81,24 +83,22 @@ FrameCounter::tick()
             check_set_irq();
         }
         break;
-
         case 0:
         {
-            if (!m_first_loop)
+            if (!m_mode)
             {
-                tick_envelope_and_linear_counter();
-                tick_length_counter_and_sweep();
-
-                check_set_irq();
-            }
-            else
-            {
-                // Tick both even it's not first loop for 5-step mode
-                if (m_step5)
+                if (!m_first_loop)
                 {
                     tick_envelope_and_linear_counter();
                     tick_length_counter_and_sweep();
+
+                    check_set_irq();
                 }
+            }
+            else
+            {
+                tick_envelope_and_linear_counter();
+                tick_length_counter_and_sweep();
             }
         }
         break;
@@ -117,7 +117,7 @@ FrameCounter::tick()
 
     // Update timer to next value
     ++m_timer;
-    if (!m_step5)
+    if (!m_mode)
     {
         if (m_timer >= 29830)
         {
@@ -148,12 +148,6 @@ FrameCounter::reset_timer()
 }
 
 void
-FrameCounter::set_mode(bool i_step5)
-{
-    m_step5 = i_step5;
-}
-
-void
 FrameCounter::set_irq_inhibit(bool i_set)
 {
     m_irq_inhibit = i_set;
@@ -164,19 +158,15 @@ FrameCounter::set_irq_inhibit(bool i_set)
 }
 
 void
-FrameCounter::delay_reset(bool i_delay)
+FrameCounter::delay_set_mode(bool i_mode, bool i_delay)
 {
-    // @IMPL: The value set is based on
-    // the assumption that APU is ticked after CPU
-    if (i_delay)
-    {
-        // delay by one clock
-        m_reset_counter = 3;
-    }
-    else
-    {
-        m_reset_counter = 2;
-    }
+    // call this while one is pending would just replace the pending one
+
+    constexpr decltype(m_reset_counter) tick_order = 1; // ticked after CPU
+    constexpr decltype(m_reset_counter) pre_dec = 1;    // check tick()
+    decltype(m_reset_counter) delay = i_delay;
+    m_mode_tmp = i_mode;
+    m_reset_counter = tick_order + pre_dec + delay;
 }
 
 void

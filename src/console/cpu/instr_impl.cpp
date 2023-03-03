@@ -27,23 +27,13 @@ CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 1:
         {
-            // @NOTE: Actually at hardware, this is done by setting to line to
-            // read instead of write
-            if (!io_cpu->m_irq_no_mem_write)
-            {
-                io_cpu->pre_push_byte(get_high(io_cpu->PC));
-            }
-            io_cpu->post_push_byte();
+            io_cpu->push_byte(get_high(io_cpu->PC));
         }
         break;
 
         case 2:
         {
-            if (!io_cpu->m_irq_no_mem_write)
-            {
-                io_cpu->pre_push_byte(get_low(io_cpu->PC));
-            }
-            io_cpu->post_push_byte();
+            io_cpu->push_byte(get_low(io_cpu->PC));
         }
         break;
 
@@ -52,7 +42,7 @@ CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
             // @QUIRK: Push B flag differently
             Byte pushed = io_cpu->P;
-            if (io_cpu->hardware_interrupts())
+            if (io_cpu->in_hardware_irq())
             {
                 pushed &= Byte(~StatusFlag::B);
             }
@@ -60,11 +50,7 @@ CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             {
                 pushed |= Byte(StatusFlag::B);
             }
-            if (!io_cpu->m_irq_no_mem_write)
-            {
-                io_cpu->pre_push_byte(pushed);
-            }
-            io_cpu->post_push_byte();
+            io_cpu->push_byte(pushed);
 
             // @QUIRK: Interrupt hijacking
             // Determine vector address at this cycle
@@ -180,7 +166,7 @@ CPU::InstrImpl::frm_rts(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 2:
         {
-            // @IMPL: Put it in data bus?
+            // @IMPL: Put it in data bus instead?
             set_low(io_cpu->PC, io_cpu->post_pop_byte());
             io_cpu->pre_pop_byte();
         }
@@ -1422,7 +1408,6 @@ CPU::InstrImpl::core_kil(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
     (void)(i_in);
     (void)(o_out);
 
-    // @TEST: CPU halt
     io_cpu->halt();
 }
 

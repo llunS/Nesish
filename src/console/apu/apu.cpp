@@ -1,15 +1,17 @@
 #include "apu.hpp"
 
 #include "console/spec.hpp"
+#include "console/apu/apu_clock.hpp"
 
 namespace ln {
 
-APU::APU()
+APU::APU(const APUClock &i_clock, DMCDMA &o_dmc_dma)
     : m_regs{}
     , m_fc(m_pulse1, m_pulse2, m_triangle, m_noise)
-    , m_divider_cpu2(1)
     , m_pulse1(true)
     , m_pulse2(false)
+    , m_dmc(o_dmc_dma)
+    , m_clock(i_clock)
 {
 }
 
@@ -64,8 +66,8 @@ APU::power_up()
     m_fc.reset_timer();
     // @QUIRK: After reset or power-up, APU acts as if $4017 were written with
     // $00 from 9 to 12 clocks before first instruction begins.
-    // So we tick it 9 times already at powerup
-    for (int i = 0; i < 9; ++i)
+    // Pick 10 to tick
+    for (int i = 0; i < 10; ++i)
     {
         m_fc.tick();
     }
@@ -78,10 +80,6 @@ APU::power_up()
 
     // https://www.nesdev.org/wiki/APU_DMC#Overview
     m_dmc.load(0);
-
-    {
-        m_cycle = 0;
-    }
 }
 
 void
@@ -97,44 +95,38 @@ APU::reset()
 
     // 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
     // counter retains old value)
-
-    {
-        m_cycle = 0;
-    }
 }
 
 void
-APU::tick(const Memory &i_memory)
+APU::tick()
 {
     // Clock frame counter to apply parameter changes first.
     m_fc.tick();
-    // @NOTE: Changes to length counter halt occur after clocking length.
-    // This is based on the assumption that APU is ticked after CPU.
+
+    // -------- Data flush/update due to tick order implementation
+    // Changes to length counter halt occur after clocking length, i.e. via
+    // m_fc.tick(). So do this after m_fc.tick().
     m_pulse1.length_counter().flush_halt_set();
     m_pulse2.length_counter().flush_halt_set();
+    m_triangle.length_counter().flush_halt_set();
     m_noise.length_counter().flush_halt_set();
-    // @NOTE: Write to length counter reload should be ignored when made during
+    // Write to length counter reload should be ignored when made during
     // length counter clocking and the length counter is not zero.
-    // This is based on the assumption that APU is ticked after CPU.
+    // Length counter clocking is done in m_fc.tick(), so do this after it.
     m_pulse1.length_counter().flush_load_set();
     m_pulse2.length_counter().flush_load_set();
     m_triangle.length_counter().flush_load_set();
     m_noise.length_counter().flush_load_set();
 
     // Every other CPU cycle
-    if (m_divider_cpu2.tick())
+    if (m_clock.odd())
     {
         m_pulse1.tick_timer();
         m_pulse2.tick_timer();
         m_noise.tick_timer();
-        // @TEST: Test this
-        m_dmc.tick_timer(i_memory);
+        m_dmc.tick_timer();
     }
     m_triangle.tick_timer();
-
-    // @TODO: Other channels
-
-    ++m_cycle;
 }
 
 float
@@ -155,10 +147,10 @@ APU::interrupt() const
     return m_fc.interrupt() || m_dmc.interrupt();
 }
 
-bool
-APU::fetching() const
+void
+APU::put_dmc_sample(Address i_sample_addr, Byte i_sample)
 {
-    return m_dmc.fetching();
+    m_dmc.put_sample(i_sample_addr, i_sample);
 }
 
 float
@@ -210,10 +202,10 @@ APU::read_register(Register i_reg, Byte &o_val)
             bool p2 = m_pulse2.length_counter().value() > 0;
             bool tri = m_triangle.length_counter().value() > 0;
             bool noise = m_noise.length_counter().value() > 0;
-            bool D = m_dmc.bytes_remaining();
-            // @NOTE: We don't emulate this.
-            // @QUIRK: If an interrupt flag was set at the same moment of the
+            bool D = m_dmc.bytes_remained();
+            // @TODO: If an interrupt flag was set at the same moment of the
             // read, it will read back as 1 but it will not be cleared.
+            // @NOTE: It seems to contradict with "sync_apu" in test source
             bool F = m_fc.interrupt();
             m_fc.clear_interrupt();
             bool I = m_dmc.interrupt();
@@ -245,7 +237,7 @@ APU::write_register(Register i_reg, Byte i_val)
             Pulse *pulse = PULSE1_DUTY == i_reg ? &m_pulse1 : &m_pulse2;
             pulse->sequencer().set_duty(i_val >> 6);
             pulse->envelope().set_loop(i_val & 0x20);
-            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            // @NOTE: Post set for tick order implmentation
             pulse->length_counter().post_set_halt(i_val & 0x20);
             pulse->envelope().set_const(i_val & 0x10);
             pulse->envelope().set_divider_reload(i_val & 0x0F);
@@ -286,7 +278,7 @@ APU::write_register(Register i_reg, Byte i_val)
                                                     : m_regs[PULSE2_TIMER_LOW];
             Byte2 timer = ((i_val & 0x07) << 8) | timer_low;
             pulse->timer().set_reload(timer);
-            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            // @NOTE: Post set for tick order implmentation
             pulse->length_counter().post_set_load(i_val >> 3);
 
             pulse->sequencer().reset();
@@ -297,6 +289,9 @@ APU::write_register(Register i_reg, Byte i_val)
         case TRI_LINEAR:
         {
             m_triangle.linear_counter().set_control(i_val & 0x80);
+            // This bit is also the length counter halt flag
+            // @NOTE: Post set for tick order implmentation
+            m_triangle.length_counter().post_set_halt(i_val & 0x80);
             m_triangle.linear_counter().set_reload_val(i_val & 0x7F);
         }
         break;
@@ -312,7 +307,7 @@ APU::write_register(Register i_reg, Byte i_val)
         {
             Byte2 timer = ((i_val & 0x07) << 8) | m_regs[TRI_TIMER_LOW];
             m_triangle.timer().set_reload(timer);
-            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            // @NOTE: Post set for tick order implmentation
             m_triangle.length_counter().post_set_load(i_val >> 3);
 
             m_triangle.linear_counter().set_reload();
@@ -322,7 +317,7 @@ APU::write_register(Register i_reg, Byte i_val)
         case NOISE_ENVELOPE:
         {
             m_noise.envelope().set_loop(i_val & 0x20);
-            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            // @NOTE: Post set for tick order implmentation
             m_noise.length_counter().post_set_halt(i_val & 0x20);
             m_noise.envelope().set_const(i_val & 0x10);
             m_noise.envelope().set_divider_reload(i_val & 0x0F);
@@ -339,7 +334,7 @@ APU::write_register(Register i_reg, Byte i_val)
 
         case NOISE_LENGTH:
         {
-            // @NOTE: Based on the assumption that APU is ticked after CPU.
+            // @NOTE: Post set for tick order implmentation
             m_noise.length_counter().post_set_load(i_val >> 3);
 
             m_noise.envelope().restart();
@@ -387,12 +382,12 @@ APU::write_register(Register i_reg, Byte i_val)
 
         case FC:
         {
-            m_fc.set_mode(i_val & 0x80);
+            // The theory that delay one when written on even cycle is backed by
+            // https://www.nesdev.org/wiki/APU_Frame_Counter and test
+            // cpu_interrupts_v2/4-irq_and_dma.nes
+            bool delay1 = m_clock.even(); // current tick is even
+            m_fc.delay_set_mode(i_val & 0x80, delay1);
             m_fc.set_irq_inhibit(i_val & 0x40);
-
-            // @IMPL: If the write occurs at odd APU internal cycle, based on
-            // the assumption that APU is ticked after CPU
-            m_fc.delay_reset(m_cycle % 2 != 0);
         }
         break;
 

@@ -13,6 +13,9 @@ namespace ln {
 Emulator::Emulator()
     : m_cpu(&m_memory, &m_ppu, &m_apu)
     , m_ppu(&m_video_memory, &m_cpu, m_debug_flags)
+    , m_oam_dma(m_apu_clock, m_memory, m_ppu)
+    , m_apu(m_apu_clock, m_dmc_dma)
+    , m_dmc_dma(m_apu_clock, m_memory, m_apu)
     , m_cart(nullptr)
     , m_ctrl_regs{}
     , m_ctrls{}
@@ -112,7 +115,7 @@ Emulator::hard_wire()
             if (LN_OAMDMA_ADDR == i_addr)
             {
                 // OAM DMA high address (this port is located on the CPU)
-                thiz->m_cpu.init_oam_dma(i_val);
+                thiz->m_oam_dma.initiate(i_val);
                 return Error::OK;
             }
             else if (LN_CTRL1_REG_ADDR == i_addr)
@@ -280,13 +283,20 @@ Emulator::power_up()
         return;
     }
 
-    m_cpu.power_up();
-    // consistent RAM startup state
+    // @NOTE: Setup memory first, since other components depends on their state.
+    // And setup internal RAM first in case mapper changes its content
+    // afterwards (if there is any).
+    // Consistent RAM startup state
     m_memory.set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
                       0xFF);
+    m_cart->power_up();
+
+    m_cpu.power_up();
     m_ppu.power_up();
     m_apu.power_up();
-    m_cart->power_up();
+    m_oam_dma.power_up();
+    m_dmc_dma.power_up();
+    m_apu_clock.power_up();
 
     reset_internal();
 }
@@ -300,12 +310,16 @@ Emulator::reset()
         return;
     }
 
-    m_cpu.reset();
-    // The internal memory was unchanged
+    // The internal memory was unchanged,
     // i.e. "m_memory" is not changed
+    m_cart->reset();
+
+    m_cpu.reset();
     m_ppu.reset();
     m_apu.reset();
-    m_cart->reset();
+    m_oam_dma.reset();
+    m_dmc_dma.reset();
+    m_apu_clock.reset();
 
     reset_internal();
 }
@@ -341,6 +355,12 @@ Emulator::ticks(Time_t i_duration)
 bool
 Emulator::tick(bool *o_cpu_instr)
 {
+    // @NOTE: Tick DMA before CPU, since CPU may be halted by them
+    // @NOTE: the RDY disable implementation depends on this order.
+    bool dma_halt = m_cpu.dma_halt();
+    bool dmc_dma_get = m_dmc_dma.tick(dma_halt);
+    m_oam_dma.tick(dma_halt, dmc_dma_get);
+
     // @IMPL: NTSC version ticks PPU 3 times per CPU tick
     // @IMPL: The tick order between CPU and PPU has to do with VBL timing.
     // Order: P->C(pre)->P->C(post)->P, plus one special case of Reading $2002
@@ -358,16 +378,9 @@ Emulator::tick(bool *o_cpu_instr)
      * the CPU to see it. (CPU inputs like NMI are sampled each clock.) */
     m_ppu.tick();
 
-    bool instr_done = false;
     bool read_2002 = false;
-    // Stall CPU
-    if (m_apu.fetching())
-    {
-    }
-    else
-    {
-        instr_done = m_cpu.pre_tick(read_2002);
-    }
+    bool instr_done =
+        m_cpu.pre_tick(m_dmc_dma.rdy() || m_oam_dma.rdy(), read_2002);
     if (o_cpu_instr)
     {
         *o_cpu_instr = instr_done;
@@ -385,7 +398,10 @@ Emulator::tick(bool *o_cpu_instr)
     // relys on this. blargg_apu_2005.07.30/11.len_reload_timing.nes
     // @IMPL: Tick after CPU post_tick() as well, according to
     // blargg_apu_2005.07.30/08.irq_timing.nes
-    m_apu.tick(m_memory);
+    m_apu.tick();
+
+    // Tick the clock last
+    m_apu_clock.tick();
 
     // APU generates a sample every CPU cycle.
     return true;

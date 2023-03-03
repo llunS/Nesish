@@ -8,11 +8,11 @@
 
 namespace ln {
 
-struct Memory;
+struct DMCDMA;
 
 struct DMC {
   public:
-    DMC();
+    DMC(DMCDMA &o_dmc_dma);
     ~DMC() = default;
     LN_KLZ_DELETE_COPY_MOVE(DMC);
 
@@ -24,12 +24,12 @@ struct DMC {
     bool
     interrupt() const;
 
-    bool
-    fetching() const;
+    void
+    put_sample(Address i_sample_addr, Byte i_sample);
 
     /// @brief Tick this every APU cycle (2 CPU cycles)
     void
-    tick_timer(const Memory &i_memory);
+    tick_timer();
 
   public:
     void
@@ -49,15 +49,15 @@ struct DMC {
     void
     clear_interrupt();
     bool
-    bytes_remaining() const;
+    bytes_remained() const;
 
   private:
     void
     restart_playback();
-    void
-    fetch_sample(const Memory &i_memory);
 
   private:
+    DMCDMA &m_dmc_dma;
+
     bool m_irq_enabled;
     bool m_loop;
     Address m_sample_addr;
@@ -74,9 +74,6 @@ struct DMC {
 
     Address m_sample_curr;
     Address m_sample_bytes_left;
-    // we internally use to implement delayed sample fetch
-    // tied with "m_sample_bytes_left"
-    unsigned int m_fetch_timer;
 
     bool m_irq;
 };

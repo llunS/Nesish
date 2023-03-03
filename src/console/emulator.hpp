@@ -9,6 +9,7 @@
 #include "console/memory/memory.hpp"
 
 #include "console/ppu/ppu.hpp"
+#include "console/ppu/oam_dma.hpp"
 #include "console/memory/video_memory.hpp"
 #include "console/ppu/frame_buffer.hpp"
 #include "console/ppu/color.hpp"
@@ -16,7 +17,9 @@
 #include "console/cartridge/cartridge.hpp"
 #include "console/peripheral/controller.hpp"
 
+#include "console/apu/apu_clock.hpp"
 #include "console/apu/apu.hpp"
+#include "console/apu/dmc_dma.hpp"
 
 #include "console/spec.hpp"
 #include "console/types.hpp"
@@ -136,8 +139,11 @@ struct Emulator {
     CPU m_cpu;
     Memory m_memory;
     PPU m_ppu;
+    OAMDMA m_oam_dma;
     VideoMemory m_video_memory;
+    APUClock m_apu_clock;
     APU m_apu;
+    DMCDMA m_dmc_dma;
 
     Cartridge *m_cart;
 

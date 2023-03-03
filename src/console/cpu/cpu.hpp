@@ -26,12 +26,16 @@ struct CPU {
     void
     reset();
 
+    /// @param i_rdy RDY line input enabled
     /// @param o_2002_read Whether $2002 was read at this tick
     /// @return Whether an instruction has completed.
     bool
-    pre_tick(bool &o_2002_read);
+    pre_tick(bool i_rdy, bool &o_2002_read);
     void
     post_tick();
+
+    bool
+    dma_halt() const;
 
   public:
     /* Query */
@@ -68,13 +72,6 @@ struct CPU {
     set_p_test(Byte i_val);
 
   private:
-    /* allow access from other components */
-
-    friend struct Emulator;
-    void
-    init_oam_dma(Byte i_val);
-
-  private:
     // ----- memory operations
 
     Byte
@@ -95,10 +92,6 @@ struct CPU {
     Byte2
     pop_byte2();
 
-    void
-    pre_push_byte(Byte i_byte);
-    void
-    post_push_byte();
     void
     pre_pop_byte();
     Byte
@@ -137,11 +130,11 @@ struct CPU {
     halt();
 
     bool
-    hardware_interrupts() const;
+    in_hardware_irq() const;
     bool
-    is_nmi() const;
+    in_nmi() const;
     bool
-    is_reset() const;
+    in_reset() const;
 
     void
     poll_interrupt();
@@ -167,10 +160,13 @@ struct CPU {
     // @NOTE: This may wrap around back to 0, which is fine, since current
     // implementation doesn't assume infinite range.
     Cycle m_cycle;
-    bool m_halted_instr; // halt caused by instructions
+    bool m_instr_halt; // halt caused by instructions
+    bool m_dma_halt;
 
     // ---- temporaries for one tick
     mutable bool m_2002_read;
+    // ---- States for/after one tick
+    bool m_write_tick;
 
     // ---- interrupt lines poll cache
     bool m_nmi_asserted;
@@ -178,10 +174,13 @@ struct CPU {
     bool m_nmi_sig; // pending NMI
     bool m_irq_sig; // pending IRQ
     bool m_reset_sig;
-    // ---- interrupts implementation flags
+    // ---- interrupts implementation used in execution of instruction
     bool m_irq_pc_no_inc;
     bool m_irq_no_mem_write;
     bool m_is_nmi;
+    bool m_irq_pc_no_inc_tmp;
+    bool m_irq_no_mem_write_tmp;
+    bool m_is_nmi_tmp;
 
   private:
     struct InstrImpl;
@@ -193,9 +192,9 @@ struct CPU {
      * the real-time status of the hardware bus (not considered) */
     Address m_addr_bus;
     Byte m_data_bus;
-    /* Set and used in instruction */
+    /* Set and used in one instruction */
     Byte m_page_offset;
-    /* Set in instruction and used in core */
+    /* Set in one instruction tick and used in core */
     Address m_i_eff_addr;
 
     struct InstrDesc {
@@ -210,15 +209,6 @@ struct CPU {
         int cycle_plus1;
         InstrDesc *instr;
     } m_instr_ctx;
-
-  private:
-    struct OAMDMAContext {
-        bool ongoing;
-        Byte upper;
-        Cycle counter;
-        Cycle start_counter;
-        Byte tmp;
-    } m_oam_dma_ctx;
 };
 
 } // namespace ln

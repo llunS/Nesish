@@ -27,7 +27,8 @@ CPU::power_up()
 
     {
         m_cycle = 0;
-        m_halted_instr = false;
+        m_instr_halt = false;
+        m_dma_halt = false;
 
         m_nmi_asserted = false;
         m_nmi_sig = false;
@@ -36,10 +37,11 @@ CPU::power_up()
         m_irq_pc_no_inc = false;
         m_irq_no_mem_write = false;
         m_is_nmi = false;
+        m_irq_pc_no_inc_tmp = false;
+        m_irq_no_mem_write_tmp = false;
+        m_is_nmi_tmp = false;
 
         m_instr_ctx = {0x00, 0, nullptr};
-
-        m_oam_dma_ctx.ongoing = false;
     }
 
     // program entry point
@@ -50,6 +52,8 @@ void
 CPU::reset()
 {
     m_reset_sig = true;
+
+    m_instr_halt = false;
 }
 
 void
@@ -65,72 +69,38 @@ CPU::set_p_test(Byte i_val)
 }
 
 bool
-CPU::pre_tick(bool &o_2002_read)
+CPU::pre_tick(bool i_rdy, bool &o_2002_read)
 {
-    this->m_2002_read = false;
-    auto write_out = [&o_2002_read, this]() {
+    // default to read tick so we only need to mark write operations.
+    // i.e. each cycle is read cycle unless marked otherwise.
+    m_write_tick = false;
+    m_2002_read = false;
+    auto defer_ret = [&o_2002_read, this]() {
         o_2002_read = this->m_2002_read;
     };
 
-    if (m_halted_instr)
+    if (m_instr_halt)
     {
-        write_out();
+        defer_ret();
         return false;
     }
 
+    // Can only halt on read cycle
+    m_dma_halt = false;
+
     bool instr_done = false;
-    /* OAM DMA transfer */
-    if (m_oam_dma_ctx.ongoing)
+    // Fetch opcode
+    if (!m_instr_ctx.instr)
     {
-        if (m_oam_dma_ctx.counter == 0)
+        Byte opcode = get_byte(PC);
+        if (i_rdy && !m_write_tick)
         {
-            // @IMPL: 1 wait state cycle while waiting for writes to complete,
-            // +1 if on an odd CPU cycle
-            // @TODO: What wait state cycle?
-            m_oam_dma_ctx.start_counter = m_cycle % 2 == 0 ? 1 : 2;
+            m_dma_halt = true;
         }
-        if (m_oam_dma_ctx.counter >= m_oam_dma_ctx.start_counter)
+        if (!m_dma_halt)
         {
-            auto dma_counter =
-                (m_oam_dma_ctx.counter - m_oam_dma_ctx.start_counter);
-            if (dma_counter > 256 * 2 - 1)
-            {
-                LN_ASSERT_FATAL(
-                    "Invalid numeric value, programming error: {}, {}",
-                    m_oam_dma_ctx.counter, m_oam_dma_ctx.start_counter);
-                write_out();
-                return false;
-            }
-            Byte byte_idx = Byte(dma_counter / 2);
-
-            /* read */
-            if (dma_counter % 2 == 0)
-            {
-                Address addr = (m_oam_dma_ctx.upper << 8) | byte_idx;
-                m_oam_dma_ctx.tmp = this->get_byte(addr);
-            }
-            else
-            {
-                m_ppu->write_register(PPU::OAMDATA, m_oam_dma_ctx.tmp);
-
-                /* end of the transfer process */
-                if (byte_idx >= 256 - 1)
-                {
-                    m_oam_dma_ctx.ongoing = false;
-                }
-            }
-        }
-        ++m_oam_dma_ctx.counter;
-    }
-    /* CPU is not halted so it can execute instruction or handle interrupts */
-    else
-    {
-        // Fetch opcode
-        if (!m_instr_ctx.instr)
-        {
-            Byte opcode = get_byte(PC);
             // IRQ/RESET/NMI/BRK all use the same behavior.
-            if (hardware_interrupts())
+            if (in_hardware_irq())
             {
                 // Force the instruction register to $00 and discard the fetch
                 // opcode
@@ -142,73 +112,111 @@ CPU::pre_tick(bool &o_2002_read)
             }
 
             m_instr_ctx.opcode = opcode;
-            m_instr_ctx.instr = &s_instr_table[opcode];
             m_instr_ctx.cycle_plus1 = 0;
+            m_instr_ctx.instr = &s_instr_table[opcode];
         }
-        // Rest cycles of the instruction
+    }
+    // Rest cycles of the instruction
+    else
+    {
+        /* Backup states that may be altered after one instruction cycle and may
+         * be used as input of the cycle themselves */
+        // Registers
+        auto prevA = A;
+        auto prevX = X;
+        auto prevY = Y;
+        auto prevPC = PC;
+        auto prevS = S;
+        auto prevP = P;
+        // Intermediate states
+        auto prev_addr_bus = m_addr_bus;
+        auto prev_data_bus = m_data_bus;
+
+        m_instr_ctx.instr->frm(m_instr_ctx.cycle_plus1, this,
+                               m_instr_ctx.instr->core, instr_done);
+
+        if (i_rdy && !m_write_tick)
+        {
+            m_dma_halt = true;
+        }
+        if (!m_dma_halt)
+        {
+            ++m_instr_ctx.cycle_plus1;
+        }
+        // Restore changes, so that repeat cycles get the same result, excluding
+        // possible multiple side effects.
         else
         {
-            m_instr_ctx.instr->frm(m_instr_ctx.cycle_plus1, this,
-                                   m_instr_ctx.instr->core, instr_done);
-            ++m_instr_ctx.cycle_plus1;
+            A = prevA;
+            X = prevX;
+            Y = prevY;
+            PC = prevPC;
+            S = prevS;
+            P = prevP;
 
-            if (instr_done)
+            m_addr_bus = prev_addr_bus;
+            m_data_bus = prev_data_bus;
+            // no need for "m_page_offset" and "m_i_eff_addr"
+        }
+        if (instr_done)
+        {
+            // ------ Current
+            if (!m_dma_halt)
             {
-                // @NOTE: Use is_reset() before clearing relevant flags
-                if (is_reset())
+                // @NOTE: Use in_reset() before updating relevant flags
+                if (in_reset())
                 {
                     // Indicating RESET is handled.
                     m_reset_sig = false;
-
-                    // Some work specific to RESET
-                    // @TEST: Is this necessary?
-                    m_cycle = 0;
                 }
-                // @NOTE: Use is_nmi() before clearing relevant flags
-                if (is_nmi())
+                // @NOTE: Use in_nmi() before updating relevant flags
+                if (in_nmi())
                 {
                     // Indicating NMI is handled.
                     // @TEST: Is this done at last cycle?
                     m_nmi_sig = false;
                 }
-                /* Clear flags which last for one instruction and are used for
-                 * interrupt sequence */
-                // @NOTE: Do this before poll_interrupt() as it may set these
-                // flags.
-                // If was executing interrupt sequence.
-                // Don't clear otherwise, since branch instruction may poll
-                // interrupts and thus sets these flags in the middle of the
-                // instruction.
-                if (m_instr_ctx.opcode == LN_BRK_OPCODE)
-                {
-                    m_irq_pc_no_inc = false;
-                    m_irq_no_mem_write = false;
-                    m_is_nmi = false;
-                }
+            }
 
-                /* Poll interrupts */
-                // @TODO: Deal with DMA
-                // Most instructions poll interrupts at the last cycle.
-                // Special cases are listed and handled on thier own.
-                if (m_instr_ctx.opcode == LN_BRK_OPCODE ||
-                    m_instr_ctx.instr->addr_mode == AddrMode::REL)
-                {
-                    // The interrupt sequences themselves do not perform
-                    // interrupt polling, meaning at least one instruction from
-                    // the interrupt handler will execute before another
-                    // interrupt is serviced
-                    // https://www.nesdev.org/wiki/CPU_interrupts#Detailed_interrupt_behavior
-                    // All types of interrupts reuse the same logic as BRK for
-                    // the most part.
+            // ------ Next
+            /* Poll interrupts */
+            // @NOTE: Poll interrupts even it's halted by DMAs (m_dma_halt)
+            // @TODO: Deal with DMA
+            // Most instructions poll interrupts at the last cycle.
+            // Special cases are listed and handled on thier own.
+            if (m_instr_ctx.opcode == LN_BRK_OPCODE ||
+                m_instr_ctx.instr->addr_mode == AddrMode::REL)
+            {
+                // The interrupt sequences themselves do not perform
+                // interrupt polling, meaning at least one instruction from
+                // the interrupt handler will execute before another
+                // interrupt is serviced
+                // https://www.nesdev.org/wiki/CPU_interrupts#Detailed_interrupt_behavior
+                // All types of interrupts reuse the same logic as BRK for
+                // the most part.
 
-                    // Branch instructions are also special, we handle it
-                    // in its implementation. They are identified by address
-                    // mode.
-                }
-                else
+                // Branch instructions are also special, we handle it
+                // in its implementation. They are identified by address
+                // mode.
+            }
+            else
+            {
+                // Poll interrupts at the last cycle
+                poll_interrupt();
+            }
+
+            if (!m_dma_halt)
+            {
+                // Swap at the end of instruction, setup states for next
+                // instruction
                 {
-                    // Poll interrupts at the last cycle
-                    poll_interrupt();
+                    m_irq_pc_no_inc = m_irq_pc_no_inc_tmp;
+                    m_irq_no_mem_write = m_irq_no_mem_write_tmp;
+                    m_is_nmi = m_is_nmi_tmp;
+
+                    m_irq_pc_no_inc_tmp = false;
+                    m_irq_no_mem_write_tmp = false;
+                    m_is_nmi_tmp = false;
                 }
 
                 // So that next instruction can continue afterwards.
@@ -218,17 +226,22 @@ CPU::pre_tick(bool &o_2002_read)
     }
     ++m_cycle;
 
-    write_out();
-    return instr_done;
+    defer_ret();
+    // When it's halted by DMCs at the last cycle, flagging it as not done would
+    // be a reasonable choice.
+    return m_dma_halt ? false : instr_done;
 }
 
 void
 CPU::post_tick()
 {
-    if (m_halted_instr)
+    if (m_instr_halt)
     {
         return;
     }
+
+    // @NOTE: Assuming the detectors don't consider if it's halted by DMAs
+    // (m_dma_halt)
 
     // @NOTE: Edge/Level detector polls lines during φ2 of each CPU cycle.
     // So this sets up signals for NEXT cycle.
@@ -251,6 +264,12 @@ CPU::post_tick()
             m_irq_sig = true; // raise an internal signal
         }
     }
+}
+
+bool
+CPU::dma_halt() const
+{
+    return m_dma_halt;
 }
 
 Cycle
@@ -347,20 +366,6 @@ CPU::get_operand_bytes(Byte i_opcode)
     }
 }
 
-void
-CPU::init_oam_dma(Byte i_val)
-{
-    if (m_oam_dma_ctx.ongoing)
-    {
-        LN_ASSERT_FATAL(
-            "Initialize a OAMDMA transfer while one is already going on.");
-        return;
-    }
-    m_oam_dma_ctx.ongoing = true;
-    m_oam_dma_ctx.upper = i_val;
-    m_oam_dma_ctx.counter = 0;
-}
-
 Byte
 CPU::get_byte(Address i_addr) const
 {
@@ -383,10 +388,19 @@ CPU::get_byte(Address i_addr) const
 void
 CPU::set_byte(Address i_addr, Byte i_byte)
 {
-    auto err = m_memory->set_byte(i_addr, i_byte);
-    LN_ASSERT_ERROR_COND(!LN_FAILED(err) || err == Error::READ_ONLY ||
-                             err == Error::UNAVAILABLE,
-                         "Invalid memory write: ${:04X}, {}", i_addr, err);
+    // @NOTE: The mark of this flag relys on the instruction implementation
+    // calling read or wrtie interface each cycle.
+    m_write_tick = true;
+
+    // @NOTE: At hardware, this is done by setting to line to read instead of
+    // write
+    if (!m_irq_no_mem_write)
+    {
+        auto err = m_memory->set_byte(i_addr, i_byte);
+        LN_ASSERT_ERROR_COND(!LN_FAILED(err) || err == Error::READ_ONLY ||
+                                 err == Error::UNAVAILABLE,
+                             "Invalid memory write: ${:04X}, {}", i_addr, err);
+    }
 }
 
 Byte2
@@ -400,20 +414,11 @@ CPU::get_byte2(Address i_addr) const
 void
 CPU::push_byte(Byte i_byte)
 {
-    pre_push_byte(i_byte);
-    post_push_byte();
-}
-
-void
-CPU::pre_push_byte(Byte i_byte)
-{
-    set_byte(Memory::STACK_PAGE_MASK | S, i_byte);
+    // It may not actually write.
     LN_LOG_TRACE(ln::get_logger(), "Push byte: {:02X}", i_byte);
-}
 
-void
-CPU::post_push_byte()
-{
+    set_byte(Memory::STACK_PAGE_MASK | S, i_byte);
+    // The pointer decrement happens regardless of write or not
     --S;
 }
 
@@ -484,17 +489,21 @@ CPU::halt()
 {
     LN_LOG_INFO(ln::get_logger(), "Halting...");
 
-    m_halted_instr = true;
+    m_instr_halt = true;
 }
 
 void
 CPU::poll_interrupt()
 {
+    // @NOTE: Assuming CPU still polls when it is halted by DMAs (m_dma_halt)
+
     /* It may be polled multiple times during an instruction.
      * e.g. Branch instructions may poll 2 times if branch is taken and page is
      * crossed.
      */
-    if (hardware_interrupts())
+    // Already pending interrupt sequence for execution next.
+    bool pending_already = m_irq_pc_no_inc_tmp;
+    if (pending_already)
     {
         return;
     }
@@ -503,40 +512,41 @@ CPU::poll_interrupt()
     // @TEST: RESET is like others, polled only at certain points?
     if (m_reset_sig)
     {
-        m_irq_pc_no_inc = true;
-        m_irq_no_mem_write = true;
+        m_irq_pc_no_inc_tmp = true;
+        m_irq_no_mem_write_tmp = true;
     }
     // NMI has higher precedence than IRQ
     // https://www.nesdev.org/wiki/NMI
     else if (m_nmi_sig)
     {
-        m_irq_pc_no_inc = true;
-        m_is_nmi = true;
+        m_irq_pc_no_inc_tmp = true;
+        m_is_nmi_tmp = true;
     }
     else if (m_irq_sig)
     {
-        m_irq_pc_no_inc = true;
+        m_irq_pc_no_inc_tmp = true;
     }
 }
 
-/// @brief Is running (or to run) hardware interrupts (IRQ/RESET/NMI)
+/// @brief Is running hardware interrupts (IRQ/RESET/NMI)
 bool
-CPU::hardware_interrupts() const
+CPU::in_hardware_irq() const
 {
     return m_irq_pc_no_inc;
 }
 
-/// @brief Is running (or to run) NMI interrupt sequence
+/// @brief Is running NMI interrupt sequence
 bool
-CPU::is_nmi() const
+CPU::in_nmi() const
 {
     return m_is_nmi;
 }
 
+/// @brief Is running RESET interrupt sequence
 bool
-CPU::is_reset() const
+CPU::in_reset() const
 {
-    return /*hardware_interrupts() &&*/ m_irq_no_mem_write;
+    return /*in_hardware_irq() &&*/ m_irq_no_mem_write;
 }
 
 } // namespace ln

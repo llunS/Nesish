@@ -30,11 +30,9 @@ struct FrameCounter {
     reset_timer();
 
     void
-    set_mode(bool i_step5);
-    void
     set_irq_inhibit(bool i_set);
     void
-    delay_reset(bool i_delay);
+    delay_set_mode(bool i_mode, bool i_delay);
     void
     clear_interrupt();
 
@@ -54,11 +52,12 @@ struct FrameCounter {
     unsigned int m_timer;
     bool m_irq;
 
-    bool m_step5;
+    bool m_mode;
     bool m_irq_inhibit;
 
     bool m_first_loop;
     unsigned char m_reset_counter;
+    bool m_mode_tmp;
 };
 
 } // namespace ln
