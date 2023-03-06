@@ -224,7 +224,18 @@ PPU::write_register(Register i_reg, Byte i_val)
 
         case OAMDATA:
         {
-            m_oam[m_regs[OAMADDR]] = i_val;
+            // @QUIRK: "The three unimplemented bits of each sprite's byte 2 do
+            // not exist in the PPU and always read back as 0 on PPU revisions
+            // that allow reading PPU OAM through OAMDATA ($2004). This can be
+            // emulated by ANDing byte 2 with $E3 either when writing to or when
+            // reading from OAM"
+            // https://www.nesdev.org/wiki/PPU_OAM#Byte_2
+            Byte oam_addr = m_regs[OAMADDR];
+            if ((oam_addr & 0x03) == 0x02)
+            {
+                i_val &= 0xE3;
+            }
+            m_oam[oam_addr] = i_val;
             ++m_regs[OAMADDR];
 
             // @QUIRK: glitchy OAMADDR update
@@ -240,12 +251,6 @@ PPU::write_register(Register i_reg, Byte i_val)
             // transfers via OAMDMA, since that uses writes to $2004. For
             // emulation purposes, it is probably best to completely ignore
             // writes during rendering.
-
-            // @QUIRK: Un implemented bits
-            // https://www.nesdev.org/wiki/PPU_OAM#Byte_2
-            // We don't emulate this.
-            // Not sure if we can know the byte is a attribute byte (i.e. byte
-            // 2).
         }
         break;
 
