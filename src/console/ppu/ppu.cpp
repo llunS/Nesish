@@ -58,7 +58,8 @@ PPU::power_up()
     static_assert(color_indices[LN_PALETTE_SIZE - 1], "Elements missing.");
     for (decltype(LN_PALETTE_SIZE) i = 0; i < LN_PALETTE_SIZE; ++i)
     {
-        (void)m_memory->set_byte(LN_PALETTE_ADDR_HEAD + i, color_indices[i]);
+        (void)m_memory->set_byte(Address(LN_PALETTE_ADDR_HEAD + i),
+                                 color_indices[i]);
     }
 
     /* Unspecified:

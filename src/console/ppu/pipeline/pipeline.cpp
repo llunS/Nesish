@@ -86,6 +86,8 @@ Pipeline::on_tick(Cycle i_curr, Cycle i_total)
         {
             ++m_curr_scanline_idx;
         }
+        Tickable *next = m_scanline_sequence[m_curr_scanline_idx];
+
         // Set scanline number based on index
         ctx.scanline_no = m_curr_scanline_idx + 1 >= SCANLINE_COUNT
                               ? -1
@@ -97,7 +99,6 @@ Pipeline::on_tick(Cycle i_curr, Cycle i_total)
             ctx.skip_cycle = false;
         }
 
-        Tickable *next = m_scanline_sequence[m_curr_scanline_idx];
         next->reset();
     }
 
