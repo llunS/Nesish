@@ -57,16 +57,14 @@ APU::power_up()
     // all channels disabled
     write_register(CTRL_STATUS, 0x00);
 
+    // --- Frame counter
+    // tests: apu_reset
     // frame irq enabled
     write_register(FC, 0x00);
-    // 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
-    // counter powers up at a value equivalent to 15)
-    // We want 2A03 behavior, but the value being referred to means exactly
-    // which storage is ambiguous, so we reset it to 0.
-    m_fc.reset_timer();
     // @QUIRK: After reset or power-up, APU acts as if $4017 were written with
     // $00 from 9 to 12 clocks before first instruction begins.
     // Pick 10 to tick
+    m_fc.reset_timer();
     for (int i = 0; i < 10; ++i)
     {
         m_fc.tick();
@@ -93,8 +91,11 @@ APU::reset()
     // APU DPCM output ANDed with 1 (upper 6 bits cleared)
     // Since we are not running in parallel, ignore this
 
-    // 2A03G: APU Frame Counter reset. (but 2A03letterless: APU frame
-    // counter retains old value)
+    // --- Frame counter
+    // tests: apu_reset
+    write_register(FC, m_regs[FC]);
+    // after the register write to ensure irq is cleared
+    m_fc.clear_interrupt();
 }
 
 void
