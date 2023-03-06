@@ -46,9 +46,23 @@ PPU::power_up()
     m_ppudata_buf = 0x00;
     m_pipeline_ctx.odd_frame = false;
 
+    // ---- Palette
+    static constexpr Byte color_indices[LN_PALETTE_SIZE] = {
+        /* clang-format off */
+            0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
+            0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C,
+            0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14,
+            0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08
+        /* clang-format on */
+    };
+    static_assert(color_indices[LN_PALETTE_SIZE - 1], "Elements missing.");
+    for (decltype(LN_PALETTE_SIZE) i = 0; i < LN_PALETTE_SIZE; ++i)
+    {
+        (void)m_memory->set_byte(LN_PALETTE_ADDR_HEAD + i, color_indices[i]);
+    }
+
     /* Unspecified:
      * OAM
-     * Palette
      * Nametable RAM
      * CHR RAM
      */
