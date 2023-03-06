@@ -50,13 +50,13 @@ PipelineAccessor::get_x()
 }
 
 Byte
-PipelineAccessor::get_oam(Byte i_addr)
+PipelineAccessor::get_oam_byte(Byte i_addr)
 {
-    return *get_oam_addr(i_addr);
+    return *get_oam_ptr(i_addr);
 }
 
 Byte *
-PipelineAccessor::get_oam_addr(Byte i_addr)
+PipelineAccessor::get_oam_ptr(Byte i_addr)
 {
     static_assert(sizeof(m_ppu->m_oam) == 256, "Wrong primary OAM size.");
     return &m_ppu->m_oam[i_addr];
@@ -234,10 +234,10 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
 {
     // @IMPL: Assuming OAMADDR starts at 0.
     Byte byte_idx_start = Byte(i_idx * 4);
-    Byte i_y = get_oam(byte_idx_start);
-    Byte i_tile = get_oam(byte_idx_start + 1);
-    Byte i_attr = get_oam(byte_idx_start + 2);
-    Byte i_x = get_oam(byte_idx_start + 3);
+    Byte i_y = get_oam_byte(byte_idx_start);
+    Byte i_tile = get_oam_byte(byte_idx_start + 1);
+    Byte i_attr = get_oam_byte(byte_idx_start + 2);
+    Byte i_x = get_oam_byte(byte_idx_start + 3);
 
     o_sprite.set_raw(i_y, i_tile, i_attr, i_x);
 

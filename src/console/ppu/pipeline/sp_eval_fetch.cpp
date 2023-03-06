@@ -58,14 +58,12 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
         {
             if (!m_fetch_only)
             {
-                if (m_accessor->rendering_enabled())
-                {
-                    m_eval.reset();
-                }
+                m_eval.reset();
 
                 Byte oam_addr = m_accessor->get_register(PPU::OAMADDR);
                 m_ctx.sec_oam_write_idx = 0;
                 m_ctx.cp_counter = 0;
+                // Perhaps we shouldn't cache this either
                 m_ctx.init_oam_addr = oam_addr;
                 m_ctx.n = m_ctx.m = 0;
                 m_ctx.n_overflow = false;
@@ -165,6 +163,7 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
 {
     (void)(i_total);
 
+#if 1 // local functions
     auto got_8_sp = [](Context *io_ctx) -> bool { return io_ctx->sp_got >= 8; };
     auto write_disabled = [&got_8_sp](Context *io_ctx) -> bool {
         return io_ctx->n_overflow || got_8_sp(io_ctx);
@@ -230,97 +229,106 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
 
         ++io_ctx->sec_oam_write_idx;
     };
+#endif
 
     // @TODO: hide sprites before OAMADDR
     // https://www.nesdev.org/wiki/PPU_registers#Values_during_rendering
 
-    // read cycle
-    if (i_curr % 2 == 0)
+    // The process must be halted immediately, i.e. in real time.
+    // "If [PPUMASK]] ($2001) with both BG and sprites disabled, rendering will
+    // be halted immediately."
+    // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Rendering_disable_or_enable_during_active_scanline
+    // test: sprite_overflow_tests/5.Emulator.nes failure #4
+    if (io_accessor->rendering_enabled())
     {
-        Byte oam_addr = io_accessor->get_register(PPU::OAMADDR);
-        io_ctx->sp_eval_bus = io_accessor->get_oam(oam_addr);
-    }
-    // write cycle
-    else
-    {
-        // Y
-        if (!io_ctx->cp_counter)
+        // read cycle
+        if (i_curr % 2 == 0)
         {
-            Byte y = io_ctx->sp_eval_bus;
-
-            // Test this before "write_sec_oam"
-            bool sp_0 = !io_ctx->sec_oam_written;
-            // copy Y to secondary OAM
-            write_sec_oam(io_accessor, io_ctx, y, false);
-
-            if (io_ctx->n_overflow || io_ctx->sp_overflow)
+            Byte oam_addr = io_accessor->get_register(PPU::OAMADDR);
+            io_ctx->sp_eval_bus = io_accessor->get_oam_byte(oam_addr);
+        }
+        // write cycle
+        else
+        {
+            // Y
+            if (!io_ctx->cp_counter)
             {
-                // try next Y
-                add_read(io_accessor, io_ctx, true, false, true);
-            }
-            else
-            {
-                static_assert(LN_PATTERN_TILE_HEIGHT == 8,
-                              "Invalid LN_PATTERN_TILE_HEIGHT.");
-                decltype(y) sp_h = io_accessor->is_8x16_sp()
-                                       ? LN_PATTERN_TILE_HEIGHT * 2
-                                       : LN_PATTERN_TILE_HEIGHT;
-                bool in_range =
-                    (y <= io_accessor->get_context().scanline_no &&
-                     io_accessor->get_context().scanline_no < y + sp_h);
-                if (in_range)
+                Byte y = io_ctx->sp_eval_bus;
+
+                // Test this before "write_sec_oam"
+                bool sp_0 = !io_ctx->sec_oam_written;
+                // copy Y to secondary OAM
+                write_sec_oam(io_accessor, io_ctx, y, false);
+
+                if (io_ctx->n_overflow || io_ctx->sp_overflow)
                 {
-                    // copy the rest
-                    inc_write(io_ctx);
-                    io_ctx->cp_counter = LN_OAM_SP_SIZE - 1;
-
-                    add_read(io_accessor, io_ctx, false, true, true);
-
-                    if (sp_0)
-                    {
-                        io_ctx->sp0_in_range = true;
-                    }
-                    if (got_8_sp(io_ctx))
-                    {
-                        // set sprite overflow flag
-                        io_ctx->sp_overflow = true;
-                        io_accessor->get_register(PPU::PPUSTATUS) |= 0x20;
-                    }
+                    // try next Y
+                    add_read(io_accessor, io_ctx, true, false, true);
                 }
                 else
                 {
-                    // try next Y
-                    if (!got_8_sp(io_ctx))
+                    static_assert(LN_PATTERN_TILE_HEIGHT == 8,
+                                  "Invalid LN_PATTERN_TILE_HEIGHT.");
+                    decltype(y) sp_h = io_accessor->is_8x16_sp()
+                                           ? LN_PATTERN_TILE_HEIGHT * 2
+                                           : LN_PATTERN_TILE_HEIGHT;
+                    bool in_range =
+                        (y <= io_accessor->get_context().scanline_no &&
+                         io_accessor->get_context().scanline_no < y + sp_h);
+                    if (in_range)
                     {
-                        add_read(io_accessor, io_ctx, true, false, true);
+                        // copy the rest
+                        inc_write(io_ctx);
+                        io_ctx->cp_counter = LN_OAM_SP_SIZE - 1;
+
+                        add_read(io_accessor, io_ctx, false, true, true);
+
+                        if (sp_0)
+                        {
+                            io_ctx->sp0_in_range = true;
+                        }
+                        if (got_8_sp(io_ctx))
+                        {
+                            // set sprite overflow flag
+                            io_ctx->sp_overflow = true;
+                            io_accessor->get_register(PPU::PPUSTATUS) |= 0x20;
+                        }
                     }
                     else
                     {
-                        // @QUIRK: Sprite overflow bug
-                        // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Sprite_overflow_bug
-                        add_read(io_accessor, io_ctx, true, true, false);
+                        // try next Y
+                        if (!got_8_sp(io_ctx))
+                        {
+                            add_read(io_accessor, io_ctx, true, false, true);
+                        }
+                        else
+                        {
+                            // @QUIRK: Sprite overflow bug
+                            // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Sprite_overflow_bug
+                            add_read(io_accessor, io_ctx, true, true, false);
+                        }
                     }
                 }
             }
-        }
-        // rest 3
-        else
-        {
-            auto prev_got_8 = got_8_sp(io_ctx);
-            write_sec_oam(io_accessor, io_ctx, io_ctx->sp_eval_bus, true);
-            if (prev_got_8 != got_8_sp(io_ctx))
+            // rest 3
+            else
             {
-                if (!got_8_sp(io_ctx) || io_ctx->cp_counter != 1)
+                auto prev_got_8 = got_8_sp(io_ctx);
+                write_sec_oam(io_accessor, io_ctx, io_ctx->sp_eval_bus, true);
+                if (prev_got_8 != got_8_sp(io_ctx))
                 {
-                    LN_ASSERT_FATAL(
-                        "Wrong sprite evaluation timing in copying rest: {}",
-                        io_ctx->cp_counter);
+                    if (!got_8_sp(io_ctx) || io_ctx->cp_counter != 1)
+                    {
+                        LN_ASSERT_FATAL("Wrong sprite evaluation timing in "
+                                        "copying rest: {}",
+                                        io_ctx->cp_counter);
+                    }
                 }
+
+                add_read(io_accessor, io_ctx, false, true, true);
+
+                --io_ctx->cp_counter;
             }
-
-            add_read(io_accessor, io_ctx, false, true, true);
-
-            --io_ctx->cp_counter;
         }
     }
 

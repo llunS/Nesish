@@ -31,9 +31,9 @@ struct PipelineAccessor final {
     get_x();
 
     Byte
-    get_oam(Byte i_addr);
+    get_oam_byte(Byte i_addr);
     Byte *
-    get_oam_addr(Byte i_addr);
+    get_oam_ptr(Byte i_addr);
 
     VideoMemory *
     get_memory();
