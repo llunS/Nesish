@@ -132,7 +132,7 @@ DMCDMA::tick(bool i_cpu_dma_halt)
     }
     else
     {
-        // @NOTE: Delay the RDY disable by 1 cycle since DMA is ticked before
+        // Delay the RDY disable by 1 cycle since DMA is ticked before
         // CPU and we want the CPU to keep halting on our last cycle.
         // No risk of another DMA initiation inbetween the two adjacent cycles.
         m_rdy = false;
@@ -143,7 +143,7 @@ DMCDMA::tick(bool i_cpu_dma_halt)
 void
 DMCDMA::initiate(Address i_sample_addr, bool i_reload)
 {
-    // @NOTE: For current implmentation, if one has been started, override the
+    // For current implmentation, if one has been started, override the
     // existing one, restart from the beginning.
     m_reload_tmp = i_reload;
     m_sample_addr_tmp = i_sample_addr;

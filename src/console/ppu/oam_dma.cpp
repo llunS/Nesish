@@ -96,7 +96,7 @@ OAMDMA::tick(bool i_cpu_dma_halt, bool dmc_dma_get)
     }
     else
     {
-        // @NOTE: Delay the RDY disable by 1 cycle since DMA is ticked before
+        // Delay the RDY disable by 1 cycle since DMA is ticked before
         // CPU and we want the CPU to keep halting on our last cycle.
         // No risk of another DMA initiation inbetween the two adjacent cycles.
         m_rdy = false;

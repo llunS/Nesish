@@ -39,7 +39,7 @@ struct PPU {
 
   public:
     // https://wiki.nesdev.org/w/index.php?title=PPU_registers
-    // @IMPL: The value must can be used as array index, see "m_regs".
+    // @NOTE: Values must be valid array index, see "m_regs".
     enum Register {
         /* clang-format off */
         PPUCTRL = 0, // VPHB SINN / NMI enable (V), PPU master/slave (P), sprite height (H), background tile select (B), sprite tile select (S), increment mode (I), nametable select (NN)

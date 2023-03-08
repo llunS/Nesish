@@ -8,7 +8,7 @@
 
 namespace ln {
 
-/* @IMPL: Valid enumerators must be unique and can be used as array index */
+/* @NOTE: Enumerators must be unique and are valid array index */
 enum class MemoryMappingPoint : unsigned char {
     INVALID = 0,
 
@@ -53,7 +53,6 @@ struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
 
     // On-board RAM
     Byte m_ram[LN_INTERNAL_RAM_SIZE];
-    // @FIXME: Move the latch out somewhere?
     mutable Byte m_read_latch;
 };
 

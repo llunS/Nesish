@@ -74,6 +74,7 @@ PipelineAccessor::get_color_byte(Address i_addr, Byte &o_val)
     auto error = get_memory()->get_byte(i_addr, o_val);
     if (!LN_FAILED(error))
     {
+        // grayscale
         if (get_register(PPU::PPUMASK) & 0x01)
         {
             o_val &= 0x30;
@@ -127,8 +128,7 @@ PipelineAccessor::no_nmi() const
 void
 PipelineAccessor::finish_frame()
 {
-    // @IMPL: Do these the same time as we swap the buffer to synchronize with
-    // it.
+    // Do these the same time as we swap the buffer to synchronize with it.
     if (capture_palette_on())
     {
         capture_palette();
@@ -203,9 +203,9 @@ PipelineAccessor::capture_palette()
     {
         static_assert(lnd::Palette::color_count() == 32,
                       "Might overflow below.");
+        // VRAM addr
         Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i);
         Byte color_byte = 0;
-        // @NOTE: The address is in VRAM.
         (void)get_color_byte(color_addr, color_byte);
 
         Color clr = get_palette().to_rgb(color_byte);
@@ -232,7 +232,7 @@ PipelineAccessor::capture_oam()
 void
 PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
 {
-    // @IMPL: Assuming OAMADDR starts at 0.
+    // Assuming OAMADDR starts at 0.
     Byte byte_idx_start = Byte(i_idx * 4);
     Byte i_y = get_oam_byte(byte_idx_start);
     Byte i_tile = get_oam_byte(byte_idx_start + 1);
@@ -288,7 +288,7 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
             }
         }
 
-        // @IMPL: Reverse the bits to implement horizontal flipping.
+        // Reverse the bits to implement horizontal flipping.
         if (flip_x)
         {
             reverse_byte(ptn_bit0_byte);
@@ -299,7 +299,7 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
         for (int fine_x = 0; fine_x < 8; ++fine_x)
         {
             auto get_palette_color = [this](int i_idx) {
-                // @NOTE: The address is in VRAM.
+                // VRAM addr
                 Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i_idx);
                 Byte color_byte = 0;
                 auto error = this->get_color_byte(color_addr, color_byte);
@@ -373,7 +373,7 @@ PipelineAccessor::capture_ptn_tbls()
                 for (int fine_x = 0; fine_x < 8; ++fine_x)
                 {
                     auto get_palette_color = [this](int i_idx) {
-                        // @NOTE: The address is in VRAM.
+                        // VRAM addr
                         Address color_addr =
                             Address(LN_PALETTE_ADDR_HEAD + i_idx);
                         Byte color_byte = 0;

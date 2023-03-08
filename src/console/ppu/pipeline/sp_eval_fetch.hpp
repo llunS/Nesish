@@ -51,14 +51,14 @@ struct SpEvalFetch : public Tickable {
 
   private:
     static Cycle
-    pvt_sec_oam_clear(Cycle i_curr, Cycle i_total,
-                      PipelineAccessor *io_accessor);
+    pv_sec_oam_clear(Cycle i_curr, Cycle i_total,
+                     PipelineAccessor *io_accessor);
     static Cycle
-    pvt_sp_eval(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor,
-                Context *io_ctx);
+    pv_sp_eval(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor,
+               Context *io_ctx);
     static Cycle
-    pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
-                        PipelineAccessor *io_accessor, Context *io_ctx);
+    pv_sp_fetch_reload(Cycle i_curr, Cycle i_total,
+                       PipelineAccessor *io_accessor, Context *io_ctx);
 };
 
 } // namespace ln

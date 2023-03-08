@@ -14,9 +14,9 @@
 namespace ln {
 
 static Error
-pvt_open_rom(const std::string &i_rom_path, std::FILE **o_file);
+pv_open_rom(const std::string &i_rom_path, std::FILE **o_file);
 static void
-pvt_close_rom(std::FILE *i_file);
+pv_close_rom(std::FILE *i_file);
 
 Error
 CartridgeLoader::load_cartridge(const std::string &i_rom_path,
@@ -43,29 +43,29 @@ CartridgeLoader::load_ines(const std::string &i_rom_path,
     std::FILE *file = nullptr;
     INES *o_ines = nullptr;
 
-    err = pvt_open_rom(i_rom_path, &file);
+    err = pv_open_rom(i_rom_path, &file);
     if (LN_FAILED(err))
     {
         goto l_cleanup;
     }
 
     o_ines = new INES();
-    err = pvt_load_ines_header(file, o_ines);
+    err = pv_load_ines_header(file, o_ines);
     if (LN_FAILED(err))
     {
         goto l_cleanup;
     }
-    err = pvt_load_ines_trainer(file, o_ines);
+    err = pv_load_ines_trainer(file, o_ines);
     if (LN_FAILED(err))
     {
         goto l_cleanup;
     }
-    err = pvt_load_ines_prg_rom(file, o_ines);
+    err = pv_load_ines_prg_rom(file, o_ines);
     if (LN_FAILED(err))
     {
         goto l_cleanup;
     }
-    err = pvt_load_ines_chr_rom(file, o_ines);
+    err = pv_load_ines_chr_rom(file, o_ines);
     if (LN_FAILED(err))
     {
         goto l_cleanup;
@@ -78,7 +78,7 @@ CartridgeLoader::load_ines(const std::string &i_rom_path,
 
 l_cleanup:
     if (file)
-        pvt_close_rom(file);
+        pv_close_rom(file);
     if (LN_FAILED(err))
     {
         if (o_ines)
@@ -102,7 +102,7 @@ l_cleanup:
 }
 
 Error
-pvt_open_rom(const std::string &i_rom_path, std::FILE **o_file)
+pv_open_rom(const std::string &i_rom_path, std::FILE **o_file)
 {
     if (!file_exists(i_rom_path))
     {
@@ -124,13 +124,13 @@ pvt_open_rom(const std::string &i_rom_path, std::FILE **o_file)
 }
 
 void
-pvt_close_rom(std::FILE *i_file)
+pv_close_rom(std::FILE *i_file)
 {
     std::fclose(i_file);
 }
 
 Error
-CartridgeLoader::pvt_load_ines_header(std::FILE *i_file, INES *io_ines)
+CartridgeLoader::pv_load_ines_header(std::FILE *i_file, INES *io_ines)
 {
 #define INES_HEADER_SIZE 16
     Byte buf[INES_HEADER_SIZE];
@@ -164,7 +164,7 @@ CartridgeLoader::pvt_load_ines_header(std::FILE *i_file, INES *io_ines)
 }
 
 Error
-CartridgeLoader::pvt_load_ines_trainer(std::FILE *i_file, INES *io_ines)
+CartridgeLoader::pv_load_ines_trainer(std::FILE *i_file, INES *io_ines)
 {
     if (io_ines->m_header.trainer)
     {
@@ -178,7 +178,7 @@ CartridgeLoader::pvt_load_ines_trainer(std::FILE *i_file, INES *io_ines)
 }
 
 Error
-CartridgeLoader::pvt_load_ines_prg_rom(std::FILE *i_file, INES *io_ines)
+CartridgeLoader::pv_load_ines_prg_rom(std::FILE *i_file, INES *io_ines)
 {
     if (!io_ines->m_header.prg_rom_size)
     {
@@ -222,7 +222,7 @@ l_cleanup:
 }
 
 Error
-CartridgeLoader::pvt_load_ines_chr_rom(std::FILE *i_file, INES *io_ines)
+CartridgeLoader::pv_load_ines_chr_rom(std::FILE *i_file, INES *io_ines)
 {
     // use RAM instead.
     if (!io_ines->m_header.chr_rom_size)

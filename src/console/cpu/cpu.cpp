@@ -163,25 +163,24 @@ CPU::pre_tick(bool i_rdy, bool &o_2002_read)
             // ------ Current
             if (!m_dma_halt)
             {
-                // @NOTE: Use in_reset() before updating relevant flags
+                // Use in_reset() before updating relevant flags
                 if (in_reset())
                 {
                     // Indicating RESET is handled.
                     m_reset_sig = false;
                 }
-                // @NOTE: Use in_nmi() before updating relevant flags
+                // Use in_nmi() before updating relevant flags
                 if (in_nmi())
                 {
                     // Indicating NMI is handled.
-                    // @TEST: Is this done at last cycle?
+                    // @TEST: Done at last cycle?
                     m_nmi_sig = false;
                 }
             }
 
             // ------ Next
             /* Poll interrupts */
-            // @NOTE: Poll interrupts even it's halted by DMAs (m_dma_halt)
-            // @TODO: Deal with DMA
+            // Poll interrupts even it's halted by DMAs (m_dma_halt)
             // Most instructions poll interrupts at the last cycle.
             // Special cases are listed and handled on thier own.
             if (m_instr_ctx.opcode == LN_BRK_OPCODE ||
@@ -240,14 +239,10 @@ CPU::post_tick()
         return;
     }
 
-    // @NOTE: Assuming the detectors don't consider if it's halted by DMAs
-    // (m_dma_halt)
+    // Assuming the detectors don't consider if it's halted by DMAs (m_dma_halt)
 
-    // @NOTE: Edge/Level detector polls lines during φ2 of each CPU cycle.
+    // Edge/Level detector polls lines during φ2 of each CPU cycle.
     // So this sets up signals for NEXT cycle.
-    // @TEST: Whether we still polls lines even when the CPU is
-    // being halted by DMA. If we do, the good side is that the poll happens
-    // across adjacent cycles.
     // --- NMI
     if (!m_nmi_asserted && m_ppu->nmi())
     {
@@ -258,7 +253,7 @@ CPU::post_tick()
     m_irq_sig = false; // inactive unless keep asserting.
     if (m_apu->interrupt())
     {
-        // @IMPL: The cause of delayed IRQ response for some instructions.
+        // The cause of delayed IRQ response for some instructions.
         if (!check_flag(StatusFlag::I))
         {
             m_irq_sig = true; // raise an internal signal
@@ -388,12 +383,11 @@ CPU::get_byte(Address i_addr) const
 void
 CPU::set_byte(Address i_addr, Byte i_byte)
 {
-    // @NOTE: The mark of this flag relys on the instruction implementation
+    // The mark of this flag relys on the instruction implementation
     // calling read or wrtie interface each cycle.
     m_write_tick = true;
 
-    // @NOTE: At hardware, this is done by setting to line to read instead of
-    // write
+    // At hardware, this is done by setting to line to read instead of write
     if (!m_irq_no_mem_write)
     {
         auto err = m_memory->set_byte(i_addr, i_byte);
@@ -495,7 +489,7 @@ CPU::halt()
 void
 CPU::poll_interrupt()
 {
-    // @NOTE: Assuming CPU still polls when it is halted by DMAs (m_dma_halt)
+    // Assuming CPU still polls when it is halted by DMAs (m_dma_halt)
 
     /* It may be polled multiple times during an instruction.
      * e.g. Branch instructions may poll 2 times if branch is taken and page is
@@ -508,8 +502,8 @@ CPU::poll_interrupt()
         return;
     }
 
-    // @TEST: RESET has highest priority?
-    // @TEST: RESET is like others, polled only at certain points?
+    // @TEST: a) RESET has highest priority? b)RESET is like others, polled only
+    // at certain points?
     if (m_reset_sig)
     {
         m_irq_pc_no_inc_tmp = true;

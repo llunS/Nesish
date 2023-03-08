@@ -59,7 +59,7 @@ PCMWriter::is_open() const
 int
 PCMWriter::write_s16le(short i_val)
 {
-    // @TODO: buffer small chunks
+    // @TODO: Buffer up small chunks
 
     unsigned char bytes[2] = {
         (unsigned char)(i_val),

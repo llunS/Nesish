@@ -35,18 +35,18 @@ PreRenderScanline::on_tick(Cycle i_curr, Cycle i_total)
             // VSO (VBLANK, Sprite 0 hit, Sprite overflow)
             m_accessor->get_register(PPU::PPUSTATUS) &= 0x1F;
 
-            // @NOTE: This should be done with rendering enabled, according to
+            // OAM corruption
+            // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Notes
+            // Simply do this near the start of pre-render scanline.
+            // This should be done with rendering enabled, according to
             // test cpu_dummy_writes/cpu_dummy_writes_oam.nes
             if (m_accessor->rendering_enabled())
             {
-                // @QUIRK: Minor corruption
-                // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Notes
-                // @NOTE: Simply do this near the start of pre-render scanline.
                 Byte oam_cpy_addr =
                     m_accessor->get_register(PPU::OAMADDR) & 0xF8;
                 if (oam_cpy_addr)
                 {
-                    // @IMPL: memcpy is ok, memmove is not needed.
+                    // memcpy is ok, memmove is not needed.
                     std::memcpy(m_accessor->get_oam_ptr(0),
                                 m_accessor->get_oam_ptr(oam_cpy_addr), 8);
                 }
@@ -92,7 +92,7 @@ PreRenderScanline::on_tick(Cycle i_curr, Cycle i_total)
 
         case 338:
         {
-            // @IMPL: Think of it as between the end of 338 and the start of
+            // @NOTE: Think of it as between the end of 338 and the start of
             // 339. We don't support true parallelism yet. We determine whether
             // to skip here, to pass the test
             // ppu_vbl_nmi/rom_singles/10-even_odd_timing.nes

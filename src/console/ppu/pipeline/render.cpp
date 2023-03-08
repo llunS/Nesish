@@ -34,12 +34,12 @@ struct OutputColor {
 static constexpr OutputColor ColorEmpty = {{0x00, 0x00, 0x00}, 0x00};
 
 static OutputColor
-pvt_bg_render(PipelineAccessor *io_accessor);
+pv_bg_render(PipelineAccessor *io_accessor);
 static OutputColor
-pvt_sp_render(PipelineAccessor *io_accessor);
+pv_sp_render(PipelineAccessor *io_accessor);
 static void
-pvt_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
-          const OutputColor &i_sp_clr);
+pv_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
+         const OutputColor &i_sp_clr);
 
 Render::Render(PipelineAccessor *io_accessor)
     : Tickable(LN_SCANLINE_CYCLES)
@@ -73,11 +73,11 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
         for (decltype(LN_MAX_VISIBLE_SP_NUM) i = 0; i < LN_MAX_VISIBLE_SP_NUM;
              ++i)
         {
-            // @IMPL: no need to worry abount activated more than once, cause it
+            // No need to worry abount activated more than once, cause it
             // lasts only ONE 256-cycle loop.
             if (m_accessor->get_context().sp_pos_x[i] == 0)
             {
-                // @IMPL: Left-over sprites can get activated (if we write it
+                // Left-over sprites can get activated (if we write it
                 // this way, with X value being 0xFF), but their pattern data
                 // will be transparent (0x00), so they contribute to no final
                 // visuals AND won't mess up sprite 0 hit flag.
@@ -86,14 +86,14 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
                 m_accessor->get_context().sp_active_counter[i] =
                     LN_PATTERN_TILE_WIDTH;
             }
-            // @IMPL: decrement it for simplicity, cause it gets reset every
-            // single 256-cycle loop.
+            // Decrement it for simplicity, cause it gets reset every single
+            // 256-cycle loop.
             --m_accessor->get_context().sp_pos_x[i];
         }
 
         /* rendering */
         {
-            // @TODO: The background palette hack
+            // @TODO: Background palette hack
             // https://www.nesdev.org/wiki/PPU_palettes#The_background_palette_hack
 
             auto get_backdrop_clr = [](PipelineAccessor *io_accessor) -> Color {
@@ -109,7 +109,7 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
                 return backdrop;
             };
 
-            OutputColor bg_clr = pvt_bg_render(m_accessor);
+            OutputColor bg_clr = pv_bg_render(m_accessor);
             if (!m_accessor->bg_enabled() ||
                 (!(m_accessor->get_context().pixel_col & ~0x07) &&
                  !(m_accessor->get_register(PPU::PPUMASK) & 0x02)))
@@ -118,7 +118,7 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
                 bg_clr.pattern = 0;
             }
 
-            OutputColor sp_clr = pvt_sp_render(m_accessor);
+            OutputColor sp_clr = pv_sp_render(m_accessor);
             // Don't draw sprites on the first visible scanline,
             // since sprite evaluation doesn't occur on pre-render scanline
             // and thus no valid data is available for rendering.
@@ -132,9 +132,9 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
                 sp_clr.pattern = 0;
             }
 
-            pvt_muxer(m_accessor, bg_clr, sp_clr);
+            pv_muxer(m_accessor, bg_clr, sp_clr);
 
-            /* @IMPL: Mark dirty after rendering to the last dot */
+            // Mark dirty after rendering to the last dot
             if (i_curr == 257 && 239 == m_accessor->get_context().scanline_no)
             {
                 m_accessor->finish_frame();
@@ -170,7 +170,7 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
 }
 
 OutputColor
-pvt_bg_render(PipelineAccessor *io_accessor)
+pv_bg_render(PipelineAccessor *io_accessor)
 {
     /* 1. Bit selection mask by finx X scroll */
     if (io_accessor->get_x() > 7)
@@ -199,7 +199,7 @@ pvt_bg_render(PipelineAccessor *io_accessor)
     /* 4. get palette index color */
     Address idx_color_addr =
         LN_PALETTE_ADDR_BG_OR_MASK | (palette_idx << 2) | pattern_data;
-    // @TODO: The background palette hack
+    // @TODO: Background palette hack
     if ((idx_color_addr & LN_PALETTE_ADDR_BACKDROP_MASK) ==
         LN_PALETTE_ADDR_BG_BACKDROP)
     {
@@ -221,10 +221,10 @@ pvt_bg_render(PipelineAccessor *io_accessor)
 }
 
 OutputColor
-pvt_sp_render(PipelineAccessor *io_accessor)
+pv_sp_render(PipelineAccessor *io_accessor)
 {
-    // @IMPL: Although the color of "ColorEmpty" may be a valid value for sprite
-    // 0, but the pattern member with a transparent value ensures that it won't
+    // Although the COLOR of "ColorEmpty" may be a valid value for sprite
+    // 0, but the pattern member being a transparent value ensures that it won't
     // trigger sprite 0 hit. So we are safe to use this, when no sprites are
     // rendered at this pixel.
     OutputColor color = ColorEmpty;
@@ -248,11 +248,10 @@ pvt_sp_render(PipelineAccessor *io_accessor)
         {
             continue;
         }
+        // No need to execute logic below.
+        // However, the active counter must still be decremented for active ones
+        // that are not chosen.
         --ctx.sp_active_counter[i];
-
-        // @IMPL: No need to execute following logic.
-        // However, the active counter must be decremented still for those
-        // active ones not chosen.
         if (got)
         {
             continue;
@@ -291,7 +290,7 @@ pvt_sp_render(PipelineAccessor *io_accessor)
         /* 4. get palette index color */
         Address idx_color_addr =
             LN_PALETTE_ADDR_SP_OR_MASK | (palette_idx << 2) | pattern_data;
-        // @TODO: The background palette hack
+        // @TODO: Background palette hack
         if ((idx_color_addr & LN_PALETTE_ADDR_BACKDROP_MASK) ==
             LN_PALETTE_ADDR_BG_BACKDROP)
         {
@@ -316,7 +315,7 @@ pvt_sp_render(PipelineAccessor *io_accessor)
                               LN_MAX_VISIBLE_SP_NUM - 1,
                       "Invalid range for sprite index");
 
-        // @NOTE: If this line includes sprite 0, it must be at index 0.
+        // If this line includes sprite 0, it must be at index 0.
         color = {pixel, pattern_data, (ctx.sp_attr[i] & 0x20) != 0,
                  i == 0 && io_accessor->get_context().with_sp0};
         got = true;
@@ -326,11 +325,11 @@ pvt_sp_render(PipelineAccessor *io_accessor)
 }
 
 void
-pvt_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
-          const OutputColor &i_sp_clr)
+pv_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
+         const OutputColor &i_sp_clr)
 {
     /* Priority decision */
-    // @IMPL: Check the decision table for details
+    // Check the decision table for details
     // https://www.nesdev.org/wiki/PPU_rendering#Preface
     Color output_clr =
         !i_sp_clr.pattern
@@ -367,8 +366,8 @@ pvt_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
         }
     }
 
-    // @IMPL: Actually pixel ouput is delayed by 2 cycles, but since we trigger
-    // the callback on per-frame basis, write to frame buffer immediately will
+    // Actually pixel ouput is delayed by 2 cycles, but since we trigger
+    // the callback on a per-frame basis, write to frame buffer immediately will
     // be functionally the same.
     // https://www.nesdev.org/wiki/PPU_rendering#Cycles_1-256
     io_accessor->get_frame_buf().write(io_accessor->get_context().pixel_row,

@@ -34,13 +34,12 @@ void
 PPU::power_up()
 {
     // https://www.nesdev.org/wiki/PPU_power_up_state
-    // @IMPL: Excluding side effects via get_register(), not sure if it's right.
+    // Excluding side effects via get_register(), not sure if it's right.
     get_register(PPUCTRL) = 0x00;
     get_register(PPUMASK) = 0x00;
     get_register(PPUSTATUS) = 0xA0; // +0+x xxxx
     get_register(OAMADDR) = 0x00;
-    // @NOTE: latche is cleared as well
-    w = 0;
+    w = 0; // Latch is cleared as well
     get_register(PPUSCROLL) = 0x00;
     get_register(PPUADDR) = 0x00;
     m_ppudata_buf = 0x00;
@@ -76,8 +75,7 @@ PPU::reset()
 {
     get_register(PPUCTRL) = 0x00;
     get_register(PPUMASK) = 0x00;
-    // @NOTE: latche is cleared as well
-    w = 0;
+    w = 0; // Latch is cleared as well
     get_register(PPUSCROLL) = 0x00;
     m_ppudata_buf = 0x00;
     m_pipeline_ctx.odd_frame = false;
@@ -107,7 +105,7 @@ PPU::reset_internal()
 void
 PPU::tick(bool i_no_nmi)
 {
-    // @TODO: impl warm-up period
+    // @TODO: Warm up period?
 
     m_no_nmi = i_no_nmi;
 
@@ -127,7 +125,7 @@ PPU::read_register(Register i_reg)
 {
     if (reg_wrtie_only(i_reg))
     {
-        // @IMPL: Open bus
+        // Open bus
         return m_io_db;
     }
 
@@ -142,8 +140,6 @@ PPU::read_register(Register i_reg)
 
             m_regs[i_reg] &= 0x7F; // clear VBLANK flag
             this->w = 0;
-            // @TODO @TEST:
-            // https://www.nesdev.org/wiki/PPU_frame_timing#VBL_Flag_Timing
         }
         break;
 
@@ -184,12 +180,6 @@ PPU::read_register(Register i_reg)
             }
 
             inc_vram_addr();
-
-            // @TODO: $2007 reads
-            // https://www.nesdev.org/wiki/PPU_scrolling#$2007_reads_and_writes
-
-            // @TODO: DPCM conflict
-            // https://www.nesdev.org/wiki/PPU_registers#Read_conflict_with_DPCM_samples
         }
         break;
 
@@ -239,8 +229,7 @@ PPU::write_register(Register i_reg, Byte i_val)
             m_oam[oam_addr] = i_val;
             ++m_regs[OAMADDR];
 
-            // @QUIRK: glitchy OAMADDR update
-            // We don't emulate this.
+            // @TODO: Writes during rendering
             // https://www.nesdev.org/wiki/PPU_registers#OAM_data_($2004)_%3C%3E_read/write
             // Writes to OAMDATA during rendering (on the pre-render line and
             // the visible lines 0-239, provided either sprite or background
@@ -288,7 +277,7 @@ PPU::write_register(Register i_reg, Byte i_val)
 
         case PPUMASK:
         {
-            // @TODO: grayscale, emphasis, 8-column clipping
+            // @TODO: emphasis
         }
         break;
 
@@ -303,9 +292,6 @@ PPU::write_register(Register i_reg, Byte i_val)
             }
 
             inc_vram_addr();
-
-            // @TODO: $2007 writes
-            // https://www.nesdev.org/wiki/PPU_scrolling#$2007_reads_and_writes
         }
         break;
 
@@ -395,6 +381,23 @@ PPU::inc_vram_addr()
 {
     Byte offset = (get_register(PPUCTRL) & 0x04) ? 32 : 1;
     this->v += offset;
+
+    // @TODO: Quirk of 2007 read/write
+    // Outside of rendering, reads from or writes to $2007 will add either 1 or
+    // 32 to v depending on the VRAM increment bit set via $2000. During
+    // rendering (on the pre-render line and the visible lines 0-239, provided
+    // either background or sprite rendering is enabled), it will update v in an
+    // odd way, triggering a coarse X increment and a Y increment simultaneously
+    // (with normal wrapping behavior). Internally, this is caused by the carry
+    // inputs to various sections of v being set up for rendering, and the $2007
+    // access triggering a "load next value" signal for all of v (when not
+    // rendering, the carry inputs are set up to linearly increment v by either
+    // 1 or 32). This behavior is not affected by the status of the increment
+    // bit. The Young Indiana Jones Chronicles uses this for some effects to
+    // adjust the Y scroll during rendering, and also Burai Fighter (U) to draw
+    // the scorebar. If the $2007 access happens to coincide with a standard
+    // VRAM address increment (either horizontal or vertical), it will
+    // presumably not double-increment the relevant counter.
 }
 
 } // namespace ln

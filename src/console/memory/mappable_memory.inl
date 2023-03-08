@@ -78,7 +78,7 @@ MappableMemory<EMappingPoint, AddressableSize>::set_byte(Address i_addr,
 
     if (entry->readonly)
     {
-        // @NOTE: Simply ignore the write to read-only memory
+        // Simply ignore the write to read-only memory
         return Error::READ_ONLY;
     }
 
@@ -104,13 +104,14 @@ MappableMemory<EMappingPoint, AddressableSize>::set_byte(Address i_addr,
     }
 }
 
+/// @note User must ensure address ranges of different mapping points don't
+/// overlap.
 template <typename EMappingPoint, std::size_t AddressableSize>
 void
 MappableMemory<EMappingPoint, AddressableSize>::set_mapping(
     EMappingPoint i_point, MappingEntry i_entry)
 {
-    // @TODO: Check for overlapping range with existing mapping?
-    // @NOTE: Ensure valid entry value.
+    // Ensure valid entry value.
     if (i_entry.begin > i_entry.end)
     {
         LN_LOG_ERROR(ln::get_logger(), "Invalid mapping entry range: {}, {}",

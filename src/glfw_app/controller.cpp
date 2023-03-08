@@ -46,7 +46,7 @@ Controller::report()
             // controllers but may return 0 on third party controllers such as
             // the U-Force."
 
-            // @TEST: Is this logic necessary? Or the test itself
+            // @TEST: Is this necessary? Or the test itself
             // (cpu_exec_space/test_cpu_exec_space_apu.nes) is defected?
             return m_8_bits_read ? true : false;
         }
@@ -82,7 +82,7 @@ Controller::reload_states()
 GLFWKey
 ControllerP1::map_key(ln::Key i_key)
 {
-    // @TODO: Support custom mapping.
+    // @TODO: Custom mapping
     constexpr static GLFWKey s_mapping[ln::KEY_SIZE] = {
         GLFW_KEY_K, GLFW_KEY_J, GLFW_KEY_V, GLFW_KEY_B,
         GLFW_KEY_W, GLFW_KEY_S, GLFW_KEY_A, GLFW_KEY_D,
@@ -93,7 +93,7 @@ ControllerP1::map_key(ln::Key i_key)
 GLFWKey
 ControllerP2::map_key(ln::Key i_key)
 {
-    // @TODO: Support custom mapping.
+    // @TODO: Custom mapping
     constexpr static GLFWKey s_mapping[ln::KEY_SIZE] = {
         GLFW_KEY_PERIOD,        GLFW_KEY_COMMA, GLFW_KEY_LEFT_BRACKET,
         GLFW_KEY_RIGHT_BRACKET, GLFW_KEY_UP,    GLFW_KEY_DOWN,

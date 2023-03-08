@@ -1,4 +1,4 @@
-// @FIXME: lesser constraints on stores/loads.
+// @FIXME: Lesser constraints on stores/loads.
 
 namespace ln_app {
 
@@ -46,7 +46,7 @@ Channel<N>::c_try_receive(value_t &o_val)
         return false;
     }
 
-    // @FIXME: Supposed to be the latest-written value, confirm this.
+    // @FIXME: Supposed to be the latest-written value, confirm it
     auto val = *begin;
     m_begin.store(begin + 1 >= m_buffer + array_size() ? m_buffer : begin + 1,
                   std::memory_order_seq_cst);

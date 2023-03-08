@@ -68,7 +68,7 @@ NROM::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                          Byte *&o_addr) -> ln::Error {
             auto thiz = (NROM *)i_entry->opaque;
 
-            // @NOTE: No way to tell if it's 2KB or 4KB, and then mirror them to
+            // No way to tell if it's 2KB or 4KB, and then mirror them to
             // fill the 8KB area.
             // Because PRG RAM size is specified in 8KB units in iNES format.
 

@@ -17,10 +17,10 @@ namespace ln {
 static spdlog::logger *g_logger;
 
 static std::string
-pvt_log_file_rel_exec_path();
+pv_log_file_rel_exec_path();
 static std::string
-pvt_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
-                         spdlog::logger *i_logger);
+pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
+                        spdlog::logger *i_logger);
 
 void
 init_logger(spdlog::level::level_enum i_level)
@@ -34,8 +34,8 @@ init_logger(spdlog::level::level_enum i_level)
     auto logger = new spdlog::logger("LightNES", console_sink);
     logger->set_level(i_level);
 
-    auto log_filepath = pvt_backup_previous_logs(pvt_log_file_rel_exec_path(),
-                                                 MAX_LOGS, logger);
+    auto log_filepath =
+        pv_backup_previous_logs(pv_log_file_rel_exec_path(), MAX_LOGS, logger);
     if (!log_filepath.empty())
     {
         try
@@ -55,7 +55,7 @@ init_logger(spdlog::level::level_enum i_level)
     else
     {
         LN_LOG_ERROR(logger, "Failed to create log file: {}",
-                     std::string("./") + pvt_log_file_rel_exec_path());
+                     std::string("./") + pv_log_file_rel_exec_path());
     }
 
     g_logger = logger;
@@ -73,14 +73,14 @@ get_logger()
 }
 
 std::string
-pvt_log_file_rel_exec_path()
+pv_log_file_rel_exec_path()
 {
     return path_join("logs", "log.txt");
 }
 
 std::string
-pvt_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
-                         spdlog::logger *i_logger)
+pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
+                        spdlog::logger *i_logger)
 {
     // sanity checks.
     if (i_log_exec_rel_path.empty())

@@ -8,7 +8,7 @@
 
 namespace ln {
 
-/* @IMPL: Valid enumerators must be unique and can be used as array index */
+/* @NOTE: Enumerators must be unique and are valid array index */
 enum class VideoMemoryMappingPoint : unsigned char {
     INVALID = 0,
 

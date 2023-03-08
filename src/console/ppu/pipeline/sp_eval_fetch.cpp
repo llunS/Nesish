@@ -16,11 +16,11 @@ SpEvalFetch::SpEvalFetch(PipelineAccessor *io_accessor, bool i_fetch_only)
     , m_accessor(io_accessor)
     , m_fetch_only(i_fetch_only)
     , m_sec_oam_clear(SEC_OAM_CLEAR_CYCLES,
-                      std::bind(pvt_sec_oam_clear, std::placeholders::_1,
+                      std::bind(pv_sec_oam_clear, std::placeholders::_1,
                                 std::placeholders::_2, io_accessor))
-    , m_eval(192, std::bind(pvt_sp_eval, std::placeholders::_1,
+    , m_eval(192, std::bind(pv_sp_eval, std::placeholders::_1,
                             std::placeholders::_2, io_accessor, &m_ctx))
-    , m_fetch_reload(8, std::bind(pvt_sp_fetch_reload, std::placeholders::_1,
+    , m_fetch_reload(8, std::bind(pv_sp_fetch_reload, std::placeholders::_1,
                                   std::placeholders::_2, io_accessor, &m_ctx))
 {
     m_sec_oam_clear.set_done();
@@ -137,8 +137,8 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
 }
 
 Cycle
-SpEvalFetch::pvt_sec_oam_clear(Cycle i_curr, Cycle i_total,
-                               PipelineAccessor *io_accessor)
+SpEvalFetch::pv_sec_oam_clear(Cycle i_curr, Cycle i_total,
+                              PipelineAccessor *io_accessor)
 {
     (void)(i_total);
 
@@ -158,8 +158,8 @@ SpEvalFetch::pvt_sec_oam_clear(Cycle i_curr, Cycle i_total,
 }
 
 Cycle
-SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
-                         PipelineAccessor *io_accessor, Context *io_ctx)
+SpEvalFetch::pv_sp_eval(Cycle i_curr, Cycle i_total,
+                        PipelineAccessor *io_accessor, Context *io_ctx)
 {
     (void)(i_total);
 
@@ -232,6 +232,8 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
 #endif
 
     // @TODO: hide sprites before OAMADDR
+    // No more sprites will be found once the end of OAM is reached, effectively
+    // hiding any sprites before the starting OAMADDR
     // https://www.nesdev.org/wiki/PPU_registers#Values_during_rendering
 
     // The process must be halted immediately, i.e. in real time.
@@ -336,8 +338,8 @@ SpEvalFetch::pvt_sp_eval(Cycle i_curr, Cycle i_total,
 }
 
 Cycle
-SpEvalFetch::pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
-                                 PipelineAccessor *io_accessor, Context *io_ctx)
+SpEvalFetch::pv_sp_fetch_reload(Cycle i_curr, Cycle i_total,
+                                PipelineAccessor *io_accessor, Context *io_ctx)
 {
     (void)(i_total);
 
@@ -352,7 +354,7 @@ SpEvalFetch::pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
         // We don't emulate dummy fetch to 0xFF
         if (i_sp_idx >= io_ctx->sp_got)
         {
-            // @IMPL: transparent values for left-over sprites
+            // Transparent values for left-over sprites
             return 0x00;
         }
 
@@ -391,7 +393,7 @@ SpEvalFetch::pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
             }
         }
 
-        // @IMPL: Reverse the bits to implement horizontal flipping.
+        // Reverse the bits to implement horizontal flipping.
         bool flip_x = io_ctx->sp_attr_byte & 0x40;
         if (flip_x)
         {
@@ -403,11 +405,11 @@ SpEvalFetch::pvt_sp_fetch_reload(Cycle i_curr, Cycle i_total,
 
     switch (i_curr)
     {
-        // @IMPL: The first 2 ticks seem to be unspecified in the nesdev
+        // The first 2 ticks seem to be unspecified in the nesdev
         // forum, we are just guessing here.
         case 0:
         {
-            // @IMPL: Mark down the current processing sprite index at first
+            // Mark down the current processing sprite index at first
             // tick. Do this before "read_sec_oam" since it modifies
             // "sec_oam_read_idx".
             io_ctx->sp_idx_reload = io_ctx->sec_oam_read_idx / LN_OAM_SP_SIZE;

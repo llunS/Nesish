@@ -30,7 +30,7 @@ VisibleScanline::on_tick(Cycle i_curr, Cycle i_total)
     (void)(i_total);
 
     auto tick_logic = [](VisibleScanline *thiz) -> void {
-        /* @IMPL: rendering happens before other data priming workload */
+        // Rendering happens before other data priming workload
         thiz->m_render.tick();
         thiz->m_bg.tick();
         thiz->m_sp.tick();

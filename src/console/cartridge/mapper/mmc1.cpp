@@ -20,8 +20,8 @@ MMC1::MMC1(const INES::RomAccessor *i_accessor, Variant i_var)
     if (prg_rom_size == 32 * 1024)
     {
         auto ram_size = m_rom_accessor->get_prg_ram_size();
-        // @NOTE: NES 2.0 format may be required to detect this,
-        // Because "ram_size" may very well be 0 for iNES format.
+        // NES 2.0 format may be required to detect this, because
+        // "ram_size" may very well be 0 for iNES format.
         if (ram_size == 0)
         {
             // Don't forbid banking for this.
@@ -197,7 +197,7 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                         if (fixed_cpu_addr_start <= i_addr &&
                             i_addr <= fixed_cpu_addr_end)
                         {
-                            // @NOTE: Max bank count is 512KB / 16KB = 32, which
+                            // Max bank count is 512KB / 16KB = 32, which
                             // fits in a Byte;
                             typedef Byte BankCount_t;
                             BankCount_t bank_cnt = static_cast<BankCount_t>(
@@ -228,7 +228,7 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                     break;
             }
 
-            // @IMPL: Mirror as necessary in case things go wrong.
+            // Mirror as necessary in case things go wrong.
             // Asummeing "mem_size" not 0 and "mem_base" not nullptr.
             {
                 mem_idx = mem_idx % mem_size;
@@ -247,9 +247,22 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
             }
             else
             {
-                // @TODO: Wait until CPU supports Consecutive-cycle writes, then
-                // supports ingoring second write bit 0.
-                // https://www.nesdev.org/wiki/MMC1#Consecutive-cycle_writes
+                // @TODO: When the serial port is written to on consecutive
+                // cycles, it ignores every write after the first. In practice,
+                // this only happens when the CPU executes read-modify-write
+                // instructions, which first write the original value before
+                // writing the modified one on the next cycle.[1] This
+                // restriction only applies to the data being written on bit 0;
+                // the bit 7 reset is never ignored. Bill & Ted's Excellent
+                // Adventure does a reset by using INC on a ROM location
+                // containing $FF and requires that the $00 write on the next
+                // cycle is ignored. Shinsenden, however, uses illegal
+                // instruction $7F (RRA abs,X) to set bit 7 on the second write
+                // and will crash after selecting the みる (look) option if this
+                // reset is ignored.[2] This write-ignore behavior appears to be
+                // intentional and is believed to ignore all consecutive write
+                // cycles after the first even if that first write does not
+                // target the serial port.[3]
 
                 bool last_write = thiz->m_shift & 0x01;
                 thiz->m_shift >>= 1;
@@ -280,7 +293,7 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
             }
 
             Address index = i_addr - i_entry->begin;
-            // @IMPL: Mirror as necessary in case things go wrong.
+            // Mirror as necessary in case things go wrong.
             {
                 // @TODO: Support PRG RAM banking, i.e. other board variants.
                 // Until then, assuming fixed at first bank (because >= 8KB
@@ -354,7 +367,7 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
                     break;
             }
 
-            // @IMPL: Mirror as necessary in case things go wrong.
+            // Mirror as necessary in case things go wrong.
             // Asummeing size not 0 and "mem_base" not nullptr.
             {
                 mem_idx = mem_idx % mem_size;

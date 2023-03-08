@@ -20,7 +20,7 @@ CNROM::validate() const
     {
         return Error::CORRUPTED;
     }
-    // @TEST: Don't support CHR RAM
+    // @TEST: Right to not support CHR RAM?
     if (m_rom_accessor->use_chr_ram())
     {
         return Error::CORRUPTED;
@@ -56,7 +56,7 @@ CNROM::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
             Address rel_address = (i_addr - i_entry->begin);
             if (mem_size == LN_128_PRG_RAM_SIZE)
             {
-                // @TEST: If this behaves like NROM for 16KB?
+                // @TEST: If this behaves like NROM of 16KB?
                 // 16K mask, to map second 16KB to the first.
                 rel_address &= 0x3FFF;
             }
@@ -83,7 +83,7 @@ CNROM::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
             Address addr_base = i_entry->begin;
             Address mem_idx = prg_rom_start + (i_addr - addr_base);
 
-            // @IMPL: Handle upper unused bank bits
+            // Handle upper unused bank bits
             // Asummeing "mem_size" not 0 and "mem_base" not nullptr.
             {
                 mem_idx = mem_idx % mem_size;

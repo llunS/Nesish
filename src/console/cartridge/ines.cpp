@@ -8,7 +8,7 @@
 namespace ln {
 
 static Mapper *
-pvt_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor);
+pv_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor);
 
 INES::INES()
     : m_prg_rom(nullptr)
@@ -40,7 +40,7 @@ INES::resolve()
     // mapper
     m_mapper_number = (m_header.mapper_higher << 4) + m_header.mapper_lower;
 
-    auto mapper = pvt_get_mapper(m_mapper_number, &m_rom_accessor);
+    auto mapper = pv_get_mapper(m_mapper_number, &m_rom_accessor);
     if (!mapper)
     {
         LN_LOG_ERROR(ln::get_logger(), "iNES unsupported mapper {}",
@@ -118,7 +118,7 @@ INES::unmap_memory(Memory *o_memory, VideoMemory *o_video_memory)
 }
 
 Mapper *
-pvt_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor)
+pv_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor)
 {
     switch (i_mapper_number)
     {

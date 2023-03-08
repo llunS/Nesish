@@ -104,8 +104,6 @@ struct CPU {
         // http://www.oxyron.de/html/opcodes02.html
         C = 1 << 0, // carry flag (1 on unsigned overflow)
         Z = 1 << 1, // zero flag (1 when all bits of a result are 0)
-        // @TODO: If the /IRQ line is low (IRQ pending) when this flag is
-        // cleared, an interrupt will immediately be triggered.
         I = 1 << 2, // IRQ flag (when 1, no interupts will occur (exceptions are
                     // IRQs forced by BRK and NMIs))
         D = 1 << 3, // decimal flag (1 when CPU in BCD mode)
@@ -152,12 +150,11 @@ struct CPU {
 
     // ---- External components references
     Memory *m_memory;
-    // @TODO: Use a bus object to avoid direct reference?
     PPU *m_ppu;
     const APU *m_apu;
 
   private:
-    // @NOTE: This may wrap around back to 0, which is fine, since current
+    // This may wrap around back to 0, which is fine, since current
     // implementation doesn't assume infinite range.
     Cycle m_cycle;
     bool m_instr_halt; // halt caused by instructions
@@ -188,7 +185,7 @@ struct CPU {
     typedef void (*InstrFrame)(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
                                bool &io_done);
 
-    /* @NOTE: Set and used in execution of instruction, not to be confused with
+    /* Set and used in execution of instruction, not to be confused with
      * the real-time status of the hardware bus (not considered) */
     Address m_addr_bus;
     Byte m_data_bus;

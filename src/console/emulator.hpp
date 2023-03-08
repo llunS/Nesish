@@ -119,7 +119,7 @@ struct Emulator {
     hard_wire();
 
   private:
-    // @IMPL: The value must can be used as array index, see "m_ctrl_regs".
+    // @NOTE: Values must be valid array index, see "m_ctrl_regs".
     enum CtrlReg {
         REG_4016 = 0,
         REG_4017,

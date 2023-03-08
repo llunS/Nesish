@@ -32,7 +32,7 @@ Sweep::muting(Byte2 *i_target) const
 void
 Sweep::tick()
 {
-    // @IMPL: tick as normal first, then check reload.
+    // Tick as normal first, then check reload.
     // This means if the divider was 0 before the reload, the period adjustment
     // check applies as normal.
     // https://archive.nes.science/nesdev-forums/f3/t11083.xhtml
@@ -53,8 +53,8 @@ Sweep::tick()
 
     if (m_reload)
     {
-        // @IMPL: Do this even if it may have been reloaded already in the above
-        // tick(), bc it doesn't matter.
+        // Do this even if it may have been reloaded already in the above
+        // tick(), for it doesn't matter.
         m_divider.reload();
     }
     m_reload = false; // clear the flag

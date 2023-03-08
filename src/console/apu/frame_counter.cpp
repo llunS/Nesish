@@ -55,8 +55,7 @@ FrameCounter::tick()
         }
     };
 
-    // @NOTE: Check details of the following timing on
-    // blargg_apu_2005.07.30/readme.txt
+    // Check details of the following timing in blargg_apu_2005.07.30/readme.txt
     switch (m_timer)
     {
         case 7458:

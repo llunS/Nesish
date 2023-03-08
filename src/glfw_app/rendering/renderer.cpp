@@ -63,9 +63,9 @@ Renderer::setup()
         goto l_end;
     }
     {
-        // @IMPL: Data in ln::FrameBuffer originate from upper left, while
-        // OpenGL texture coordinate originates from lower left, we flip the Y
-        // texture coordinate here for simplicity.
+        // Data in ln::FrameBuffer originate from upper left, while OpenGL
+        // texture coordinate originates from lower left, we flip the Y texture
+        // coordinate here for simplicity.
         constexpr Vertex BL = {-1.0f, -1.0f, 0.0f, 1.0f};
         constexpr Vertex BR = {1.0f, -1.0f, 1.0f, 1.0f};
         constexpr Vertex TR = {1.0f, 1.0f, 1.0f, 0.0f};

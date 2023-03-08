@@ -33,7 +33,7 @@ struct APUClock {
     odd() const;
 
   private:
-    // @NOTE: This may wrap around back to 0, which is fine, since current
+    // This may wrap around back to 0, which is fine, since current
     // implementation doesn't assume infinite range.
     Cycle m_cycle;
 };

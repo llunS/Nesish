@@ -40,7 +40,7 @@ CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
         case 3:
         {
             // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
-            // @QUIRK: Push B flag differently
+            // Push B flag differently
             Byte pushed = io_cpu->P;
             if (io_cpu->in_hardware_irq())
             {
@@ -52,11 +52,11 @@ CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             }
             io_cpu->push_byte(pushed);
 
-            // @QUIRK: Interrupt hijacking
+            // Interrupt hijacking
             // Determine vector address at this cycle
             // Priority: RESET(?)>NMI>IRQ>BRK
-            // @NOTE: Check using the signal status, instead of which initiate
-            // the interrupt sequence.
+            // Check using the current signal status, instead of what
+            // initiates the interrupt sequence.
             // The hijacking doesn't lose the B flag
             // RESET
             if (io_cpu->m_reset_sig)
@@ -119,7 +119,7 @@ CPU::InstrImpl::frm_rti(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 2:
         {
-            // @QUIRK: disregards bits 5 and 4 when reading flags from the stack
+            // Disregards bits 5 and 4 when reading flags from the stack
             // https://www.nesdev.org/wiki/Status_flags#The_B_flag
             ignore_ub(io_cpu->post_pop_byte(), io_cpu->P);
             io_cpu->pre_pop_byte();
@@ -166,7 +166,6 @@ CPU::InstrImpl::frm_rts(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 2:
         {
-            // @IMPL: Put it in data bus instead?
             set_low(io_cpu->PC, io_cpu->post_pop_byte());
             io_cpu->pre_pop_byte();
         }
@@ -225,7 +224,7 @@ CPU::InstrImpl::frm_php(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
                         bool &io_done)
 {
     // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
-    // @QUIRK: Push the status register with the B flag set
+    // Push the status register with the B flag set
     frm_phr_impl(i_idx, io_cpu, i_core, io_done, io_cpu->P | StatusFlag::B);
 }
 
@@ -283,7 +282,7 @@ CPU::InstrImpl::frm_plp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
     frm_plr_impl(i_idx, io_cpu, i_core, io_done, val);
     if (io_done)
     {
-        // @QUIRK: disregards bits 5 and 4 when reading flags from the stack
+        // Disregards bits 5 and 4 when reading flags from the stack
         // https://www.nesdev.org/wiki/Status_flags#The_B_flag
         ignore_ub(val, io_cpu->P);
     }
@@ -306,7 +305,7 @@ CPU::InstrImpl::frm_jsr(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 1:
         {
-            // @IMPL: Unclear, internal operation?
+            // Unclear as to what internal operation is done at this cycle.
         }
         break;
 
@@ -324,7 +323,7 @@ CPU::InstrImpl::frm_jsr(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 4:
         {
-            // @NOTE: Fetch high address byte before mutating PC
+            // Fetch high address byte before mutating PC
             Byte high = io_cpu->get_byte(io_cpu->PC);
             set_low(io_cpu->PC, io_cpu->m_data_bus);
             set_high(io_cpu->PC, high);
@@ -339,7 +338,9 @@ void
 CPU::InstrImpl::frm_imp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
                         bool &io_done)
 {
-    // @IMPL: Since the in and out in core won't be used for this kind of
+    // @TODO: Pipelining
+
+    // Since the in and out won't be used in core for this kind of
     // instructions, reuse acc implemenation for simplicity.
     frm_acc(i_idx, io_cpu, i_core, io_done);
 }
@@ -401,7 +402,7 @@ CPU::InstrImpl::frm_abs_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 1:
         {
-            // @NOTE: Fetch high address byte before mutating PC
+            // Fetch high address byte before mutating PC
             Byte high = io_cpu->get_byte(io_cpu->PC);
             set_low(io_cpu->PC, io_cpu->m_data_bus);
             set_high(io_cpu->PC, high);
@@ -565,7 +566,7 @@ CPU::InstrImpl::frm_abi_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 2:
         {
-            // @NOTE: The read must be done regardlessly.
+            // The read must be done regardlessly.
             Byte in = io_cpu->get_byte(io_cpu->m_addr_bus);
             if (io_cpu->m_page_offset)
             {
@@ -612,7 +613,7 @@ CPU::InstrImpl::frm_abi_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 2:
         {
-            // @NOTE: Read from possibly smaller address first.
+            // Read from possibly smaller address first.
             (void)(io_cpu->get_byte(io_cpu->m_addr_bus));
             // if (io_cpu->m_page_offset)
             {
@@ -650,7 +651,7 @@ CPU::InstrImpl::frm_abi_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 2:
         {
-            // @NOTE: Read from possibly smaller address first.
+            // Read from possibly smaller address first.
             (void)(io_cpu->get_byte(io_cpu->m_addr_bus));
             // if (io_cpu->m_page_offset)
             {
@@ -979,9 +980,9 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             {
                 io_done = true;
             }
-            // @NOTE: This is polled regardless of branching or not
+            // This is polled regardless of branching or not
             io_cpu->poll_interrupt();
-            // @NOTE: Even if interrupt is detected, it is delayed until this
+            // Even if interrupt is detected, it is delayed until this
             // instruction is complete, or else the taken branch could be missed
             // after the handler returns.
             // So it's fine we poll in the middle of an instruction.
@@ -990,7 +991,8 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 1:
         {
-            // @IMPL: Assuming branch is taken
+            // Branch is taken at this point
+
             Byte opcode = io_cpu->get_byte(io_cpu->PC);
             (void)(opcode);
 
@@ -1011,14 +1013,15 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
             {
                 io_done = true;
             }
-            // @NOTE: A taken non-page-crossing doesn't poll so it may delay the
+            // A taken non-page-crossing doesn't poll so it may delay the
             // interrupt by one instruction.
         }
         break;
 
         case 2:
         {
-            // @IMPL: Assuming branch occurs to different page
+            // Branch occurs to different page at this point
+
             // The high byte of Program Counter (PCH) is invalid at this time,
             // i.e. it may be smaller or bigger by $0100.
             Byte opcode = io_cpu->get_byte(io_cpu->PC);
@@ -1218,7 +1221,7 @@ CPU::InstrImpl::frm_izy_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 3:
         {
-            // @NOTE: The read must be done regardlessly.
+            // The read must be done regardlessly.
             Byte in = io_cpu->get_byte(io_cpu->m_addr_bus);
             if (io_cpu->m_page_offset)
             {
@@ -1266,7 +1269,7 @@ CPU::InstrImpl::frm_izy_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 3:
         {
-            // @NOTE: Read from possibly smaller address first.
+            // Read from possibly smaller address first.
             (void)(io_cpu->get_byte(io_cpu->m_addr_bus));
             // if (io_cpu->m_page_offset)
             {
@@ -1318,7 +1321,7 @@ CPU::InstrImpl::frm_izy_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 3:
         {
-            // @NOTE: Read from possibly smaller address first.
+            // Read from possibly smaller address first.
             (void)(io_cpu->get_byte(io_cpu->m_addr_bus));
             // if (io_cpu->m_page_offset)
             {
@@ -1369,10 +1372,10 @@ CPU::InstrImpl::frm_ind_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 
         case 3:
         {
-            // @IMPL: Set PCL at this cycle, according to the doc
+            // Set PCL at this cycle, according to the doc
             set_low(io_cpu->PC, io_cpu->m_data_bus);
 
-            // @IMPL: Address bytes are fetched from the same page
+            // Address bytes are fetched from the same page
             io_cpu->m_addr_bus = to_byte2(get_high(io_cpu->m_addr_bus),
                                           get_low(io_cpu->m_addr_bus + 1));
             set_high(io_cpu->PC, io_cpu->get_byte(io_cpu->m_addr_bus));
@@ -1919,8 +1922,8 @@ CPU::InstrImpl::core_arr(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
     // perform signed division by 4 is: CMP #$80; ARR #$FF; ROR. This can be
     // extended to larger powers of two.
 
-    // @NOTE: ROR depends on C flag, but AND doesn't affect C flag, so we can
-    // perform AND without updating flags.
+    // ROR depends on C flag, but AND doesn't affect C flag, so we can
+    // reuse AND logic and do it first.
     core_and_op(io_cpu, i_in);
     Byte after_and = io_cpu->A;
     // ROR A
@@ -2019,9 +2022,9 @@ CPU::InstrImpl::core_tas(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
 
-    // @TEST
     // http://www.oxyron.de/html/opcodes02.html
     // https://www.nesdev.com/extra_instructions.txt
+    // @TEST: Test this instruction
 
     io_cpu->S = io_cpu->A & io_cpu->X;
     core_XhX_impl(io_cpu, io_cpu->S, o_out);
@@ -2054,12 +2057,12 @@ CPU::InstrImpl::core_ahx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 void
 CPU::InstrImpl::core_XhX_impl(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 {
-    // @TEST
     // http://www.oxyron.de/html/opcodes02.html
     // https://www.nesdev.com/extra_instructions.txt
     // https://github.com/ltriant/nes/blob/master/doc/undocumented_opcodes.txt
+    // @TEST: Test this instruction
 
-    // @IMPL: Assuming there is an effective address
+    // Assuming effective address is set already
     o_out = i_in & (get_high(io_cpu->m_i_eff_addr) + 1);
 }
 
@@ -2092,12 +2095,13 @@ CPU::InstrImpl::core_ror_op(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 void
 CPU::InstrImpl::throw_away(ln::CPU *io_cpu, Byte i_data)
 {
-    // @IMPL: What does it mean to throw it away?
-    // Inferring from the wordings in the doc, putting it in the bus does not
+    // What does it mean to throw it away?
+    // Inferring from the wording in the doc, putting it in the bus does not
     // seem right.
+    // io_cpu->m_data_bus = i_data;
+
     (void)(io_cpu);
     (void)(i_data);
-    // io_cpu->m_data_bus = i_data;
 }
 
 void

@@ -20,17 +20,18 @@ main(int argc, char **argv)
             ->option_text("\x7F")
             ->required(true);
 
-        app.add_option("-l", log_level, "Set log level, 0 - 6(off)")
+        app.add_option("-l", log_level, "Log level, 0 - 6(off)")
             ->option_text("<level>")
             ->check(CLI::Range(spdlog::level::trace, spdlog::level::off));
 
-        app.add_flag("-d", debug_win, "Debug window")->option_text("\x7F");
+        app.add_flag("-d", debug_win, "With debug window")->option_text("\x7F");
 
         app.add_flag("--pcm", log_pcm,
                      "Log audio PCM file in signed 16-bit integer format")
             ->option_text("\x7F");
 
-        app.add_flag("-a", audio_enabled, "Enable audio")->option_text("\x7F");
+        app.add_flag("-a", audio_enabled, "Experimental audio support")
+            ->option_text("\x7F");
 
         CLI11_PARSE(app, argc, argv);
     }

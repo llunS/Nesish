@@ -30,7 +30,7 @@ APU::power_up()
     }
 
     // https://www.nesdev.org/wiki/CPU_power_up_state
-    // @IMPL: We want all the side effects applied, so we use write_register().
+    // We want the side effects applied, so we use write_register().
     write_register(PULSE1_DUTY, 0x00);
     write_register(PULSE1_SWEEP, 0x00);
     write_register(PULSE1_TIMER_LOW, 0x00);
@@ -104,7 +104,7 @@ APU::tick()
     // Clock frame counter to apply parameter changes first.
     m_fc.tick();
 
-    // -------- Data flush/update due to tick order implementation
+    // -------- Unit post update, owing to tick order implementation
     // Changes to length counter halt occur after clocking length, i.e. via
     // m_fc.tick(). So do this after m_fc.tick().
     m_pulse1.length_counter().flush_halt_set();
@@ -133,7 +133,6 @@ APU::tick()
 float
 APU::amplitude() const
 {
-    // @TODO: Other channels
     Byte pulse1 = m_pulse1.amplitude();
     Byte pulse2 = m_pulse2.amplitude();
     Byte triangle = m_triangle.amplitude();
@@ -158,16 +157,13 @@ float
 APU::mix(Byte i_pulse1, Byte i_pulse2, Byte i_triangle, Byte i_noise,
          Byte i_dmc)
 {
-    // @TODO: Static lookup table.
+    // @TODO: Efficient lookup table
     // https://www.nesdev.org/wiki/APU_Mixer
+
     float pulse_out = 0.0;
     if (i_pulse1 || i_pulse2)
     {
         pulse_out = float(95.88 / (8128. / (i_pulse1 + i_pulse2) + 100.));
-    }
-    else
-    {
-        // 0
     }
 
     float tnd_out = 0.0;
@@ -176,10 +172,6 @@ APU::mix(Byte i_pulse1, Byte i_pulse2, Byte i_triangle, Byte i_noise,
         tnd_out = float(159.79 / (1. / (i_triangle / 8227. + i_noise / 12241. +
                                         i_dmc / 22638.) +
                                   100.));
-    }
-    else
-    {
-        // 0
     }
 
     float output = pulse_out + tnd_out;
@@ -193,20 +185,15 @@ APU::read_register(Register i_reg, Byte &o_val)
     {
         case CTRL_STATUS:
         {
-            // @IMPL: If an interrupt flag was set at the same moment of the
-            // read, it will read back as 1 but it will not be cleared. We don't
-            // emulate this, since we don't actually run cpu and apu in
-            // parallel.
+            // @TODO: If an interrupt flag was set at the same moment of the
+            // read, it will read back as 1 but it will not be cleared.
+            // However, it seems to contradict with "sync_apu" in test source
 
-            // @TODO: Other channels.
             bool p1 = m_pulse1.length_counter().value() > 0;
             bool p2 = m_pulse2.length_counter().value() > 0;
             bool tri = m_triangle.length_counter().value() > 0;
             bool noise = m_noise.length_counter().value() > 0;
             bool D = m_dmc.bytes_remained();
-            // @TODO: If an interrupt flag was set at the same moment of the
-            // read, it will read back as 1 but it will not be cleared.
-            // @NOTE: It seems to contradict with "sync_apu" in test source
             bool F = m_fc.interrupt();
             m_fc.clear_interrupt();
             bool I = m_dmc.interrupt();
@@ -228,8 +215,6 @@ APU::write_register(Register i_reg, Byte i_val)
 {
     m_regs[i_reg] = i_val;
 
-    // @TODO: Other channels.
-
     switch (i_reg)
     {
         case PULSE1_DUTY:
@@ -238,7 +223,6 @@ APU::write_register(Register i_reg, Byte i_val)
             Pulse *pulse = PULSE1_DUTY == i_reg ? &m_pulse1 : &m_pulse2;
             pulse->sequencer().set_duty(i_val >> 6);
             pulse->envelope().set_loop(i_val & 0x20);
-            // @NOTE: Post set for tick order implmentation
             pulse->length_counter().post_set_halt(i_val & 0x20);
             pulse->envelope().set_const(i_val & 0x10);
             pulse->envelope().set_divider_reload(i_val & 0x0F);
@@ -279,7 +263,6 @@ APU::write_register(Register i_reg, Byte i_val)
                                                     : m_regs[PULSE2_TIMER_LOW];
             Byte2 timer = ((i_val & 0x07) << 8) | timer_low;
             pulse->timer().set_reload(timer);
-            // @NOTE: Post set for tick order implmentation
             pulse->length_counter().post_set_load(i_val >> 3);
 
             pulse->sequencer().reset();
@@ -291,7 +274,6 @@ APU::write_register(Register i_reg, Byte i_val)
         {
             m_triangle.linear_counter().set_control(i_val & 0x80);
             // This bit is also the length counter halt flag
-            // @NOTE: Post set for tick order implmentation
             m_triangle.length_counter().post_set_halt(i_val & 0x80);
             m_triangle.linear_counter().set_reload_val(i_val & 0x7F);
         }
@@ -308,7 +290,6 @@ APU::write_register(Register i_reg, Byte i_val)
         {
             Byte2 timer = ((i_val & 0x07) << 8) | m_regs[TRI_TIMER_LOW];
             m_triangle.timer().set_reload(timer);
-            // @NOTE: Post set for tick order implmentation
             m_triangle.length_counter().post_set_load(i_val >> 3);
 
             m_triangle.linear_counter().set_reload();
@@ -318,7 +299,6 @@ APU::write_register(Register i_reg, Byte i_val)
         case NOISE_ENVELOPE:
         {
             m_noise.envelope().set_loop(i_val & 0x20);
-            // @NOTE: Post set for tick order implmentation
             m_noise.length_counter().post_set_halt(i_val & 0x20);
             m_noise.envelope().set_const(i_val & 0x10);
             m_noise.envelope().set_divider_reload(i_val & 0x0F);
@@ -335,7 +315,6 @@ APU::write_register(Register i_reg, Byte i_val)
 
         case NOISE_LENGTH:
         {
-            // @NOTE: Post set for tick order implmentation
             m_noise.length_counter().post_set_load(i_val >> 3);
 
             m_noise.envelope().restart();
@@ -370,7 +349,6 @@ APU::write_register(Register i_reg, Byte i_val)
 
         case CTRL_STATUS:
         {
-            // @TODO: Other channels.
             m_pulse1.length_counter().set_enabled(i_val & 0x01);
             m_pulse2.length_counter().set_enabled(i_val & 0x02);
             m_triangle.length_counter().set_enabled(i_val & 0x04);

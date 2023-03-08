@@ -10,12 +10,12 @@
 #include "common/logger.hpp"
 
 static std::ifstream
-pvt_open_log(const std::string &i_path, bool &o_ok);
+pv_open_log(const std::string &i_path, bool &o_ok);
 static bool
-pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
-                     std::size_t i_instr, ln::Cycle i_base_cycle);
+pv_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
+                    std::size_t i_instr, ln::Cycle i_base_cycle);
 static void
-pvt_close_log(std::ifstream &o_file);
+pv_close_log(std::ifstream &o_file);
 
 TEST(cpu, nestest)
 {
@@ -27,7 +27,7 @@ TEST(cpu, nestest)
     cycle_emu->power_up();
 
     bool open = false;
-    auto log_file = pvt_open_log(ln::join_exec_rel_path("nestest.log"), open);
+    auto log_file = pv_open_log(ln::join_exec_rel_path("nestest.log"), open);
     ASSERT_TRUE(open);
 
     auto init_func = [](ln::CPU *io_cpu, void *) {
@@ -64,7 +64,7 @@ TEST(cpu, nestest)
             // log opcode coverage
             opcode_set.insert(bytes[0]);
 
-            if (!pvt_compare_log_line(&log_file, &i_cpu, i_instr, CYC_BASE))
+            if (!pv_compare_log_line(&log_file, &i_cpu, i_instr, CYC_BASE))
             {
                 ASSERT_TRUE(false);
             }
@@ -86,11 +86,11 @@ TEST(cpu, nestest)
 
     LN_LOG_INFO(ln::get_logger(), "Opcode kinds covered: {}",
                 opcode_set.size());
-    pvt_close_log(log_file);
+    pv_close_log(log_file);
 }
 
 std::ifstream
-pvt_open_log(const std::string &i_path, bool &o_ok)
+pv_open_log(const std::string &i_path, bool &o_ok)
 {
     std::ifstream istrm(i_path, std::ios::binary);
     o_ok = istrm.is_open();
@@ -98,8 +98,8 @@ pvt_open_log(const std::string &i_path, bool &o_ok)
 }
 
 bool
-pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
-                     std::size_t i_instr, ln::Cycle i_base_cycle)
+pv_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
+                    std::size_t i_instr, ln::Cycle i_base_cycle)
 {
     std::string line;
     std::getline(*io_file, line);
@@ -163,7 +163,7 @@ pvt_compare_log_line(std::ifstream *io_file, const ln::CPU *i_cpu,
 }
 
 void
-pvt_close_log(std::ifstream &o_file)
+pv_close_log(std::ifstream &o_file)
 {
     o_file.close();
 }

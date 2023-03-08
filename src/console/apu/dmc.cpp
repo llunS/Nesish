@@ -150,13 +150,6 @@ void
 DMC::load(Byte i_val)
 {
     m_level = i_val;
-
-    // @QUIRK: The DMC output level is set to D, an unsigned value. If the timer
-    // is outputting a clock at the same time, the output level is occasionally
-    // not changed properly.
-    // http://forums.nesdev.org/viewtopic.php?p=104491#p104491
-    // @NOTE: We don't emulate this, since we are basically running CPU and APU
-    // serially.
 }
 
 void
@@ -185,7 +178,7 @@ DMC::set_enabled(bool i_set)
         {
             restart_playback();
 
-            // @TEST: Do load DMA only if we restated, it looks right since
+            // Load DMA only if we restarts, it looks right since
             // remaining bytes could be left to reload DMA.
             if (m_sample_buffer_empty && m_sample_bytes_left > 0)
             {

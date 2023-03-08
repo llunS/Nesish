@@ -10,19 +10,19 @@
 namespace ln {
 
 static void
-pvt_nt_byte_fetch(PipelineAccessor *io_accessor);
+pv_nt_byte_fetch(PipelineAccessor *io_accessor);
 static Cycle
-pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor);
+pv_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor);
 
 static void
-pvt_shift_regs_shift(PipelineAccessor *io_accessor);
+pv_shift_regs_shift(PipelineAccessor *io_accessor);
 static void
-pvt_shift_regs_reload(PipelineAccessor *io_accessor);
+pv_shift_regs_reload(PipelineAccessor *io_accessor);
 
 BgFetch::BgFetch(PipelineAccessor *io_accessor)
     : Tickable(LN_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
-    , m_bg_tile_fetch(8, std::bind(pvt_tile_fetch, std::placeholders::_1,
+    , m_bg_tile_fetch(8, std::bind(pv_tile_fetch, std::placeholders::_1,
                                    std::placeholders::_2, io_accessor))
 {
     m_bg_tile_fetch.set_done();
@@ -41,12 +41,11 @@ BgFetch::on_tick(Cycle i_curr, Cycle i_total)
 {
     (void)(i_total);
 
-    /* @IMPL: shift registers shift should happen before shift registers reload
-     */
+    // @NOTE: shift registers shift should happen before shift registers reload
     if ((2 <= i_curr && i_curr <= 257) || (322 <= i_curr && i_curr <= 337))
     {
         /* shift */
-        pvt_shift_regs_shift(m_accessor);
+        pv_shift_regs_shift(m_accessor);
     }
 
     switch (i_curr)
@@ -146,7 +145,7 @@ BgFetch::on_tick(Cycle i_curr, Cycle i_total)
                 v = (v & ~0x041F) | (t & 0x041F);
             }
 
-            pvt_shift_regs_reload(m_accessor);
+            pv_shift_regs_reload(m_accessor);
         }
         break;
 
@@ -154,7 +153,7 @@ BgFetch::on_tick(Cycle i_curr, Cycle i_total)
         case 338:
         case 340:
         {
-            pvt_nt_byte_fetch(m_accessor);
+            pv_nt_byte_fetch(m_accessor);
         }
         break;
 
@@ -193,7 +192,7 @@ BgFetch::on_tick(Cycle i_curr, Cycle i_total)
         case 329:
         case 337:
         {
-            pvt_shift_regs_reload(m_accessor);
+            pv_shift_regs_reload(m_accessor);
         }
         break;
 
@@ -201,7 +200,7 @@ BgFetch::on_tick(Cycle i_curr, Cycle i_total)
             break;
     }
 
-    /* @IMPL: shift registers reload should happen before tile fetch */
+    // @NOTE: shift registers reload should happen before tile fetch
     switch (i_curr)
     {
         case 1:
@@ -253,7 +252,7 @@ BgFetch::on_tick(Cycle i_curr, Cycle i_total)
 }
 
 void
-pvt_nt_byte_fetch(PipelineAccessor *io_accessor)
+pv_nt_byte_fetch(PipelineAccessor *io_accessor)
 {
     const Byte2 &v = io_accessor->get_v();
     Address tile_addr = 0x2000 | (v & 0x0FFF);
@@ -271,7 +270,7 @@ pvt_nt_byte_fetch(PipelineAccessor *io_accessor)
 }
 
 Cycle
-pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
+pv_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
 {
     (void)(i_total);
 
@@ -301,7 +300,7 @@ pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
         case 1:
         {
             /* fetch nametable byte */
-            pvt_nt_byte_fetch(io_accessor);
+            pv_nt_byte_fetch(io_accessor);
         }
         break;
 
@@ -361,7 +360,7 @@ pvt_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
 }
 
 void
-pvt_shift_regs_shift(PipelineAccessor *io_accessor)
+pv_shift_regs_shift(PipelineAccessor *io_accessor)
 {
     auto &ctx = io_accessor->get_context();
     ctx.sf_bg_pattern_lower <<= 1;
@@ -371,7 +370,7 @@ pvt_shift_regs_shift(PipelineAccessor *io_accessor)
 }
 
 void
-pvt_shift_regs_reload(PipelineAccessor *io_accessor)
+pv_shift_regs_reload(PipelineAccessor *io_accessor)
 {
     auto &ctx = io_accessor->get_context();
     ctx.sf_bg_pattern_lower =

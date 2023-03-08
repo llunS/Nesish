@@ -82,7 +82,7 @@ Emulator::hard_wire()
                 Byte val = thiz->read_ctrl_reg(LN_CTRL1_REG_ADDR == i_addr
                                                    ? CtrlReg::REG_4016
                                                    : CtrlReg::REG_4017);
-                // @IMPL: Partial open bus
+                // Partial open bus
                 // https://www.nesdev.org/wiki/Open_bus_behavior#CPU_open_bus
                 o_val = (val & 0x1F) | (thiz->m_memory.get_latch() & ~0x1F);
                 return Error::OK;
@@ -96,8 +96,9 @@ Emulator::hard_wire()
                     o_val = 0xFF;
                     return Error::PROGRAMMING;
                 }
-                // @IMPL: APU Status doesn't require partial open bus as it
-                // seems according to cpu_exec_space/test_cpu_exec_space_apu.nes
+                // APU Status doesn't require partial open bus as it
+                // seems, according to
+                // cpu_exec_space/test_cpu_exec_space_apu.nes
                 Byte val;
                 auto err = thiz->m_apu.read_register(reg, val);
                 if (LN_FAILED(err))
@@ -159,11 +160,11 @@ Emulator::read_ctrl_reg(CtrlReg i_reg)
             else
             {
                 auto ctrl = m_ctrls[index];
-                /* @NOTE: We don't support parsing other bits yet */
+                // @TODO: Other bits
                 Byte primaryBit{0};
                 if (!ctrl)
                 {
-                    // Repot 0 for unconnected controller.
+                    // Report 0 for unconnected controller.
                     // https://www.nesdev.org/wiki/Standard_controller#Output_($4016/$4017_read)
                     primaryBit = 0;
                 }
@@ -171,7 +172,7 @@ Emulator::read_ctrl_reg(CtrlReg i_reg)
                 {
                     primaryBit = ctrl->report();
                 }
-                // @IMPL: Other bits are 0 as initialized.
+                // @NOTE: Other bits are 0 as initialized.
                 val = (val & 0xFE) | primaryBit;
             }
         }
@@ -283,10 +284,10 @@ Emulator::power_up()
         return;
     }
 
-    // @NOTE: Setup memory first, since other components depends on their state.
-    // And setup internal RAM first in case mapper changes its content
-    // afterwards (if there is any).
-    // Consistent RAM startup state
+    // @NOTE: Setup memory first, since other components depends on their
+    // states.
+    // Setup internal RAM first in case mapper changes its content
+    // afterwards (if there is any). Set to a consistent RAM startup state.
     m_memory.set_bulk(LN_INTERNAL_RAM_ADDR_HEAD, LN_INTERNAL_RAM_ADDR_TAIL,
                       0xFF);
     m_cart->power_up();
@@ -361,8 +362,9 @@ Emulator::tick(bool *o_cpu_instr)
     bool dmc_dma_get = m_dmc_dma.tick(dma_halt);
     m_oam_dma.tick(dma_halt, dmc_dma_get);
 
-    // @IMPL: NTSC version ticks PPU 3 times per CPU tick
-    // @IMPL: The tick order between CPU and PPU has to do with VBL timing.
+    // NTSC version ticks PPU 3 times per CPU tick
+
+    // @NOTE: The tick order between CPU and PPU has to do with VBL timing.
     // Order: P->C(pre)->P->C(post)->P, plus one special case of Reading $2002
     // one PPU clock before VBL is set.
     // Test rom: vbl_nmi_timing/2.vbl_timing.nes, etc.
@@ -390,13 +392,13 @@ Emulator::tick(bool *o_cpu_instr)
     m_cpu.post_tick();
     m_ppu.tick();
 
-    // @IMPL: Tick after CPU pre_tick(), frame counter reset relys on this.
+    // @NOTE: Tick after CPU pre_tick(), frame counter reset relys on this.
     // blargg_apu_2005.07.30/04.clock_jitter.nes
-    // @IMPL: Tick after CPU pre_tick(), length counter halt delay relys on
+    // @NOTE: Tick after CPU pre_tick(), length counter halt delay relys on
     // this. blargg_apu_2005.07.30/10.len_halt_timing.nes
-    // @IMPL: Tick after CPU pre_tick(), length counter reload during ticking
+    // @NOTE: Tick after CPU pre_tick(), length counter reload during ticking
     // relys on this. blargg_apu_2005.07.30/11.len_reload_timing.nes
-    // @IMPL: Tick after CPU post_tick() as well, according to
+    // @NOTE: Tick after CPU post_tick(), according to
     // blargg_apu_2005.07.30/08.irq_timing.nes
     m_apu.tick();
 

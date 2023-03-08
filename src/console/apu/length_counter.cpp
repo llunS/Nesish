@@ -29,7 +29,7 @@ LengthCounter::tick()
     if (m_counter > 0)
     {
         --m_counter;
-        // @NOTE: Length reload is completely ignored if written during length
+        // Length reload is completely ignored if written during length
         // clocking and length counter is non-zero before clocking
         m_to_load = false;
     }

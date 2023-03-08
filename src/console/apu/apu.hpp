@@ -40,12 +40,9 @@ struct APU {
     put_dmc_sample(Address i_sample_addr, Byte i_sample);
 
   public:
-    // They are write-only except $4015 (CTRL_STATUS) which is read/write.
-    // https://www.nesdev.org/wiki/APU
     // https://www.nesdev.org/wiki/APU_registers
-    // @IMPL: The value must can be used as array index, see "m_regs".
-    // @IMPL: The values must in order to correspond to address, see
-    // addr_to_regsiter().
+    // @NOTE: Values must be valid array index, see "m_regs".
+    // @NOTE: Values must correspond to address, see addr_to_regsiter().
     enum Register {
         /* clang-format off */
         PULSE1_DUTY = 0, // DDLC NNNN / Duty, loop envelope/disable length counter, constant volume, envelope period/volume

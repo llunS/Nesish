@@ -210,7 +210,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                                 float sample = emulator->get_sample();
                                 // @NOTE: Once clocked, samples must be drained
                                 // to avoid buffer overflow.
-                                // @FIXME: Which is correct? [0, 1] or [-1, 1]
+                                // @FIXME: Which is correct, [0, 1] or [-1, 1]?
                                 resampler.clock(
                                     short((sample * 2. - 1.) * 32767));
                                 // resampler.clock(sample * 32767);
@@ -250,8 +250,6 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
             if (currTimeUS >= nextRenderTimeUS)
             {
                 // Don't bother to render emulator if paused.
-                // @IMPL: Handle emulator window first anyhow to reflect latest
-                // visuals.
                 if (!(dbg_win && dbg_win->isPaused()))
                 {
                     if (emu_win)
@@ -384,7 +382,8 @@ audio_playback(void *outputBuffer, void *inputBuffer,
 
     if (status)
     {
-        LN_LOG_INFO(ln::get_logger(), "Stream underflow of {} detected!",
+        LN_LOG_INFO(ln::get_logger(),
+                    "Stream underflow for buffer of {} detected!",
                     nBufferFrames);
     }
 

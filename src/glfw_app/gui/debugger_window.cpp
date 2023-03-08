@@ -203,7 +203,7 @@ DebuggerWindow::draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu)
     if (ImGui::Begin("Frame Debugger", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
     {
-        // @TODO: Turn it into nametable viewer.
+        // @TODO: Change it to nametable viewer
         // draw_fd_frame(io_emu);
         // ImGui::Spacing();
         io_emu.set_debug_on(lnd::DBG_PATTERN);
