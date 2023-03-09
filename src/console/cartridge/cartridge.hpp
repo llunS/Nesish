@@ -4,7 +4,7 @@
 #include "console/memory/memory.hpp"
 #include "console/memory/video_memory.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Cartridge {
   public:
@@ -24,4 +24,4 @@ struct Cartridge {
     unmap_memory(Memory *o_memory, VideoMemory *o_video_memory) = 0;
 };
 
-} // namespace ln
+} // namespace nh

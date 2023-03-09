@@ -7,7 +7,7 @@
 #include "console/ppu/pipeline/vblank_scanline.hpp"
 #include "console/ppu/pipeline/idle_ticker.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor;
 
@@ -38,4 +38,4 @@ struct Pipeline : public Tickable {
     int m_curr_scanline_idx;
 };
 
-} // namespace ln
+} // namespace nh

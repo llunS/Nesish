@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-namespace ln_app {
+namespace sh {
 
 // Reference: https://halt.software/dead-simple-layouts/
 
@@ -33,4 +33,4 @@ cut_top(Rect &io_rect, float i_amount);
 Rect
 cut_bottom(Rect &io_rect, float i_amount);
 
-} // namespace ln_app
+} // namespace sh

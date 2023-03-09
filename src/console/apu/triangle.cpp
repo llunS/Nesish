@@ -4,7 +4,7 @@
 
 #define SEQ_SIZE 32
 
-namespace ln {
+namespace nh {
 
 Triangle::Triangle()
     : m_seq_idx(0)
@@ -76,4 +76,4 @@ Triangle::length_counter()
     return m_length;
 }
 
-} // namespace ln
+} // namespace nh

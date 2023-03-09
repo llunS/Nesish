@@ -3,7 +3,7 @@
 
 #include <type_traits>
 
-namespace ln {
+namespace nh {
 
 enum Key {
     KEY_BEGIN = 0,
@@ -21,7 +21,7 @@ enum Key {
     KEY_SIZE,
     KEY_END = KEY_SIZE,
 };
-typedef std::underlying_type<ln::Key>::type KeyIt;
+typedef std::underlying_type<nh::Key>::type KeyIt;
 
 struct Controller {
   public:
@@ -36,4 +36,4 @@ struct Controller {
     reset() = 0;
 };
 
-} // namespace ln
+} // namespace nh

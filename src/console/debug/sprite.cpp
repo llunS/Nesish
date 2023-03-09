@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-namespace lnd {
+namespace nhd {
 
 constexpr int Sprite::WIDTH;
 
@@ -28,11 +28,11 @@ Sprite::get_height() const
     return m_8x16 ? 16 : 8;
 }
 
-const ln::Byte *
+const nh::Byte *
 Sprite::get_data() const
 {
-    static_assert(std::is_pod<ln::Color>::value, "Incorrect pointer position");
-    return (ln::Byte *)(&m_pixels[0]);
+    static_assert(std::is_pod<nh::Color>::value, "Incorrect pointer position");
+    return (nh::Byte *)(&m_pixels[0]);
 }
 
 LN_CONSOLE_API int
@@ -66,14 +66,14 @@ Sprite::set_mode(bool i_8x16)
 }
 
 void
-Sprite::set_pixel(int i_row, int i_col, const ln::Color &i_color)
+Sprite::set_pixel(int i_row, int i_col, const nh::Color &i_color)
 {
     // Save the bound check, leave it to the user.
     m_pixels[i_row * WIDTH + i_col] = i_color;
 }
 
 void
-Sprite::set_raw(ln::Byte i_y, ln::Byte i_tile, ln::Byte i_attr, ln::Byte i_x)
+Sprite::set_raw(nh::Byte i_y, nh::Byte i_tile, nh::Byte i_attr, nh::Byte i_x)
 {
     y = i_y;
     tile = i_tile;
@@ -81,4 +81,4 @@ Sprite::set_raw(ln::Byte i_y, ln::Byte i_tile, ln::Byte i_attr, ln::Byte i_x)
     x = i_x;
 }
 
-} // namespace lnd
+} // namespace nhd

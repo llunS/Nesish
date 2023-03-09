@@ -3,7 +3,7 @@
 #include "console/ppu/palette_color.hpp"
 #include "console/ppu/color.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Palette {
   public:
@@ -11,4 +11,4 @@ struct Palette {
     to_rgb(PaletteColor i_color) const = 0;
 };
 
-} // namespace ln
+} // namespace nh

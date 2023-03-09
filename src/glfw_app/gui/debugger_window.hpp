@@ -8,15 +8,15 @@
 
 #include "glfw_app/rendering/texture.hpp"
 
-namespace ln {
+namespace nh {
 struct Emulator;
-} // namespace ln
+} // namespace nh
 
-namespace ln_app {
+namespace sh {
 struct Rect;
-} // namespace ln_app
+} // namespace sh
 
-namespace ln_app {
+namespace sh {
 
 struct DebuggerWindow : public PlatformWindow {
   public:
@@ -28,11 +28,11 @@ struct DebuggerWindow : public PlatformWindow {
 
   public:
     void
-    pre_render(ln::Emulator &io_emu);
+    pre_render(nh::Emulator &io_emu);
     void
-    render(ln::Emulator &io_emu);
+    render(nh::Emulator &io_emu);
     void
-    post_render(ln::Emulator &io_emu);
+    post_render(nh::Emulator &io_emu);
 
     bool
     isPaused() const;
@@ -51,18 +51,18 @@ struct DebuggerWindow : public PlatformWindow {
 
   private:
     void
-    draw_control(const Rect &i_layout, ln::Emulator &io_emu);
+    draw_control(const Rect &i_layout, nh::Emulator &io_emu);
 
     void
-    draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu);
+    draw_frame_debugger(const Rect &i_layout, nh::Emulator &io_emu);
     void
-    draw_fd_pattern(const ln::Emulator &i_emu);
+    draw_fd_pattern(const nh::Emulator &i_emu);
     void
-    draw_fd_frame(const ln::Emulator &i_emu);
+    draw_fd_frame(const nh::Emulator &i_emu);
     void
-    draw_fd_palette(const ln::Emulator &i_emu);
+    draw_fd_palette(const nh::Emulator &i_emu);
     void
-    draw_fd_oam(const ln::Emulator &i_emu);
+    draw_fd_oam(const nh::Emulator &i_emu);
 
   private:
     bool m_paused;
@@ -72,7 +72,7 @@ struct DebuggerWindow : public PlatformWindow {
     Texture m_sp_tex[64];
     Texture m_ptn_tbl_texs[2];
 
-    ln::Emulator::PaletteSet m_ptn_tbl_palette;
+    nh::Emulator::PaletteSet m_ptn_tbl_palette;
 };
 
-} // namespace ln_app
+} // namespace sh

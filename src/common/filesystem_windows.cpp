@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace ln {
+namespace nh {
 
 bool
 file_exists(const std::string &i_path)
@@ -12,4 +12,4 @@ file_exists(const std::string &i_path)
            !(attr & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-} // namespace ln
+} // namespace nh

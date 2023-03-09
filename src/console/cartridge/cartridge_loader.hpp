@@ -5,7 +5,7 @@
 #include "console/cartridge/cartridge.hpp"
 #include "console/cartridge/cartridge_type.hpp"
 
-namespace ln {
+namespace nh {
 
 struct INES;
 
@@ -29,4 +29,4 @@ struct CartridgeLoader {
     pv_load_ines_chr_rom(std::FILE *i_file, INES *io_ines);
 };
 
-} // namespace ln
+} // namespace nh

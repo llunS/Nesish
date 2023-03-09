@@ -5,7 +5,7 @@
 #include "console/cartridge/mapper/mmc1.hpp"
 #include "console/cartridge/mapper/cnrom.hpp"
 
-namespace ln {
+namespace nh {
 
 static Mapper *
 pv_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor);
@@ -43,7 +43,7 @@ INES::resolve()
     auto mapper = pv_get_mapper(m_mapper_number, &m_rom_accessor);
     if (!mapper)
     {
-        LN_LOG_ERROR(ln::get_logger(), "iNES unsupported mapper {}",
+        LN_LOG_ERROR(nh::get_logger(), "iNES unsupported mapper {}",
                      m_mapper_number);
         return Error::UNIMPLEMENTED;
     }
@@ -60,17 +60,17 @@ INES::validate() const
     if (!(m_header.nes_magic[0] == 0x4e && m_header.nes_magic[1] == 0x45 &&
           m_header.nes_magic[2] == 0x53 && m_header.nes_magic[3] == 0x1a))
     {
-        LN_LOG_ERROR(ln::get_logger(), "iNES invalid magic number.");
+        LN_LOG_ERROR(nh::get_logger(), "iNES invalid magic number.");
         return Error::CORRUPTED;
     }
     if (!m_prg_rom)
     {
-        LN_LOG_ERROR(ln::get_logger(), "iNES empty PRG ROM.");
+        LN_LOG_ERROR(nh::get_logger(), "iNES empty PRG ROM.");
         return Error::CORRUPTED;
     }
     if (m_header.ines2 != 0)
     {
-        LN_LOG_ERROR(ln::get_logger(), "Support only iNES format for now, {}.",
+        LN_LOG_ERROR(nh::get_logger(), "Support only iNES format for now, {}.",
                      m_header.ines2);
         return Error::CORRUPTED;
     }
@@ -78,11 +78,11 @@ INES::validate() const
     // 2. runtime state check
     if (!m_mapper)
     {
-        LN_LOG_ERROR(ln::get_logger(), "iNES mapper uninitialized.");
+        LN_LOG_ERROR(nh::get_logger(), "iNES mapper uninitialized.");
         return Error::UNINITIALIZED;
     }
 
-    LN_LOG_INFO(ln::get_logger(), "iNES mapper {}.", m_mapper_number);
+    LN_LOG_INFO(nh::get_logger(), "iNES mapper {}.", m_mapper_number);
 
     auto error = m_mapper->validate();
     if (LN_FAILED(error))
@@ -140,9 +140,9 @@ pv_get_mapper(Byte i_mapper_number, const INES::RomAccessor *i_accessor)
     }
 }
 
-} // namespace ln
+} // namespace nh
 
-namespace ln {
+namespace nh {
 
 INES::RomAccessor::RomAccessor(const INES *i_nes)
     : m_ines(i_nes)
@@ -185,4 +185,4 @@ INES::RomAccessor::use_chr_ram() const
     return m_ines->m_use_chr_ram;
 }
 
-} // namespace ln
+} // namespace nh

@@ -7,7 +7,7 @@
 #include "console/spec.hpp"
 #include "console/assert.hpp"
 
-namespace ln {
+namespace nh {
 
 static void
 pv_nt_byte_fetch(PipelineAccessor *io_accessor);
@@ -385,4 +385,4 @@ pv_shift_regs_reload(PipelineAccessor *io_accessor)
         (ctx.bg_attr_palette_idx & 0x02 ? 0xFF : 0x00);
 }
 
-} // namespace ln
+} // namespace nh

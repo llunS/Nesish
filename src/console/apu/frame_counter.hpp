@@ -2,7 +2,7 @@
 
 #include "common/klass.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Pulse;
 struct Triangle;
@@ -60,4 +60,4 @@ struct FrameCounter {
     bool m_mode_tmp;
 };
 
-} // namespace ln
+} // namespace nh

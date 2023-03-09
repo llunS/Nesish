@@ -4,7 +4,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct APUClock;
 struct Memory;
@@ -50,4 +50,4 @@ struct DMCDMA {
     Address m_sample_addr_tmp;
 };
 
-} // namespace ln
+} // namespace nh

@@ -3,7 +3,7 @@
 #include "console/ppu/pipeline/tickable.hpp"
 #include "common/klass.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor;
 
@@ -19,4 +19,4 @@ struct Render : public Tickable {
     PipelineAccessor *m_accessor;
 };
 
-} // namespace ln
+} // namespace nh

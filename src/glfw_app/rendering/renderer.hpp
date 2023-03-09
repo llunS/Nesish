@@ -8,11 +8,11 @@
 #include "glfw_app/glad/glad.h"
 #include "glfw_app/rendering/texture.hpp"
 
-namespace ln {
+namespace nh {
 struct FrameBuffer;
-} // namespace ln
+} // namespace nh
 
-namespace ln_app {
+namespace sh {
 
 /// @brief A fullscreen rect renderer for emulator frame buffer
 struct Renderer {
@@ -21,12 +21,12 @@ struct Renderer {
     ~Renderer();
     LN_KLZ_DELETE_COPY_MOVE(Renderer);
 
-    ln::Error
+    nh::Error
     setup();
 
   public:
     void
-    render(const ln::FrameBuffer &i_frame_buf);
+    render(const nh::FrameBuffer &i_frame_buf);
 
   private:
     void
@@ -40,4 +40,4 @@ struct Renderer {
     Texture m_tex;
 };
 
-} // namespace ln_app
+} // namespace sh

@@ -10,7 +10,7 @@
 #include "console/apu/noise.hpp"
 #include "console/apu/dmc.hpp"
 
-namespace ln {
+namespace nh {
 
 struct APUClock;
 struct DMCDMA;
@@ -106,4 +106,4 @@ struct APU {
     const APUClock &m_clock;
 };
 
-} // namespace ln
+} // namespace nh

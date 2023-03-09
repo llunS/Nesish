@@ -2,7 +2,7 @@
 
 // https://www.nesdev.org/wiki/APU_Pulse
 
-namespace ln {
+namespace nh {
 
 Pulse::Pulse(bool i_mode_1)
     : m_sweep(m_timer, i_mode_1)
@@ -84,4 +84,4 @@ Pulse::length_counter()
     return m_length;
 }
 
-} // namespace ln
+} // namespace nh

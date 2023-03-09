@@ -3,7 +3,7 @@
 #include "console/spec.hpp"
 #include "console/ppu/pipeline_accessor.hpp"
 
-namespace ln {
+namespace nh {
 
 VisibleScanline::VisibleScanline(PipelineAccessor *io_accessor)
     : Tickable(LN_SCANLINE_CYCLES)
@@ -57,4 +57,4 @@ VisibleScanline::on_tick(Cycle i_curr, Cycle i_total)
     return steps;
 }
 
-} // namespace ln
+} // namespace nh

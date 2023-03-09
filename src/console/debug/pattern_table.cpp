@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-namespace lnd {
+namespace nhd {
 
 constexpr int PatternTable::TILES_W;
 constexpr int PatternTable::TILES_H;
@@ -14,16 +14,16 @@ PatternTable::PatternTable()
 {
 }
 
-const ln::Byte *
+const nh::Byte *
 PatternTable::get_data() const
 {
-    static_assert(std::is_pod<ln::Color>::value, "Incorrect pointer position");
-    return (ln::Byte *)(&m_pixels[0]);
+    static_assert(std::is_pod<nh::Color>::value, "Incorrect pointer position");
+    return (nh::Byte *)(&m_pixels[0]);
 }
 
 void
 PatternTable::set_pixel(int i_tile_idx, int i_fine_y, int i_fine_x,
-                        const ln::Color &i_color)
+                        const nh::Color &i_color)
 {
     // Save the bound check, leave it to the user.
     int tile_y = i_tile_idx / TILES_W;
@@ -33,4 +33,4 @@ PatternTable::set_pixel(int i_tile_idx, int i_fine_y, int i_fine_x,
     m_pixels[row * get_width() + col] = i_color;
 }
 
-} // namespace lnd
+} // namespace nhd

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace ln_app {
+namespace sh {
 
 Rect::Rect(float i_minx, float i_miny, float i_maxx, float i_maxy)
     : minx(i_minx)
@@ -60,4 +60,4 @@ cut_bottom(Rect &io_rect, float i_amount)
     return {io_rect.minx, io_rect.maxy, io_rect.maxx, maxy};
 }
 
-} // namespace ln_app
+} // namespace sh

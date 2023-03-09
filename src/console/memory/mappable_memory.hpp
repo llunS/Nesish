@@ -7,7 +7,7 @@
 #include "console/types.hpp"
 #include "console/memory/mapping_entry.hpp"
 
-namespace ln {
+namespace nh {
 
 template <typename EMappingPoint, std::size_t AddressableSize>
 struct MappableMemory {
@@ -62,6 +62,6 @@ struct MappableMemory {
     EntryElement m_mapping_entries[MappingPointIndex_t(EMappingPoint::SIZE)];
 };
 
-} // namespace ln
+} // namespace nh
 
 #include "mappable_memory.inl"

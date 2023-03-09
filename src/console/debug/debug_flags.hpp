@@ -1,6 +1,6 @@
 #pragma once
 
-namespace lnd {
+namespace nhd {
 
 enum DebugFlags {
     DBG_OFF = 0,
@@ -33,4 +33,4 @@ debug_off(DebugFlags &o_flags, DebugFlags i_flag)
     o_flags = DebugFlags(o_flags & ~i_flag);
 }
 
-} // namespace lnd
+} // namespace nhd

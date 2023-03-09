@@ -10,7 +10,7 @@
 #include "console/dllexport.h"
 #include "console/cpu/addr_mode.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PPU;
 struct APU;
@@ -181,8 +181,8 @@ struct CPU {
 
   private:
     struct InstrImpl;
-    typedef void (*InstrCore)(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
-    typedef void (*InstrFrame)(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+    typedef void (*InstrCore)(nh::CPU *io_cpu, Byte i_in, Byte &o_out);
+    typedef void (*InstrFrame)(int i_idx, nh::CPU *io_cpu, InstrCore i_core,
                                bool &io_done);
 
     /* Set and used in execution of instruction, not to be confused with
@@ -208,6 +208,6 @@ struct CPU {
     } m_instr_ctx;
 };
 
-} // namespace ln
+} // namespace nh
 
 // #include "cpu.inl"

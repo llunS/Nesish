@@ -5,7 +5,7 @@
 #include "console/dllexport.h"
 #include "console/debug/color.hpp"
 
-namespace lnd {
+namespace nhd {
 
 struct Palette {
   public:
@@ -19,7 +19,7 @@ struct Palette {
     {
         return 32;
     }
-    LN_CONSOLE_API const lnd::Color &
+    LN_CONSOLE_API const nhd::Color &
     get_color(int i_idx) const;
 
   public:
@@ -28,7 +28,7 @@ struct Palette {
               unsigned char i_g, unsigned char i_b);
 
   private:
-    lnd::Color m_colors[32];
+    nhd::Color m_colors[32];
 };
 
-} // namespace lnd
+} // namespace nhd

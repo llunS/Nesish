@@ -6,16 +6,16 @@
 
 #include <functional>
 
-namespace ln {
+namespace nh {
 
 struct MappingEntry;
-typedef std::function<ln::Error(const MappingEntry *i_entry, Address i_addr,
+typedef std::function<nh::Error(const MappingEntry *i_entry, Address i_addr,
                                 Byte *&o_addr)>
     MappingDecodeFunc;
-typedef std::function<ln::Error(const MappingEntry *i_entry, Address i_addr,
+typedef std::function<nh::Error(const MappingEntry *i_entry, Address i_addr,
                                 Byte &o_val)>
     MappingGetByteFunc;
-typedef std::function<ln::Error(const MappingEntry *i_entry, Address i_addr,
+typedef std::function<nh::Error(const MappingEntry *i_entry, Address i_addr,
                                 Byte i_val)>
     MappingSetByteFunc;
 
@@ -56,4 +56,4 @@ struct MappingEntry {
     MappingSetByteFunc set_byte;
 };
 
-} // namespace ln
+} // namespace nh

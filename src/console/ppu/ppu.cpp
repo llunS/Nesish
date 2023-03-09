@@ -6,10 +6,10 @@
 #include "console/assert.hpp"
 #include "console/cpu/cpu.hpp"
 
-namespace ln {
+namespace nh {
 
 PPU::PPU(VideoMemory *i_memory, CPU *i_cpu,
-         const lnd::DebugFlags &i_debug_flags)
+         const nhd::DebugFlags &i_debug_flags)
     : m_regs{}
     , m_oam{}
     , m_memory(i_memory)
@@ -340,19 +340,19 @@ PPU::get_frame() const
     return m_front_buf;
 }
 
-const lnd::Palette &
+const nhd::Palette &
 PPU::get_palette_dbg() const
 {
     return m_palette_snap;
 }
 
-const lnd::OAM &
+const nhd::OAM &
 PPU::get_oam_dbg() const
 {
     return m_oam_snap;
 }
 
-const lnd::PatternTable &
+const nhd::PatternTable &
 PPU::get_ptn_tbl_dbg(bool i_right) const
 {
     return i_right ? m_ptn_tbl_r_snap : m_ptn_tbl_l_snap;
@@ -400,4 +400,4 @@ PPU::inc_vram_addr()
     // presumably not double-increment the relevant counter.
 }
 
-} // namespace ln
+} // namespace nh

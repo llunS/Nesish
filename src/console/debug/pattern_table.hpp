@@ -6,7 +6,7 @@
 #include "console/ppu/color.hpp"
 #include "console/types.hpp"
 
-namespace lnd {
+namespace nhd {
 
 struct PatternTable {
   public:
@@ -25,7 +25,7 @@ struct PatternTable {
     {
         return TILES_H * TILE_H;
     }
-    LN_CONSOLE_API const ln::Byte *
+    LN_CONSOLE_API const nh::Byte *
     get_data() const;
 
   public:
@@ -58,7 +58,7 @@ struct PatternTable {
   public:
     void
     set_pixel(int i_tile_idx, int i_fine_y, int i_fine_x,
-              const ln::Color &i_color);
+              const nh::Color &i_color);
 
   private:
     static constexpr int TILES_W = 16;
@@ -68,7 +68,7 @@ struct PatternTable {
 
   private:
     // 16x16 tiles each with 8x8 pixels
-    ln::Color m_pixels[(TILES_W * TILES_H) * (TILE_W * TILE_H)];
+    nh::Color m_pixels[(TILES_W * TILES_H) * (TILE_W * TILE_H)];
 };
 
-} // namespace lnd
+} // namespace nhd

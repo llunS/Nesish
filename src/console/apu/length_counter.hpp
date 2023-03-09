@@ -4,7 +4,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct LengthCounter {
   public:
@@ -50,4 +50,4 @@ struct LengthCounter {
     Byte m_load_val;
 };
 
-} // namespace ln
+} // namespace nh

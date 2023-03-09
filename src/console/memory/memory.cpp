@@ -4,7 +4,7 @@
 
 #define BASE MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE>
 
-namespace ln {
+namespace nh {
 
 constexpr Address Memory::STACK_PAGE_MASK;
 
@@ -19,7 +19,7 @@ Memory::Memory()
     // Internal RAM space mapping
     {
         auto decode = [](const MappingEntry *i_entry, Address i_addr,
-                         Byte *&o_addr) -> ln::Error {
+                         Byte *&o_addr) -> nh::Error {
             Byte *ram = (Byte *)i_entry->opaque;
 
             Address addr = i_addr & LN_RAM_ADDR_MASK;
@@ -76,4 +76,4 @@ Memory::set_bulk(Address i_begin, Address i_end, Byte i_byte)
     return Error::INVALID_ARGUMENT;
 }
 
-} // namespace ln
+} // namespace nh

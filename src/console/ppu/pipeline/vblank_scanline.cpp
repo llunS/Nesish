@@ -3,7 +3,7 @@
 #include "console/spec.hpp"
 #include "console/ppu/pipeline_accessor.hpp"
 
-namespace ln {
+namespace nh {
 
 VBlankScanline::VBlankScanline(PipelineAccessor *io_accessor)
     : Tickable(LN_SCANLINE_CYCLES)
@@ -38,4 +38,4 @@ VBlankScanline::on_tick(Cycle i_curr, Cycle i_total)
     return 1;
 }
 
-} // namespace ln
+} // namespace nh

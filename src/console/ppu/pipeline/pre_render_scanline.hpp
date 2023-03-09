@@ -5,7 +5,7 @@
 #include "console/ppu/pipeline/bg_fetch.hpp"
 #include "console/ppu/pipeline/sp_eval_fetch.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor;
 
@@ -26,4 +26,4 @@ struct PreRenderScanline : public Tickable {
     SpEvalFetch m_sp;
 };
 
-} // namespace ln
+} // namespace nh

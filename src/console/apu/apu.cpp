@@ -3,7 +3,7 @@
 #include "console/spec.hpp"
 #include "console/apu/apu_clock.hpp"
 
-namespace ln {
+namespace nh {
 
 APU::APU(const APUClock &i_clock, DMCDMA &o_dmc_dma)
     : m_regs{}
@@ -397,4 +397,4 @@ APU::addr_to_regsiter(Address i_addr) -> Register
     }
 }
 
-} // namespace ln
+} // namespace nh

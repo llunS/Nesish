@@ -2,7 +2,7 @@
 
 #include "common/klass.hpp"
 
-namespace ln {
+namespace nh {
 
 /// @brief Sequencer for pulse channel
 struct Sequencer {
@@ -28,4 +28,4 @@ struct Sequencer {
     int m_seq_idx;
 };
 
-} // namespace ln
+} // namespace nh

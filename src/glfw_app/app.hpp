@@ -5,7 +5,7 @@
 
 #include "glfw_app/dllexport.h"
 
-namespace ln_app {
+namespace sh {
 
 enum AppOpt {
     OPT_NONE = 0,
@@ -25,4 +25,4 @@ operator|=(AppOpt &a, AppOpt b)
 LN_APP_API int
 run_app(const std::string &i_rom_path, AppOpt i_opts);
 
-} // namespace ln_app
+} // namespace sh

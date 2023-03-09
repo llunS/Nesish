@@ -4,11 +4,10 @@
 
 #include <type_traits>
 
-namespace ln {
+namespace nh {
 
 void
-CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_brk(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     (void)(i_core);
 
@@ -97,8 +96,7 @@ CPU::InstrImpl::frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_rti(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_rti(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     (void)(i_core);
 
@@ -144,8 +142,7 @@ CPU::InstrImpl::frm_rti(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_rts(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_rts(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     (void)(i_core);
 
@@ -188,7 +185,7 @@ CPU::InstrImpl::frm_rts(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_phr_impl(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_phr_impl(int i_idx, CPU *io_cpu, InstrCore i_core,
                              bool &io_done, Byte i_val)
 {
     (void)(i_core);
@@ -213,15 +210,13 @@ CPU::InstrImpl::frm_phr_impl(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_pha(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_pha(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     frm_phr_impl(i_idx, io_cpu, i_core, io_done, io_cpu->A);
 }
 
 void
-CPU::InstrImpl::frm_php(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_php(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
     // Push the status register with the B flag set
@@ -229,7 +224,7 @@ CPU::InstrImpl::frm_php(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_plr_impl(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_plr_impl(int i_idx, CPU *io_cpu, InstrCore i_core,
                              bool &io_done, Byte &o_val)
 {
     (void)(i_core);
@@ -260,8 +255,7 @@ CPU::InstrImpl::frm_plr_impl(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_pla(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_pla(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     Byte val;
     frm_plr_impl(i_idx, io_cpu, i_core, io_done, val);
@@ -275,8 +269,7 @@ CPU::InstrImpl::frm_pla(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_plp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_plp(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     Byte val;
     frm_plr_impl(i_idx, io_cpu, i_core, io_done, val);
@@ -289,8 +282,7 @@ CPU::InstrImpl::frm_plp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_jsr(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_jsr(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     (void)(i_core);
 
@@ -335,8 +327,7 @@ CPU::InstrImpl::frm_jsr(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_imp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_imp(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     // @TODO: Pipelining
 
@@ -346,8 +337,7 @@ CPU::InstrImpl::frm_imp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_acc(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_acc(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     switch (i_idx)
     {
@@ -366,8 +356,7 @@ CPU::InstrImpl::frm_acc(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_imm(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_imm(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     switch (i_idx)
     {
@@ -386,7 +375,7 @@ CPU::InstrImpl::frm_imm(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abs_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abs_jmp(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     (void)(i_core);
@@ -414,7 +403,7 @@ CPU::InstrImpl::frm_abs_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abs_pre(int i_idx, ln::CPU *io_cpu)
+CPU::InstrImpl::frm_abs_pre(int i_idx, CPU *io_cpu)
 {
     switch (i_idx)
     {
@@ -434,7 +423,7 @@ CPU::InstrImpl::frm_abs_pre(int i_idx, ln::CPU *io_cpu)
 }
 
 void
-CPU::InstrImpl::frm_abs_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abs_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     switch (i_idx)
@@ -461,7 +450,7 @@ CPU::InstrImpl::frm_abs_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abs_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abs_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     switch (i_idx)
@@ -501,7 +490,7 @@ CPU::InstrImpl::frm_abs_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abs_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abs_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     switch (i_idx)
@@ -528,7 +517,7 @@ CPU::InstrImpl::frm_abs_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abi_pre(int i_idx, ln::CPU *io_cpu, Byte i_val)
+CPU::InstrImpl::frm_abi_pre(int i_idx, CPU *io_cpu, Byte i_val)
 {
     switch (i_idx)
     {
@@ -551,7 +540,7 @@ CPU::InstrImpl::frm_abi_pre(int i_idx, ln::CPU *io_cpu, Byte i_val)
 }
 
 void
-CPU::InstrImpl::frm_abi_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abi_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done, Byte i_val)
 {
     switch (i_idx)
@@ -598,7 +587,7 @@ CPU::InstrImpl::frm_abi_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abi_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abi_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done, Byte i_val)
 {
     switch (i_idx)
@@ -636,7 +625,7 @@ CPU::InstrImpl::frm_abi_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abi_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abi_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done, Byte i_val)
 {
     switch (i_idx)
@@ -687,49 +676,49 @@ CPU::InstrImpl::frm_abi_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_abx_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abx_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_abi_r(i_idx, io_cpu, i_core, io_done, io_cpu->X);
 }
 
 void
-CPU::InstrImpl::frm_abx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abx_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     frm_abi_rmw(i_idx, io_cpu, i_core, io_done, io_cpu->X);
 }
 
 void
-CPU::InstrImpl::frm_abx_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_abx_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_abi_w(i_idx, io_cpu, i_core, io_done, io_cpu->X);
 }
 
 void
-CPU::InstrImpl::frm_aby_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_aby_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_abi_r(i_idx, io_cpu, i_core, io_done, io_cpu->Y);
 }
 
 void
-CPU::InstrImpl::frm_aby_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_aby_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     frm_abi_rmw(i_idx, io_cpu, i_core, io_done, io_cpu->Y);
 }
 
 void
-CPU::InstrImpl::frm_aby_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_aby_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_abi_w(i_idx, io_cpu, i_core, io_done, io_cpu->Y);
 }
 
 void
-CPU::InstrImpl::frm_zp_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zp_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                          bool &io_done)
 {
     switch (i_idx)
@@ -755,7 +744,7 @@ CPU::InstrImpl::frm_zp_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_zp_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zp_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                            bool &io_done)
 {
     switch (i_idx)
@@ -794,7 +783,7 @@ CPU::InstrImpl::frm_zp_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_zp_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zp_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                          bool &io_done)
 {
     switch (i_idx)
@@ -820,7 +809,7 @@ CPU::InstrImpl::frm_zp_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_zpi_pre(int i_idx, ln::CPU *io_cpu, Byte i_val)
+CPU::InstrImpl::frm_zpi_pre(int i_idx, CPU *io_cpu, Byte i_val)
 {
     switch (i_idx)
     {
@@ -841,7 +830,7 @@ CPU::InstrImpl::frm_zpi_pre(int i_idx, ln::CPU *io_cpu, Byte i_val)
 }
 
 void
-CPU::InstrImpl::frm_zpi_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zpi_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done, Byte i_val)
 {
     switch (i_idx)
@@ -868,7 +857,7 @@ CPU::InstrImpl::frm_zpi_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_zpi_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zpi_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done, Byte i_val)
 {
     switch (i_idx)
@@ -895,14 +884,14 @@ CPU::InstrImpl::frm_zpi_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_zpx_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zpx_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_zpi_r(i_idx, io_cpu, i_core, io_done, io_cpu->X);
 }
 
 void
-CPU::InstrImpl::frm_zpx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zpx_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     switch (i_idx)
@@ -942,29 +931,28 @@ CPU::InstrImpl::frm_zpx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_zpx_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zpx_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_zpi_w(i_idx, io_cpu, i_core, io_done, io_cpu->X);
 }
 
 void
-CPU::InstrImpl::frm_zpy_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zpy_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_zpi_r(i_idx, io_cpu, i_core, io_done, io_cpu->Y);
 }
 
 void
-CPU::InstrImpl::frm_zpy_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_zpy_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     frm_zpi_w(i_idx, io_cpu, i_core, io_done, io_cpu->Y);
 }
 
 void
-CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
-                        bool &io_done)
+CPU::InstrImpl::frm_rel(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
 {
     switch (i_idx)
     {
@@ -1041,7 +1029,7 @@ CPU::InstrImpl::frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_izx_pre(int i_idx, ln::CPU *io_cpu)
+CPU::InstrImpl::frm_izx_pre(int i_idx, CPU *io_cpu)
 {
     switch (i_idx)
     {
@@ -1075,7 +1063,7 @@ CPU::InstrImpl::frm_izx_pre(int i_idx, ln::CPU *io_cpu)
 }
 
 void
-CPU::InstrImpl::frm_izx_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_izx_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     switch (i_idx)
@@ -1104,7 +1092,7 @@ CPU::InstrImpl::frm_izx_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_izx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_izx_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     switch (i_idx)
@@ -1146,7 +1134,7 @@ CPU::InstrImpl::frm_izx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_izx_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_izx_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     switch (i_idx)
@@ -1175,7 +1163,7 @@ CPU::InstrImpl::frm_izx_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_izy_pre(int i_idx, ln::CPU *io_cpu)
+CPU::InstrImpl::frm_izy_pre(int i_idx, CPU *io_cpu)
 {
     switch (i_idx)
     {
@@ -1205,7 +1193,7 @@ CPU::InstrImpl::frm_izy_pre(int i_idx, ln::CPU *io_cpu)
 }
 
 void
-CPU::InstrImpl::frm_izy_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_izy_r(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     switch (i_idx)
@@ -1253,7 +1241,7 @@ CPU::InstrImpl::frm_izy_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_izy_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_izy_rmw(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     switch (i_idx)
@@ -1305,7 +1293,7 @@ CPU::InstrImpl::frm_izy_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_izy_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_izy_w(int i_idx, CPU *io_cpu, InstrCore i_core,
                           bool &io_done)
 {
     switch (i_idx)
@@ -1344,7 +1332,7 @@ CPU::InstrImpl::frm_izy_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::frm_ind_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
+CPU::InstrImpl::frm_ind_jmp(int i_idx, CPU *io_cpu, InstrCore i_core,
                             bool &io_done)
 {
     (void)(i_core);
@@ -1387,7 +1375,7 @@ CPU::InstrImpl::frm_ind_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core,
 }
 
 void
-CPU::InstrImpl::core_nop(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_nop(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(io_cpu);
     (void)(i_in);
@@ -1395,7 +1383,7 @@ CPU::InstrImpl::core_nop(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_ora(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_ora(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1406,7 +1394,7 @@ CPU::InstrImpl::core_ora(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_kil(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_kil(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1415,7 +1403,7 @@ CPU::InstrImpl::core_kil(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_asl(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_asl(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     Byte new_val = i_in << 1;
     o_out = new_val;
@@ -1426,14 +1414,14 @@ CPU::InstrImpl::core_asl(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bpl(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bpl(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = !io_cpu->check_flag(StatusFlag::N);
 }
 
 void
-CPU::InstrImpl::core_clc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_clc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1441,7 +1429,7 @@ CPU::InstrImpl::core_clc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_and(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_and(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1452,7 +1440,7 @@ CPU::InstrImpl::core_and(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bit(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bit(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1462,7 +1450,7 @@ CPU::InstrImpl::core_bit(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_rol(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_rol(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     bool carry = io_cpu->check_flag(StatusFlag::C);
     o_out = (i_in << 1) | (carry << 0);
@@ -1473,14 +1461,14 @@ CPU::InstrImpl::core_rol(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bmi(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bmi(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->check_flag(StatusFlag::N);
 }
 
 void
-CPU::InstrImpl::core_sec(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sec(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1488,7 +1476,7 @@ CPU::InstrImpl::core_sec(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_eor(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_eor(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1499,7 +1487,7 @@ CPU::InstrImpl::core_eor(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_lsr(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_lsr(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     o_out = i_in >> 1;
 
@@ -1509,14 +1497,14 @@ CPU::InstrImpl::core_lsr(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bvc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bvc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = !io_cpu->check_flag(StatusFlag::V);
 }
 
 void
-CPU::InstrImpl::core_cli(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_cli(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1524,7 +1512,7 @@ CPU::InstrImpl::core_cli(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_adc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_adc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1546,7 +1534,7 @@ CPU::InstrImpl::core_adc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_ror(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_ror(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     core_ror_op(io_cpu, i_in, o_out);
 
@@ -1556,14 +1544,14 @@ CPU::InstrImpl::core_ror(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bvs(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bvs(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->check_flag(StatusFlag::V);
 }
 
 void
-CPU::InstrImpl::core_sei(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sei(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1571,28 +1559,28 @@ CPU::InstrImpl::core_sei(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_sta(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sta(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->A;
 }
 
 void
-CPU::InstrImpl::core_sty(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sty(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->Y;
 }
 
 void
-CPU::InstrImpl::core_stx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_stx(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->X;
 }
 
 void
-CPU::InstrImpl::core_dey(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_dey(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1604,7 +1592,7 @@ CPU::InstrImpl::core_dey(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_txa(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_txa(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1616,14 +1604,14 @@ CPU::InstrImpl::core_txa(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bcc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bcc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = !io_cpu->check_flag(StatusFlag::C);
 }
 
 void
-CPU::InstrImpl::core_tya(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_tya(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1635,7 +1623,7 @@ CPU::InstrImpl::core_tya(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_txs(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_txs(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1644,7 +1632,7 @@ CPU::InstrImpl::core_txs(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_ldy(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_ldy(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1655,7 +1643,7 @@ CPU::InstrImpl::core_ldy(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_lda(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_lda(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1666,7 +1654,7 @@ CPU::InstrImpl::core_lda(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_ldx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_ldx(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1677,7 +1665,7 @@ CPU::InstrImpl::core_ldx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_tay(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_tay(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1689,7 +1677,7 @@ CPU::InstrImpl::core_tay(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_tax(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_tax(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1701,14 +1689,14 @@ CPU::InstrImpl::core_tax(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bcs(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bcs(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->check_flag(StatusFlag::C);
 }
 
 void
-CPU::InstrImpl::core_clv(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_clv(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1716,7 +1704,7 @@ CPU::InstrImpl::core_clv(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_tsx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_tsx(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1728,21 +1716,21 @@ CPU::InstrImpl::core_tsx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_cpy(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_cpy(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
     (void)(core_cmp_impl(io_cpu, i_in, io_cpu->Y));
 }
 
 void
-CPU::InstrImpl::core_cmp(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_cmp(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
     (void)(core_cmp_impl(io_cpu, i_in, io_cpu->A));
 }
 
 void
-CPU::InstrImpl::core_dec(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_dec(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     o_out = i_in - 1;
 
@@ -1751,7 +1739,7 @@ CPU::InstrImpl::core_dec(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_iny(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_iny(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1763,7 +1751,7 @@ CPU::InstrImpl::core_iny(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_dex(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_dex(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1775,14 +1763,14 @@ CPU::InstrImpl::core_dex(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_bne(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_bne(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = !io_cpu->check_flag(StatusFlag::Z);
 }
 
 void
-CPU::InstrImpl::core_cld(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_cld(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1790,14 +1778,14 @@ CPU::InstrImpl::core_cld(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_cpx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_cpx(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
     (void)(core_cmp_impl(io_cpu, i_in, io_cpu->X));
 }
 
 void
-CPU::InstrImpl::core_sbc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sbc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1818,7 +1806,7 @@ CPU::InstrImpl::core_sbc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_inc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_inc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     o_out = i_in + 1;
 
@@ -1827,7 +1815,7 @@ CPU::InstrImpl::core_inc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_inx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_inx(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1839,14 +1827,14 @@ CPU::InstrImpl::core_inx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_beq(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_beq(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->check_flag(StatusFlag::Z);
 }
 
 void
-CPU::InstrImpl::core_sed(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sed(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     (void)(o_out);
@@ -1854,7 +1842,7 @@ CPU::InstrImpl::core_sed(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_slo(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_slo(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     core_asl(io_cpu, i_in, o_out);
     Byte tmp;
@@ -1863,7 +1851,7 @@ CPU::InstrImpl::core_slo(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_anc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_anc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1878,7 +1866,7 @@ CPU::InstrImpl::core_anc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_rla(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_rla(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     core_rol(io_cpu, i_in, o_out);
     Byte tmp;
@@ -1887,7 +1875,7 @@ CPU::InstrImpl::core_rla(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_alr(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_alr(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1904,7 +1892,7 @@ CPU::InstrImpl::core_alr(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_sre(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sre(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     core_lsr(io_cpu, i_in, o_out);
     Byte tmp;
@@ -1913,7 +1901,7 @@ CPU::InstrImpl::core_sre(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_arr(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_arr(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1937,7 +1925,7 @@ CPU::InstrImpl::core_arr(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_rra(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_rra(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     core_ror(io_cpu, i_in, o_out);
     Byte tmp;
@@ -1946,7 +1934,7 @@ CPU::InstrImpl::core_rra(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_xaa(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_xaa(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
     io_cpu->A = io_cpu->X & i_in;
@@ -1956,14 +1944,14 @@ CPU::InstrImpl::core_xaa(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_sax(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_sax(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
     o_out = io_cpu->A & io_cpu->X;
 }
 
 void
-CPU::InstrImpl::core_las(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_las(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1975,7 +1963,7 @@ CPU::InstrImpl::core_las(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_lax(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_lax(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -1987,7 +1975,7 @@ CPU::InstrImpl::core_lax(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_axs(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_axs(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(o_out);
 
@@ -2000,7 +1988,7 @@ CPU::InstrImpl::core_axs(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_dcp(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_dcp(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     core_dec(io_cpu, i_in, o_out);
     Byte tmp;
@@ -2009,7 +1997,7 @@ CPU::InstrImpl::core_dcp(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_isc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_isc(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     core_inc(io_cpu, i_in, o_out);
     Byte tmp;
@@ -2018,7 +2006,7 @@ CPU::InstrImpl::core_isc(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_tas(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_tas(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
 
@@ -2031,7 +2019,7 @@ CPU::InstrImpl::core_tas(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_shy(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_shy(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
 
@@ -2039,7 +2027,7 @@ CPU::InstrImpl::core_shy(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_shx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_shx(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
 
@@ -2047,7 +2035,7 @@ CPU::InstrImpl::core_shx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_ahx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_ahx(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     (void)(i_in);
 
@@ -2055,7 +2043,7 @@ CPU::InstrImpl::core_ahx(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 void
-CPU::InstrImpl::core_XhX_impl(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_XhX_impl(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     // http://www.oxyron.de/html/opcodes02.html
     // https://www.nesdev.com/extra_instructions.txt
@@ -2067,7 +2055,7 @@ CPU::InstrImpl::core_XhX_impl(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
 }
 
 Byte
-CPU::InstrImpl::core_cmp_impl(ln::CPU *io_cpu, Byte i_in, ln::Byte i_reg)
+CPU::InstrImpl::core_cmp_impl(CPU *io_cpu, Byte i_in, nh::Byte i_reg)
 {
     Byte delta = i_reg - i_in;
     bool borrow = i_reg < i_in;
@@ -2080,20 +2068,20 @@ CPU::InstrImpl::core_cmp_impl(ln::CPU *io_cpu, Byte i_in, ln::Byte i_reg)
 }
 
 void
-CPU::InstrImpl::core_and_op(ln::CPU *io_cpu, Byte i_in)
+CPU::InstrImpl::core_and_op(CPU *io_cpu, Byte i_in)
 {
     io_cpu->A &= i_in;
 }
 
 void
-CPU::InstrImpl::core_ror_op(ln::CPU *io_cpu, Byte i_in, Byte &o_out)
+CPU::InstrImpl::core_ror_op(CPU *io_cpu, Byte i_in, Byte &o_out)
 {
     bool carry = io_cpu->check_flag(StatusFlag::C);
     o_out = (i_in >> 1) | (carry << 7);
 }
 
 void
-CPU::InstrImpl::throw_away(ln::CPU *io_cpu, Byte i_data)
+CPU::InstrImpl::throw_away(CPU *io_cpu, Byte i_data)
 {
     // What does it mean to throw it away?
     // Inferring from the wording in the doc, putting it in the bus does not
@@ -2136,15 +2124,15 @@ CPU::InstrImpl::get_high(Address i_val)
 }
 
 void
-CPU::InstrImpl::test_flag_n(ln::CPU *o_cpu, Byte i_val)
+CPU::InstrImpl::test_flag_n(CPU *o_cpu, Byte i_val)
 {
     o_cpu->test_flag(StatusFlag::N, check_bit<7>(i_val));
 }
 
 void
-CPU::InstrImpl::test_flag_z(ln::CPU *o_cpu, Byte i_val)
+CPU::InstrImpl::test_flag_z(CPU *o_cpu, Byte i_val)
 {
     o_cpu->test_flag(StatusFlag::Z, i_val == 0);
 }
 
-} // namespace ln
+} // namespace nh

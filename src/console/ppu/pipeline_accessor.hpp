@@ -4,11 +4,11 @@
 #include "console/types.hpp"
 #include "console/ppu/ppu.hpp"
 
-namespace lnd {
+namespace nhd {
 struct Sprite;
-} // namespace lnd
+} // namespace nhd
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor final {
   public:
@@ -38,7 +38,7 @@ struct PipelineAccessor final {
     VideoMemory *
     get_memory();
 
-    ln::Error
+    nh::Error
     get_color_byte(Address i_addr, Byte &o_val);
     const Palette &
     get_palette();
@@ -65,7 +65,7 @@ struct PipelineAccessor final {
     static Address
     get_sliver_addr(bool i_tbl_right, Byte i_tile_idx, bool i_upper,
                     Byte i_fine_y);
-    static ln::Error
+    static nh::Error
     get_ptn_sliver(bool i_tbl_right, Byte i_tile_idx, bool i_upper,
                    Byte i_fine_y, const VideoMemory *i_vram, Byte &o_val);
 
@@ -89,7 +89,7 @@ struct PipelineAccessor final {
     void
     capture_oam();
     void
-    update_oam_sprite(lnd::Sprite &o_sprite, int i_idx);
+    update_oam_sprite(nhd::Sprite &o_sprite, int i_idx);
 
     bool
     capture_ptn_tbls_on();
@@ -104,4 +104,4 @@ struct PipelineAccessor final {
     PPU *m_ppu;
 };
 
-} // namespace ln
+} // namespace nh

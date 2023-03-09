@@ -1,6 +1,6 @@
 #include "apu_clock.hpp"
 
-namespace ln {
+namespace nh {
 
 APUClock::APUClock()
     : m_cycle(0)
@@ -49,4 +49,4 @@ APUClock::odd() const
     return !even();
 }
 
-} // namespace ln
+} // namespace nh

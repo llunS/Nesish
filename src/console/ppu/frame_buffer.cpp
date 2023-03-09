@@ -4,7 +4,7 @@
 
 #include "console/assert.hpp"
 
-namespace ln {
+namespace nh {
 
 FrameBuffer::FrameBuffer()
 {
@@ -43,4 +43,4 @@ FrameBuffer::get_data() const
     return (Byte *)(&m_buf[0]);
 }
 
-} // namespace ln
+} // namespace nh

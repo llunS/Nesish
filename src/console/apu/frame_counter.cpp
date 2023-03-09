@@ -6,7 +6,7 @@
 
 // https://www.nesdev.org/wiki/APU_Frame_Counter
 
-namespace ln {
+namespace nh {
 
 FrameCounter::FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2,
                            Triangle &o_triangle, Noise &o_noise)
@@ -200,4 +200,4 @@ FrameCounter::tick_envelope_and_linear_counter()
     m_noise.tick_envelope();
 }
 
-} // namespace ln
+} // namespace nh

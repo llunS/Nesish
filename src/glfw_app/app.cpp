@@ -23,7 +23,7 @@
 #define LA_AUDIO_RESAMPLE_BUF_SIZE LA_AUDIO_SAMPLE_RATE / 10
 #define LA_AUDIO_DYN_D 0.005
 
-namespace ln_app {
+namespace sh {
 
 static constexpr double FRAME_TIME = 1.0 / 60.0;
 
@@ -56,14 +56,14 @@ struct ChannelData {
 int
 run_app(const std::string &i_rom_path, AppOpt i_opts)
 {
-    std::unique_ptr<ln::Emulator> emulator{new ln::Emulator()};
-    auto ln_err = ln::Error::OK;
+    std::unique_ptr<nh::Emulator> emulator{new nh::Emulator()};
+    auto ln_err = nh::Error::OK;
 
     /* Insert cartridge */
     ln_err = emulator->insert_cartridge(i_rom_path);
     if (LN_FAILED(ln_err))
     {
-        LN_LOG_ERROR(ln::get_logger(), "Failed to load cartridge: {}", ln_err);
+        LN_LOG_ERROR(nh::get_logger(), "Failed to load cartridge: {}", ln_err);
         return 1;
     }
 
@@ -77,7 +77,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     int err = 0;
     std::unique_ptr<EmulatorWindow> emu_win{new EmulatorWindow()};
     std::unique_ptr<DebuggerWindow> dbg_win;
-    if (i_opts & ln_app::OPT_DEBUG_WIN)
+    if (i_opts & sh::OPT_DEBUG_WIN)
     {
         dbg_win.reset(new DebuggerWindow());
     }
@@ -86,7 +86,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     ChannelData ch_data{&audio_ch, false};
     RtAudio dac;
     PCMWriter pcm_writer;
-    bool enable_audio = i_opts & ln_app::OPT_AUDIO;
+    bool enable_audio = i_opts & sh::OPT_AUDIO;
 
     /* init audio */
     if (enable_audio)
@@ -102,9 +102,9 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
             err = 1;
             goto l_end;
         }
-        if (i_opts & ln_app::OPT_PCM)
+        if (i_opts & sh::OPT_PCM)
         {
-            if (pcm_writer.open(ln::join_exec_rel_path("audio.pcm")))
+            if (pcm_writer.open(nh::join_exec_rel_path("audio.pcm")))
             {
                 err = 1;
                 goto l_end;
@@ -123,7 +123,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
         dbg_win->set_pos(50 + LN_NES_WIDTH * 2 + 50, 115);
     }
     if (!emu_win->init(emulator.get(), LN_NES_WIDTH * 2, LN_NES_HEIGHT * 2,
-                       !dbg_win, false, "Emulator"))
+                       !dbg_win, false, "Nesish"))
     {
         err = 1;
         goto l_end;
@@ -149,7 +149,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
         constexpr double S_TO_US = 1000.0 * 1000.0;
         constexpr double FRAME_TIME_US = FRAME_TIME * S_TO_US;
 
-        double currTimeUS = ln::get_now_micro();
+        double currTimeUS = nh::get_now_micro();
         double nextEmulateTimeUS = currTimeUS;
         double nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
 
@@ -173,7 +173,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
             }
 
             /* Emulate */
-            currTimeUS = ln::get_now_micro();
+            currTimeUS = nh::get_now_micro();
             if (!(dbg_win && dbg_win->isPaused()) &&
                 currTimeUS >= nextEmulateTimeUS)
             {
@@ -198,7 +198,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                     }
 
                     /* Emulate until audio buffer of target size is met */
-                    ln::Cycle cpu_ticks = 0;
+                    nh::Cycle cpu_ticks = 0;
                     for (int buf_idx = 0; buf_idx < target_bufsize; ++buf_idx)
                     {
                         // Feed input samples until target count is met
@@ -235,7 +235,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                 }
                 else
                 {
-                    ln::Cycle ticks = emulator->ticks(0.002);
+                    nh::Cycle ticks = emulator->ticks(0.002);
                     for (decltype(ticks) i = 0; i < ticks; ++i)
                     {
                         emulator->tick();
@@ -382,7 +382,7 @@ audio_playback(void *outputBuffer, void *inputBuffer,
 
     if (status)
     {
-        LN_LOG_INFO(ln::get_logger(),
+        LN_LOG_INFO(nh::get_logger(),
                     "Stream underflow for buffer of {} detected!",
                     nBufferFrames);
     }
@@ -406,4 +406,4 @@ audio_playback(void *outputBuffer, void *inputBuffer,
     return 0;
 }
 
-} // namespace ln_app
+} // namespace sh

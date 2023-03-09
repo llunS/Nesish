@@ -6,7 +6,7 @@
 
 // https://www.nesdev.org/wiki/APU_DMC
 
-namespace ln {
+namespace nh {
 
 DMC::DMC(DMCDMA &o_dmc_dma)
     : m_dmc_dma(o_dmc_dma)
@@ -263,4 +263,4 @@ DMC::restart_playback()
     m_sample_bytes_left = m_sample_length;
 }
 
-} // namespace ln
+} // namespace nh

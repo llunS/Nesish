@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace ln {
+namespace nh {
 
 char
 path_delimiter();
@@ -10,4 +10,4 @@ path_delimiter();
 std::string
 get_exec_path();
 
-} // namespace ln
+} // namespace nh

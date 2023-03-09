@@ -2,7 +2,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 inline Byte2
 to_byte2(Byte i_higher, Byte i_lower)
@@ -47,4 +47,4 @@ reverse_byte(Byte &io_byte)
     io_byte = (io_byte & 0xAA) >> 1 | (io_byte & 0x55) << 1;
 }
 
-} // namespace ln
+} // namespace nh

@@ -8,12 +8,12 @@
 
 #include "glfw_app/rendering/renderer.hpp"
 
-namespace ln {
+namespace nh {
 struct Emulator;
 struct Controller;
-} // namespace ln
+} // namespace nh
 
-namespace ln_app {
+namespace sh {
 
 struct EmulatorWindow : public PlatformWindow {
   public:
@@ -28,7 +28,7 @@ struct EmulatorWindow : public PlatformWindow {
 
   public:
     bool
-    init(ln::Emulator *i_emu, int i_width, int i_height, bool i_load_gl,
+    init(nh::Emulator *i_emu, int i_width, int i_height, bool i_load_gl,
          bool i_resizable = false, const char *i_name = nullptr);
 
   public:
@@ -44,11 +44,11 @@ struct EmulatorWindow : public PlatformWindow {
     insert_cart(const std::string i_rom_path);
 
   private:
-    ln::Emulator *m_emu;
-    ln::Controller *m_p1;
-    ln::Controller *m_p2;
+    nh::Emulator *m_emu;
+    nh::Controller *m_p1;
+    nh::Controller *m_p2;
 
     Renderer *m_renderer;
 };
 
-} // namespace ln_app
+} // namespace sh

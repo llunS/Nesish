@@ -8,7 +8,7 @@
 
 #include "console/ppu/frame_buffer.hpp"
 
-namespace ln_app {
+namespace sh {
 
 static constexpr int VERT_COUNT = 6;
 
@@ -40,10 +40,10 @@ Renderer::cleanup()
     m_tex.cleanup();
 }
 
-ln::Error
+nh::Error
 Renderer::setup()
 {
-    ln::Error err = ln::Error::OK;
+    nh::Error err = nh::Error::OK;
 
     err = m_shader.compile(g_screen_rect_vert, g_screen_rect_frag);
     if (LN_FAILED(err))
@@ -59,11 +59,11 @@ Renderer::setup()
     glGenBuffers(1, &m_vbo);
     if (checkGLError())
     {
-        err = ln::Error::RENDERING_API;
+        err = nh::Error::RENDERING_API;
         goto l_end;
     }
     {
-        // Data in ln::FrameBuffer originate from upper left, while OpenGL
+        // Data in nh::FrameBuffer originate from upper left, while OpenGL
         // texture coordinate originates from lower left, we flip the Y texture
         // coordinate here for simplicity.
         constexpr Vertex BL = {-1.0f, -1.0f, 0.0f, 1.0f};
@@ -80,7 +80,7 @@ Renderer::setup()
     glGenVertexArrays(1, &m_vao);
     if (checkGLError())
     {
-        err = ln::Error::RENDERING_API;
+        err = nh::Error::RENDERING_API;
         goto l_end;
     }
     {
@@ -117,7 +117,7 @@ l_end:
 }
 
 void
-Renderer::render(const ln::FrameBuffer &i_frame_buf)
+Renderer::render(const nh::FrameBuffer &i_frame_buf)
 {
     /* update input texture with "i_frame_buf" */
     if (!m_tex.from_frame(i_frame_buf))
@@ -139,4 +139,4 @@ Renderer::render(const ln::FrameBuffer &i_frame_buf)
     }
 }
 
-} // namespace ln_app
+} // namespace sh

@@ -28,7 +28,7 @@
 #include <string>
 #include <cstddef>
 
-namespace ln {
+namespace nh {
 
 enum CtrlSlot {
     CTRL_P1,
@@ -81,15 +81,15 @@ struct Emulator {
     /* debug */
 
     LN_CONSOLE_API void
-    set_debug_on(lnd::DebugFlags i_flag);
+    set_debug_on(nhd::DebugFlags i_flag);
     LN_CONSOLE_API void
-    set_debug_off(lnd::DebugFlags i_flag);
+    set_debug_off(nhd::DebugFlags i_flag);
 
-    LN_CONSOLE_API const lnd::Palette &
+    LN_CONSOLE_API const nhd::Palette &
     get_palette_dbg() const;
-    LN_CONSOLE_API const lnd::OAM &
+    LN_CONSOLE_API const nhd::OAM &
     get_oam_dbg() const;
-    LN_CONSOLE_API const lnd::PatternTable &
+    LN_CONSOLE_API const nhd::PatternTable &
     get_ptn_tbl_dbg(bool i_right) const;
     enum PaletteSet : unsigned char {
         BG0 = 0,
@@ -110,7 +110,7 @@ struct Emulator {
     LN_CONSOLE_API const CPU &
     get_cpu_test() const;
 
-    typedef void (*TestInitFunc)(ln::CPU *io_cpu, void *i_context);
+    typedef void (*TestInitFunc)(nh::CPU *io_cpu, void *i_context);
     LN_CONSOLE_API void
     init_test(TestInitFunc i_init_func, void *i_context);
 
@@ -151,7 +151,7 @@ struct Emulator {
     Controller *m_ctrls[CTRL_SIZE]; // References
 
   private:
-    lnd::DebugFlags m_debug_flags;
+    nhd::DebugFlags m_debug_flags;
 };
 
-} // namespace ln
+} // namespace nh

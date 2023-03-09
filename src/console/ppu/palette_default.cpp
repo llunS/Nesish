@@ -1,6 +1,6 @@
 #include "palette_default.hpp"
 
-namespace ln {
+namespace nh {
 
 Color
 PaletteDefault::to_rgb(PaletteColor i_color) const
@@ -33,4 +33,4 @@ PaletteDefault::to_rgb(PaletteColor i_color) const
     return table[i_color.value];
 }
 
-} // namespace ln
+} // namespace nh

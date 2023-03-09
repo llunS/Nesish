@@ -3,7 +3,7 @@
 #include "console/cartridge/mapper/mapper.hpp"
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 /// @brief Mapper 3 implementation, CNROM-like boards
 struct CNROM : public Mapper {
@@ -27,4 +27,4 @@ struct CNROM : public Mapper {
     Byte m_chr_bnk;
 };
 
-} // namespace ln
+} // namespace nh

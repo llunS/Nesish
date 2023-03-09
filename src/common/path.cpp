@@ -2,7 +2,7 @@
 
 #include "common/path_private.hpp"
 
-namespace ln {
+namespace nh {
 
 std::string
 dirname(const std::string &i_path)
@@ -56,4 +56,4 @@ join_exec_rel_path(const std::string &i_rel_path)
     return path_join(exec_dir, i_rel_path);
 }
 
-} // namespace ln
+} // namespace nh

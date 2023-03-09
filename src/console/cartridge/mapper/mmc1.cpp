@@ -6,7 +6,7 @@
  *    SNORM/SOROM/...
  */
 
-namespace ln {
+namespace nh {
 
 MMC1::MMC1(const INES::RomAccessor *i_accessor, Variant i_var)
     : Mapper{i_accessor}
@@ -284,7 +284,7 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
     // PRG RAM
     {
         auto decode = [](const MappingEntry *i_entry, Address i_addr,
-                         Byte *&o_addr) -> ln::Error {
+                         Byte *&o_addr) -> nh::Error {
             auto thiz = (MMC1 *)i_entry->opaque;
 
             if (!thiz->prg_ram_enabled())
@@ -325,7 +325,7 @@ MMC1::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
 
         auto decode = [mem_base, mem_size](const MappingEntry *i_entry,
                                            Address i_addr,
-                                           Byte *&o_addr) -> ln::Error {
+                                           Byte *&o_addr) -> nh::Error {
             auto thiz = (MMC1 *)i_entry->opaque;
 
             Address mem_idx = 0;
@@ -416,4 +416,4 @@ MMC1::unmap_memory(Memory *o_memory, VideoMemory *o_video_memory)
     o_video_memory->unset_mirror();
 }
 
-} // namespace ln
+} // namespace nh

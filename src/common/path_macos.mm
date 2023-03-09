@@ -7,7 +7,7 @@
 
 #include "common/path_private.hpp"
 
-namespace ln {
+namespace nh {
 
 char
 path_delimiter()
@@ -35,4 +35,4 @@ get_exec_path()
     return "";
 }
 
-} // namespace ln
+} // namespace nh

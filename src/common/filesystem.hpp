@@ -4,7 +4,7 @@
 
 #include "common/dllexport.h"
 
-namespace ln {
+namespace nh {
 
 LN_COMMON_API
 bool
@@ -14,4 +14,4 @@ LN_COMMON_API
 bool
 file_rename(const std::string &i_old, const std::string &i_new, bool i_force);
 
-} // namespace ln
+} // namespace nh

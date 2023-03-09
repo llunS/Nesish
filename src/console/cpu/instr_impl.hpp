@@ -2,276 +2,276 @@
 
 #include "console/cpu/cpu.hpp"
 
-namespace ln {
+namespace nh {
 
 struct CPU::InstrImpl {
   public:
     static void
-    frm_brk(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_brk(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_rti(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_rti(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_rts(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_rts(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_pha(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_pha(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_php(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_php(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_pla(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_pla(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_plp(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_plp(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_jsr(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_jsr(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_imp(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_imp(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_acc(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_acc(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_imm(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_imm(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_rel(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_rel(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_ind_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_ind_jmp(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_abs_jmp(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_abs_jmp(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_abs_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_abs_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_abs_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_abs_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_abs_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_abs_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_abx_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_abx_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_abx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_abx_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_abx_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_abx_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_aby_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_aby_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_aby_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_aby_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_aby_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_aby_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_zp_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zp_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_zp_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zp_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_zp_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zp_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_zpx_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zpx_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_zpx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zpx_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_zpx_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zpx_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_zpy_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zpy_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_zpy_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_zpy_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_izx_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_izx_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_izx_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_izx_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_izx_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_izx_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
     static void
-    frm_izy_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_izy_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_izy_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_izy_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
     static void
-    frm_izy_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done);
+    frm_izy_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done);
 
   private:
     static void
-    frm_phr_impl(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done,
+    frm_phr_impl(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done,
                  Byte i_val);
     static void
-    frm_plr_impl(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done,
+    frm_plr_impl(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done,
                  Byte &o_val);
     static void
-    frm_abs_pre(int i_idx, ln::CPU *io_cpu);
+    frm_abs_pre(int i_idx, CPU *io_cpu);
     static void
-    frm_abi_pre(int i_idx, ln::CPU *io_cpu, Byte i_val);
+    frm_abi_pre(int i_idx, CPU *io_cpu, Byte i_val);
     static void
-    frm_abi_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done,
+    frm_abi_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done,
               Byte i_val);
     static void
-    frm_abi_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done,
+    frm_abi_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done,
               Byte i_val);
     static void
-    frm_abi_rmw(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done,
+    frm_abi_rmw(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done,
                 Byte i_val);
     static void
-    frm_zpi_pre(int i_idx, ln::CPU *io_cpu, Byte i_val);
+    frm_zpi_pre(int i_idx, CPU *io_cpu, Byte i_val);
     static void
-    frm_zpi_r(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done,
+    frm_zpi_r(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done,
               Byte i_val);
     static void
-    frm_zpi_w(int i_idx, ln::CPU *io_cpu, InstrCore i_core, bool &io_done,
+    frm_zpi_w(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done,
               Byte i_val);
     static void
-    frm_izx_pre(int i_idx, ln::CPU *io_cpu);
+    frm_izx_pre(int i_idx, CPU *io_cpu);
     static void
-    frm_izy_pre(int i_idx, ln::CPU *io_cpu);
+    frm_izy_pre(int i_idx, CPU *io_cpu);
 
   public:
     static void
-    core_nop(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_nop(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_ora(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_ora(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_kil(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_kil(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_asl(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_asl(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bpl(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bpl(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_clc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_clc(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_and(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_and(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bit(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bit(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_rol(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_rol(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bmi(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bmi(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sec(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sec(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_eor(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_eor(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_lsr(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_lsr(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bvc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bvc(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_cli(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_cli(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_adc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_adc(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_ror(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_ror(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bvs(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bvs(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sei(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sei(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sta(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sta(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sty(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sty(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_stx(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_stx(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_dey(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_dey(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_txa(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_txa(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bcc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bcc(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_tya(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_tya(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_txs(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_txs(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_ldy(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_ldy(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_lda(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_lda(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_ldx(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_ldx(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_tay(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_tay(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_tax(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_tax(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bcs(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bcs(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_clv(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_clv(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_tsx(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_tsx(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_cpy(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_cpy(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_cmp(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_cmp(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_dec(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_dec(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_iny(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_iny(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_dex(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_dex(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_bne(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_bne(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_cld(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_cld(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_cpx(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_cpx(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sbc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sbc(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_inc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_inc(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_inx(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_inx(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_beq(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_beq(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sed(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sed(CPU *io_cpu, Byte i_in, Byte &o_out);
 
     static void
-    core_slo(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_slo(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_anc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_anc(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_rla(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_rla(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_alr(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_alr(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sre(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sre(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_arr(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_arr(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_rra(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_rra(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_xaa(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_xaa(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_sax(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_sax(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_las(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_las(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_lax(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_lax(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_axs(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_axs(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_dcp(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_dcp(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_isc(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_isc(CPU *io_cpu, Byte i_in, Byte &o_out);
 
     static void
-    core_tas(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_tas(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_shy(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_shy(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_shx(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_shx(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_ahx(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_ahx(CPU *io_cpu, Byte i_in, Byte &o_out);
 
   private:
     static Byte
-    core_cmp_impl(ln::CPU *io_cpu, Byte i_in, ln::Byte i_reg);
+    core_cmp_impl(CPU *io_cpu, Byte i_in, nh::Byte i_reg);
     static void
-    core_and_op(ln::CPU *io_cpu, Byte i_in);
+    core_and_op(CPU *io_cpu, Byte i_in);
     static void
-    core_ror_op(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_ror_op(CPU *io_cpu, Byte i_in, Byte &o_out);
     static void
-    core_XhX_impl(ln::CPU *io_cpu, Byte i_in, Byte &o_out);
+    core_XhX_impl(CPU *io_cpu, Byte i_in, Byte &o_out);
 
   private:
     static void
-    throw_away(ln::CPU *io_cpu, Byte i_data);
+    throw_away(CPU *io_cpu, Byte i_data);
     static void
     ignore_ub(Byte i_src, Byte &io_dst);
     static void
@@ -284,9 +284,9 @@ struct CPU::InstrImpl {
     get_high(Address i_val);
 
     static void
-    test_flag_n(ln::CPU *o_cpu, Byte i_val);
+    test_flag_n(CPU *o_cpu, Byte i_val);
     static void
-    test_flag_z(ln::CPU *o_cpu, Byte i_val);
+    test_flag_z(CPU *o_cpu, Byte i_val);
 };
 
-} // namespace ln
+} // namespace nh

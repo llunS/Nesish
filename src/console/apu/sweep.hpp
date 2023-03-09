@@ -5,7 +5,7 @@
 #include "console/apu/divider.hpp"
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Sweep {
   public:
@@ -52,4 +52,4 @@ struct Sweep {
     bool m_mode_1;
 };
 
-} // namespace ln
+} // namespace nh

@@ -1,6 +1,6 @@
 #include "tickable.hpp"
 
-namespace ln {
+namespace nh {
 
 Tickable::Tickable(Cycle i_total)
     : m_curr(0)
@@ -38,4 +38,4 @@ Tickable::tick()
     m_curr += cycles;
 }
 
-} // namespace ln
+} // namespace nh

@@ -4,7 +4,7 @@
 
 // https://www.nesdev.org/wiki/APU_Pulse
 
-namespace ln {
+namespace nh {
 
 Sequencer::Sequencer()
     : m_duty_idx(0)
@@ -53,4 +53,4 @@ Sequencer::reset()
     m_seq_idx = 0;
 }
 
-} // namespace ln
+} // namespace nh

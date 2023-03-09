@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-namespace ln_app {
+namespace sh {
 
 Resampler::Resampler(int i_buffer_size, short i_amp)
     : m_amp(i_amp)
@@ -90,4 +90,4 @@ Resampler::samples_avail(short o_samples[], int i_count)
     return false;
 }
 
-} // namespace ln_app
+} // namespace sh

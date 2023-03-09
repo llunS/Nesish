@@ -8,7 +8,7 @@
 #include "console/spec.hpp"
 #include "console/assert.hpp"
 
-namespace ln {
+namespace nh {
 
 Emulator::Emulator()
     : m_cpu(&m_memory, &m_ppu, &m_apu)
@@ -19,7 +19,7 @@ Emulator::Emulator()
     , m_cart(nullptr)
     , m_ctrl_regs{}
     , m_ctrls{}
-    , m_debug_flags(lnd::DBG_OFF)
+    , m_debug_flags(nhd::DBG_OFF)
 {
     hard_wire();
 }
@@ -230,7 +230,7 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
 {
     if (!file_exists(i_rom_path))
     {
-        LN_LOG_ERROR(ln::get_logger(), "Invalid cartridge path: \"{}\"",
+        LN_LOG_ERROR(nh::get_logger(), "Invalid cartridge path: \"{}\"",
                      i_rom_path);
         return Error::INVALID_ARGUMENT;
     }
@@ -238,7 +238,7 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
     Error err = Error::OK;
 
     // 1. load cartridge
-    LN_LOG_INFO(ln::get_logger(), "Loading cartridge...");
+    LN_LOG_INFO(nh::get_logger(), "Loading cartridge...");
     Cartridge *cart = nullptr;
     err =
         CartridgeLoader::load_cartridge(i_rom_path, CartridgeType::INES, &cart);
@@ -253,7 +253,7 @@ Emulator::insert_cartridge(const std::string &i_rom_path)
     }
 
     // 2. map to address space
-    LN_LOG_INFO(ln::get_logger(), "Mapping cartridge...");
+    LN_LOG_INFO(nh::get_logger(), "Mapping cartridge...");
     cart->map_memory(&m_memory, &m_video_memory);
 
 l_cleanup:
@@ -280,7 +280,7 @@ Emulator::power_up()
 {
     if (!m_cart)
     {
-        LN_LOG_ERROR(ln::get_logger(), "Power up without cartridge inserted");
+        LN_LOG_ERROR(nh::get_logger(), "Power up without cartridge inserted");
         return;
     }
 
@@ -307,7 +307,7 @@ Emulator::reset()
 {
     if (!m_cart)
     {
-        LN_LOG_ERROR(ln::get_logger(), "Reset without cartridge inserted");
+        LN_LOG_ERROR(nh::get_logger(), "Reset without cartridge inserted");
         return;
     }
 
@@ -429,30 +429,30 @@ Emulator::get_sample() const
 }
 
 void
-Emulator::set_debug_on(lnd::DebugFlags i_flag)
+Emulator::set_debug_on(nhd::DebugFlags i_flag)
 {
-    lnd::debug_on(m_debug_flags, i_flag);
+    nhd::debug_on(m_debug_flags, i_flag);
 }
 
 void
-Emulator::set_debug_off(lnd::DebugFlags i_flag)
+Emulator::set_debug_off(nhd::DebugFlags i_flag)
 {
-    lnd::debug_off(m_debug_flags, i_flag);
+    nhd::debug_off(m_debug_flags, i_flag);
 }
 
-const lnd::Palette &
+const nhd::Palette &
 Emulator::get_palette_dbg() const
 {
     return m_ppu.get_palette_dbg();
 }
 
-const lnd::OAM &
+const nhd::OAM &
 Emulator::get_oam_dbg() const
 {
     return m_ppu.get_oam_dbg();
 }
 
-const lnd::PatternTable &
+const nhd::PatternTable &
 Emulator::get_ptn_tbl_dbg(bool i_right) const
 {
     return m_ppu.get_ptn_tbl_dbg(i_right);
@@ -476,4 +476,4 @@ Emulator::init_test(TestInitFunc i_init_func, void *i_context)
     i_init_func(&m_cpu, i_context);
 }
 
-} // namespace ln
+} // namespace nh

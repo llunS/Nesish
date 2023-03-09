@@ -2,7 +2,7 @@
 
 #include "glfw/glfw3.h"
 
-namespace ln_app {
+namespace sh {
 
 /// @brief Helper glfw window class
 struct PlatformWindow {
@@ -40,4 +40,4 @@ struct PlatformWindow {
     bool m_resizable;
 };
 
-} // namespace ln_app
+} // namespace sh

@@ -4,7 +4,7 @@
 
 // https://www.nesdev.org/wiki/APU_Noise
 
-namespace ln {
+namespace nh {
 
 Noise::Noise()
     : m_shift(0)
@@ -90,4 +90,4 @@ Noise::length_counter()
     return m_length;
 }
 
-} // namespace ln
+} // namespace nh

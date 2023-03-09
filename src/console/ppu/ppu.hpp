@@ -12,7 +12,7 @@
 #include "console/debug/oam.hpp"
 #include "console/debug/pattern_table.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor;
 struct Pipeline;
@@ -21,7 +21,7 @@ struct CPU;
 struct PPU {
   public:
     PPU(VideoMemory *i_memory, CPU *i_cpu,
-        const lnd::DebugFlags &i_debug_flags);
+        const nhd::DebugFlags &i_debug_flags);
     ~PPU();
     LN_KLZ_DELETE_COPY_MOVE(PPU);
 
@@ -75,13 +75,13 @@ struct PPU {
     /* debug */
 
     friend struct Emulator;
-    const lnd::Palette &
+    const nhd::Palette &
     get_palette_dbg() const;
     friend struct Emulator;
-    const lnd::OAM &
+    const nhd::OAM &
     get_oam_dbg() const;
     friend struct Emulator;
-    const lnd::PatternTable &
+    const nhd::PatternTable &
     get_ptn_tbl_dbg(bool i_right) const;
     friend struct Emulator;
     /// @param i_idx [0, 7]
@@ -181,12 +181,12 @@ struct PPU {
   private:
     /* debug */
 
-    const lnd::DebugFlags &m_debug_flags;
-    lnd::Palette m_palette_snap;
-    lnd::OAM m_oam_snap;
-    lnd::PatternTable m_ptn_tbl_l_snap;
-    lnd::PatternTable m_ptn_tbl_r_snap;
+    const nhd::DebugFlags &m_debug_flags;
+    nhd::Palette m_palette_snap;
+    nhd::OAM m_oam_snap;
+    nhd::PatternTable m_ptn_tbl_l_snap;
+    nhd::PatternTable m_ptn_tbl_r_snap;
     unsigned char m_ptn_tbl_palette_idx;
 };
 
-} // namespace ln
+} // namespace nh

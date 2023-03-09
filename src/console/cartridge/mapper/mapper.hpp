@@ -5,7 +5,7 @@
 #include "console/memory/memory.hpp"
 #include "console/memory/video_memory.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Mapper {
   public:
@@ -35,4 +35,4 @@ struct Mapper {
     const INES::RomAccessor *m_rom_accessor;
 };
 
-} // namespace ln
+} // namespace nh

@@ -5,7 +5,7 @@
 #include "console/dllexport.h"
 #include "console/debug/sprite.hpp"
 
-namespace lnd {
+namespace nhd {
 
 struct OAM {
   public:
@@ -30,4 +30,4 @@ struct OAM {
     Sprite m_sprites[64];
 };
 
-} // namespace lnd
+} // namespace nhd

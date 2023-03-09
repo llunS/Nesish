@@ -1,6 +1,6 @@
 #include "divider.hpp"
 
-namespace ln {
+namespace nh {
 
 Divider::Divider()
     : Divider(0)
@@ -52,4 +52,4 @@ Divider::tick()
     }
 }
 
-} // namespace ln
+} // namespace nh

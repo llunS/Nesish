@@ -4,7 +4,7 @@
 
 #include <atomic>
 
-namespace ln_app {
+namespace sh {
 
 template <unsigned int N> struct Channel {
   public:
@@ -37,6 +37,6 @@ template <unsigned int N> struct Channel {
     std::atomic<value_t *> m_end;
 };
 
-} // namespace ln_app
+} // namespace sh
 
 #include "channel.inl"

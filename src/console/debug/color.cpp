@@ -1,6 +1,6 @@
 #include "color.hpp"
 
-namespace lnd {
+namespace nhd {
 
 Color::Color()
     : index(0)
@@ -10,4 +10,4 @@ Color::Color()
 {
 }
 
-} // namespace lnd
+} // namespace nhd

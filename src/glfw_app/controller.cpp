@@ -1,6 +1,6 @@
 #include "controller.hpp"
 
-namespace ln_app {
+namespace sh {
 
 Controller::Controller(GLFWwindow *window)
     : m_window(window)
@@ -16,7 +16,7 @@ Controller::strobe(bool i_on)
     if (!i_on)
     {
         reload_states();
-        m_strobe_idx = ln::KEY_BEGIN;
+        m_strobe_idx = nh::KEY_BEGIN;
         m_8_bits_read = false;
     }
 }
@@ -27,13 +27,13 @@ Controller::report()
     if (m_strobing)
     {
         reload_states();
-        return m_key_state[ln::KEY_A];
+        return m_key_state[nh::KEY_A];
     }
     else
     {
-        if (m_strobe_idx < ln::KEY_END)
+        if (m_strobe_idx < nh::KEY_END)
         {
-            if (m_strobe_idx + 1 >= ln::KEY_END)
+            if (m_strobe_idx + 1 >= nh::KEY_END)
             {
                 m_8_bits_read = true;
             }
@@ -57,8 +57,8 @@ void
 Controller::reset()
 {
     m_strobing = false;
-    m_strobe_idx = ln::KEY_END;
-    for (ln::KeyIt it = ln::KEY_BEGIN; it < ln::KEY_END; ++it)
+    m_strobe_idx = nh::KEY_END;
+    for (nh::KeyIt it = nh::KEY_BEGIN; it < nh::KEY_END; ++it)
     {
         m_key_state[it] = false;
     }
@@ -70,9 +70,9 @@ void
 Controller::reload_states()
 {
     // reload all bits with latest state.
-    for (ln::KeyIt it = ln::KEY_BEGIN; it < ln::KEY_END; ++it)
+    for (nh::KeyIt it = nh::KEY_BEGIN; it < nh::KEY_END; ++it)
     {
-        auto key = ln::Key(it);
+        auto key = nh::Key(it);
 
         auto app_key = map_key(key);
         m_key_state[key] = glfwGetKey(m_window, app_key) == GLFW_PRESS;
@@ -80,10 +80,10 @@ Controller::reload_states()
 }
 
 GLFWKey
-ControllerP1::map_key(ln::Key i_key)
+ControllerP1::map_key(nh::Key i_key)
 {
     // @TODO: Custom mapping
-    constexpr static GLFWKey s_mapping[ln::KEY_SIZE] = {
+    constexpr static GLFWKey s_mapping[nh::KEY_SIZE] = {
         GLFW_KEY_K, GLFW_KEY_J, GLFW_KEY_V, GLFW_KEY_B,
         GLFW_KEY_W, GLFW_KEY_S, GLFW_KEY_A, GLFW_KEY_D,
     };
@@ -91,10 +91,10 @@ ControllerP1::map_key(ln::Key i_key)
 }
 
 GLFWKey
-ControllerP2::map_key(ln::Key i_key)
+ControllerP2::map_key(nh::Key i_key)
 {
     // @TODO: Custom mapping
-    constexpr static GLFWKey s_mapping[ln::KEY_SIZE] = {
+    constexpr static GLFWKey s_mapping[nh::KEY_SIZE] = {
         GLFW_KEY_PERIOD,        GLFW_KEY_COMMA, GLFW_KEY_LEFT_BRACKET,
         GLFW_KEY_RIGHT_BRACKET, GLFW_KEY_UP,    GLFW_KEY_DOWN,
         GLFW_KEY_LEFT,          GLFW_KEY_RIGHT,
@@ -102,4 +102,4 @@ ControllerP2::map_key(ln::Key i_key)
     return s_mapping[i_key];
 }
 
-} // namespace ln_app
+} // namespace sh

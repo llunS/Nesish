@@ -1,7 +1,7 @@
 #include "types.hpp"
 
-namespace ln {
+namespace nh {
 
 Uninitialized_t Uninitialized;
 
-} // namespace ln
+} // namespace nh

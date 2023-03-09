@@ -4,7 +4,7 @@
 
 #include <cstdio>
 
-namespace ln_app {
+namespace sh {
 
 bool
 checkGLError()
@@ -18,4 +18,4 @@ checkGLError()
     return false;
 }
 
-} // namespace ln_app
+} // namespace sh

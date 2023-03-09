@@ -5,7 +5,7 @@
 #define CORE(i_name) CPU::InstrImpl::core_##i_name
 #define FRM(i_name) CPU::InstrImpl::frm_##i_name
 
-namespace ln {
+namespace nh {
 
 CPU::InstrDesc CPU::s_instr_table[256] = {
     // http://www.oxyron.de/html/opcodes02.html
@@ -285,4 +285,4 @@ CPU::InstrDesc CPU::s_instr_table[256] = {
     /* clang-format on */
 };
 
-} // namespace ln
+} // namespace nh

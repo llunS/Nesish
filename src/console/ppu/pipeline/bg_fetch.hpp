@@ -4,7 +4,7 @@
 #include "common/klass.hpp"
 #include "console/ppu/pipeline/functor_tickable.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor;
 
@@ -24,4 +24,4 @@ struct BgFetch : public Tickable {
     FunctorTickable m_bg_tile_fetch;
 };
 
-} // namespace ln
+} // namespace nh

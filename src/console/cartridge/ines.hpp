@@ -7,7 +7,7 @@
 #include "common/klass.hpp"
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Mapper;
 
@@ -103,4 +103,4 @@ struct INES : public Cartridge {
     RomAccessor m_rom_accessor;
 };
 
-} // namespace ln
+} // namespace nh

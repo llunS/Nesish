@@ -15,7 +15,7 @@
 
 #include <string>
 
-namespace ln_app {
+namespace sh {
 
 static void
 HelpMarker(const char *desc)
@@ -31,9 +31,9 @@ HelpMarker(const char *desc)
     }
 }
 
-} // namespace ln_app
+} // namespace sh
 
-namespace ln_app {
+namespace sh {
 
 DebuggerWindow::DebuggerWindow()
     : m_imgui_ctx(nullptr)
@@ -41,7 +41,7 @@ DebuggerWindow::DebuggerWindow()
     , m_should_quit(false)
     , m_sp_tex{}
     , m_ptn_tbl_texs{}
-    , m_ptn_tbl_palette(ln::Emulator::BG0)
+    , m_ptn_tbl_palette(nh::Emulator::BG0)
 {
 }
 
@@ -95,21 +95,21 @@ DebuggerWindow::makeCurrent()
 }
 
 void
-DebuggerWindow::pre_render(ln::Emulator &io_emu)
+DebuggerWindow::pre_render(nh::Emulator &io_emu)
 {
     io_emu.set_ptn_tbl_palette_dbg(m_ptn_tbl_palette);
 }
 
 void
-DebuggerWindow::post_render(ln::Emulator &io_emu)
+DebuggerWindow::post_render(nh::Emulator &io_emu)
 {
-    io_emu.set_debug_off(lnd::DBG_PALETTE);
-    io_emu.set_debug_off(lnd::DBG_OAM);
-    io_emu.set_debug_off(lnd::DBG_PATTERN);
+    io_emu.set_debug_off(nhd::DBG_PALETTE);
+    io_emu.set_debug_off(nhd::DBG_OAM);
+    io_emu.set_debug_off(nhd::DBG_PATTERN);
 }
 
 void
-DebuggerWindow::render(ln::Emulator &io_emu)
+DebuggerWindow::render(nh::Emulator &io_emu)
 {
     assert(m_win);
 
@@ -121,9 +121,9 @@ DebuggerWindow::render(ln::Emulator &io_emu)
     }
 
     /* Reset states at the start */
-    io_emu.set_debug_off(lnd::DBG_PALETTE);
-    io_emu.set_debug_off(lnd::DBG_OAM);
-    io_emu.set_debug_off(lnd::DBG_PATTERN);
+    io_emu.set_debug_off(nhd::DBG_PALETTE);
+    io_emu.set_debug_off(nhd::DBG_OAM);
+    io_emu.set_debug_off(nhd::DBG_PATTERN);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -154,7 +154,7 @@ DebuggerWindow::render(ln::Emulator &io_emu)
 }
 
 void
-DebuggerWindow::draw_control(const Rect &i_layout, ln::Emulator &io_emu)
+DebuggerWindow::draw_control(const Rect &i_layout, nh::Emulator &io_emu)
 {
     ImGui::SetNextWindowPos(i_layout.pos(), ImGuiCond_Once);
     ImGui::SetNextWindowSize(i_layout.size(), ImGuiCond_Once);
@@ -196,7 +196,7 @@ DebuggerWindow::draw_control(const Rect &i_layout, ln::Emulator &io_emu)
 }
 
 void
-DebuggerWindow::draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu)
+DebuggerWindow::draw_frame_debugger(const Rect &i_layout, nh::Emulator &io_emu)
 {
     ImGui::SetNextWindowPos(i_layout.pos(), ImGuiCond_Once);
     ImGui::SetNextWindowSize(i_layout.size(), ImGuiCond_Once);
@@ -206,13 +206,13 @@ DebuggerWindow::draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu)
         // @TODO: Change it to nametable viewer
         // draw_fd_frame(io_emu);
         // ImGui::Spacing();
-        io_emu.set_debug_on(lnd::DBG_PATTERN);
+        io_emu.set_debug_on(nhd::DBG_PATTERN);
         draw_fd_pattern(io_emu);
         ImGui::Spacing();
-        io_emu.set_debug_on(lnd::DBG_OAM);
+        io_emu.set_debug_on(nhd::DBG_OAM);
         draw_fd_oam(io_emu);
         ImGui::Spacing();
-        io_emu.set_debug_on(lnd::DBG_PALETTE);
+        io_emu.set_debug_on(nhd::DBG_PALETTE);
         draw_fd_palette(io_emu);
         ImGui::Spacing();
     }
@@ -220,7 +220,7 @@ DebuggerWindow::draw_frame_debugger(const Rect &i_layout, ln::Emulator &io_emu)
 }
 
 void
-DebuggerWindow::draw_fd_frame(const ln::Emulator &i_emu)
+DebuggerWindow::draw_fd_frame(const nh::Emulator &i_emu)
 {
     ImGui::PushID("<Frame>");
 
@@ -242,7 +242,7 @@ DebuggerWindow::draw_fd_frame(const ln::Emulator &i_emu)
 }
 
 void
-DebuggerWindow::draw_fd_pattern(const ln::Emulator &i_emu)
+DebuggerWindow::draw_fd_pattern(const nh::Emulator &i_emu)
 {
     ImGui::PushID("<Pattern>");
 
@@ -268,14 +268,13 @@ DebuggerWindow::draw_fd_pattern(const ln::Emulator &i_emu)
         {
             if (ImGui::Selectable(names[i]))
             {
-                m_ptn_tbl_palette = ln::Emulator::PaletteSet(i);
+                m_ptn_tbl_palette = nh::Emulator::PaletteSet(i);
             }
         }
         ImGui::EndPopup();
     }
 
-    auto draw_ptn_tbl = [](const lnd::PatternTable &i_tbl,
-                           ln_app::Texture &o_tex,
+    auto draw_ptn_tbl = [](const nhd::PatternTable &i_tbl, sh::Texture &o_tex,
                            const char *i_title) -> void {
         ImGui::BeginGroup();
 
@@ -335,7 +334,7 @@ DebuggerWindow::draw_fd_pattern(const ln::Emulator &i_emu)
 }
 
 void
-DebuggerWindow::draw_fd_palette(const ln::Emulator &i_emu)
+DebuggerWindow::draw_fd_palette(const nh::Emulator &i_emu)
 {
     ImGui::PushID("<Palette>");
 
@@ -345,7 +344,7 @@ DebuggerWindow::draw_fd_palette(const ln::Emulator &i_emu)
     HelpMarker("The snapshot was took at the end of the rendering.");
 
     const auto &palette = i_emu.get_palette_dbg();
-    static_assert(lnd::Palette::color_count() == 32, "Check fixed loop below");
+    static_assert(nhd::Palette::color_count() == 32, "Check fixed loop below");
     char const *const pa_rows[2] = {"Background", "Sprite"};
     float lock_x = 0.0;
     for (int r = 0; r < 2; ++r)
@@ -370,11 +369,11 @@ DebuggerWindow::draw_fd_palette(const ln::Emulator &i_emu)
 
             ImGui::PushID(c);
 
-            auto rgb_to_imvec4 = [](lnd::Color i_clr) -> ImVec4 {
+            auto rgb_to_imvec4 = [](nhd::Color i_clr) -> ImVec4 {
                 return ImVec4(i_clr.r / 255.f, i_clr.g / 255.f, i_clr.b / 255.f,
                               1.0f);
             };
-            lnd::Color color = palette.get_color(palette_idx);
+            nhd::Color color = palette.get_color(palette_idx);
             ImVec4 im_color = rgb_to_imvec4(color);
 
             if (c % 4 == 0)
@@ -424,7 +423,7 @@ DebuggerWindow::draw_fd_palette(const ln::Emulator &i_emu)
 }
 
 void
-DebuggerWindow::draw_fd_oam(const ln::Emulator &i_emu)
+DebuggerWindow::draw_fd_oam(const nh::Emulator &i_emu)
 {
     ImGui::PushID("<OAM>");
 
@@ -435,7 +434,7 @@ DebuggerWindow::draw_fd_oam(const ln::Emulator &i_emu)
                "assumes OAMADDR starts with 0.");
 
     const auto &oam = i_emu.get_oam_dbg();
-    static_assert(lnd::OAM::get_sprite_count() == 64, "Check fixed loop below");
+    static_assert(nhd::OAM::get_sprite_count() == 64, "Check fixed loop below");
     static_assert(sizeof(m_sp_tex) / sizeof(Texture) == 64,
                   "Check fixed loop below");
     for (int i = 0; i < 4; ++i)
@@ -513,4 +512,4 @@ DebuggerWindow::shouldQuit() const
     return m_should_quit;
 }
 
-} // namespace ln_app
+} // namespace sh

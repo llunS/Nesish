@@ -6,7 +6,7 @@
 #include "console/ppu/color.hpp"
 #include "console/types.hpp"
 
-namespace lnd {
+namespace nhd {
 
 /// @brief Information needed to display a sprite
 struct Sprite {
@@ -20,7 +20,7 @@ struct Sprite {
     get_width() const;
     LN_CONSOLE_API int
     get_height() const;
-    LN_CONSOLE_API const ln::Byte *
+    LN_CONSOLE_API const nh::Byte *
     get_data() const;
 
   public:
@@ -37,22 +37,22 @@ struct Sprite {
     void
     set_mode(bool i_8x16);
     void
-    set_pixel(int i_row, int i_col, const ln::Color &i_color);
+    set_pixel(int i_row, int i_col, const nh::Color &i_color);
     void
-    set_raw(ln::Byte i_y, ln::Byte i_tile, ln::Byte i_attr, ln::Byte i_x);
+    set_raw(nh::Byte i_y, nh::Byte i_tile, nh::Byte i_attr, nh::Byte i_x);
 
   private:
     static constexpr int WIDTH = 8;
 
   private:
     bool m_8x16;
-    ln::Color m_pixels[WIDTH * 16]; // up to 8x16
+    nh::Color m_pixels[WIDTH * 16]; // up to 8x16
 
   public:
-    ln::Byte y;
-    ln::Byte tile;
-    ln::Byte attr;
-    ln::Byte x;
+    nh::Byte y;
+    nh::Byte tile;
+    nh::Byte attr;
+    nh::Byte x;
 };
 
-} // namespace lnd
+} // namespace nhd

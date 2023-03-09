@@ -5,7 +5,7 @@
 #include <string>
 #include <cstdio>
 
-namespace ln_app {
+namespace sh {
 
 struct PCMWriter {
   public:
@@ -29,4 +29,4 @@ struct PCMWriter {
     std::FILE *m_file;
 };
 
-} // namespace ln_app
+} // namespace sh

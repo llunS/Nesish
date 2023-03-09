@@ -6,7 +6,7 @@
 
 #include "common/logger.hpp"
 
-namespace ln {
+namespace nh {
 
 template <typename EMappingPoint, std::size_t AddressableSize>
 MappableMemory<EMappingPoint, AddressableSize>::MappableMemory()
@@ -114,13 +114,13 @@ MappableMemory<EMappingPoint, AddressableSize>::set_mapping(
     // Ensure valid entry value.
     if (i_entry.begin > i_entry.end)
     {
-        LN_LOG_ERROR(ln::get_logger(), "Invalid mapping entry range: {}, {}",
+        LN_LOG_ERROR(nh::get_logger(), "Invalid mapping entry range: {}, {}",
                      i_entry.begin, i_entry.end);
         return;
     }
     if (i_entry.begin >= AddressableSize || i_entry.end >= AddressableSize)
     {
-        LN_LOG_ERROR(ln::get_logger(),
+        LN_LOG_ERROR(nh::get_logger(),
                      "Invalid mapping entry range: [{}, {}] in {}",
                      i_entry.begin, i_entry.end, AddressableSize);
         return;
@@ -128,7 +128,7 @@ MappableMemory<EMappingPoint, AddressableSize>::set_mapping(
     if (i_entry.decode == nullptr &&
         (i_entry.get_byte == nullptr || i_entry.set_byte == nullptr))
     {
-        LN_LOG_ERROR(ln::get_logger(), "Empty mapping callbacks.");
+        LN_LOG_ERROR(nh::get_logger(), "Empty mapping callbacks.");
         return;
     }
 
@@ -218,7 +218,7 @@ MappableMemory<EMappingPoint, AddressableSize>::decode_addr_impl(
 
     if (!byte_ptr)
     {
-        LN_LOG_ERROR(ln::get_logger(),
+        LN_LOG_ERROR(nh::get_logger(),
                      "Registered mapping can not handle address "
                      "decoding: ${:04X}, {}, ${:04X}, ${:04X}",
                      i_addr, mp, entry->begin, entry->end);
@@ -227,4 +227,4 @@ MappableMemory<EMappingPoint, AddressableSize>::decode_addr_impl(
     return Error::OK;
 }
 
-} // namespace ln
+} // namespace nh

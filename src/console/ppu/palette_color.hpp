@@ -3,7 +3,7 @@
 #include "console/types.hpp"
 #include "common/klass.hpp"
 
-namespace ln {
+namespace nh {
 
 /**
  * @brief Palette index color. 8-bit in memory, 6-bit in use.
@@ -27,4 +27,4 @@ struct PaletteColor {
     Byte value;
 };
 
-} // namespace ln
+} // namespace nh

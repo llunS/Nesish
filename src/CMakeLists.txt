@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(LightNES)
+project(Nesish)
 
 
 # --------------------------------------------
@@ -78,18 +78,18 @@ add_subdirectory(glfw_app)
 # Source files
 # --------------------------------------------
 
-add_executable(LightNES)
+add_executable(Nesish)
 
 list(APPEND sources main.cpp)
 
-target_sources(LightNES PRIVATE ${sources})
+target_sources(Nesish PRIVATE ${sources})
 
 
 # --------------------------------------------
 # Include directories
 # --------------------------------------------
 
-target_include_directories(LightNES PRIVATE .)
+target_include_directories(Nesish PRIVATE .)
 
 
 # --------------------------------------------
@@ -98,7 +98,7 @@ target_include_directories(LightNES PRIVATE .)
 
 find_package(CLI11 CONFIG REQUIRED)
 
-target_link_libraries(LightNES PRIVATE
+target_link_libraries(Nesish PRIVATE
     Common
     GLFWApp
     CLI11::CLI11

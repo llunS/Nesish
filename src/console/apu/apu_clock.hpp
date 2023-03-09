@@ -4,7 +4,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 /// @brief A struct to sync get/put cycle among APU and DMA(OAM/DMC)
 struct APUClock {
@@ -38,4 +38,4 @@ struct APUClock {
     Cycle m_cycle;
 };
 
-} // namespace ln
+} // namespace nh

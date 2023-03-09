@@ -2,7 +2,7 @@
 
 // https://www.nesdev.org/wiki/APU_Envelope
 
-namespace ln {
+namespace nh {
 
 Envelope::Envelope()
     : m_start(false)
@@ -88,4 +88,4 @@ Envelope::restart()
     m_start = true;
 }
 
-} // namespace ln
+} // namespace nh

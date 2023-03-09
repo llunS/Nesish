@@ -4,7 +4,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct LinearCounter {
   public:
@@ -34,4 +34,4 @@ struct LinearCounter {
     Byte m_reload_val;
 };
 
-} // namespace ln
+} // namespace nh

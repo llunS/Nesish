@@ -4,7 +4,7 @@
 
 #include "glfw_app/blip_buf/blip_buf.h"
 
-namespace ln_app {
+namespace sh {
 
 struct Resampler {
   public:
@@ -33,4 +33,4 @@ struct Resampler {
     int m_frame_size; // in clocks
 };
 
-} // namespace ln_app
+} // namespace sh

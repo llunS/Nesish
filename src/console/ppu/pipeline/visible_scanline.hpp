@@ -6,7 +6,7 @@
 #include "console/ppu/pipeline/sp_eval_fetch.hpp"
 #include "console/ppu/pipeline/render.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor;
 
@@ -28,4 +28,4 @@ struct VisibleScanline : public Tickable {
     SpEvalFetch m_sp;
 };
 
-} // namespace ln
+} // namespace nh

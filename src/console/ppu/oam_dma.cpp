@@ -6,7 +6,7 @@
 #include "console/memory/memory.hpp"
 #include "console/ppu/ppu.hpp"
 
-namespace ln {
+namespace nh {
 
 OAMDMA::OAMDMA(const APUClock &i_clock, const Memory &i_memory, PPU &o_ppu)
     : m_clock(i_clock)
@@ -118,4 +118,4 @@ OAMDMA::rdy() const
     return m_rdy;
 }
 
-} // namespace ln
+} // namespace nh

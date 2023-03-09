@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace ln {
+namespace nh {
 
 typedef std::uint8_t Byte;
 typedef std::uint16_t Byte2;
@@ -17,4 +17,4 @@ typedef Byte2 Address;
 struct Uninitialized_t {};
 extern Uninitialized_t Uninitialized;
 
-} // namespace ln
+} // namespace nh

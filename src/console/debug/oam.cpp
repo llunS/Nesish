@@ -1,6 +1,6 @@
 #include "oam.hpp"
 
-namespace lnd {
+namespace nhd {
 
 OAM::OAM()
     : m_sprites{}
@@ -19,4 +19,4 @@ OAM::sprite_of(int i_idx)
     return m_sprites[i_idx];
 }
 
-} // namespace lnd
+} // namespace nhd

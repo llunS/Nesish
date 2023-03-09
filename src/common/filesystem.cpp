@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-namespace ln {
+namespace nh {
 
 bool
 file_rename(const std::string &i_old, const std::string &i_new, bool i_force)
@@ -20,4 +20,4 @@ file_rename(const std::string &i_old, const std::string &i_new, bool i_force)
     return !err;
 }
 
-} // namespace ln
+} // namespace nh

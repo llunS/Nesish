@@ -2,7 +2,7 @@
 
 #define BASE MappableMemory<VideoMemoryMappingPoint, LN_ADDRESSABLE_SIZE>
 
-namespace ln {
+namespace nh {
 
 VideoMemory::VideoMemory()
     : m_ram{}
@@ -11,7 +11,7 @@ VideoMemory::VideoMemory()
     // Nametable mirror
     {
         auto decode = [](const MappingEntry *i_entry, Address i_addr,
-                         Byte *&o_addr) -> ln::Error {
+                         Byte *&o_addr) -> nh::Error {
             VideoMemory *thiz = (VideoMemory *)i_entry->opaque;
 
             return thiz->decode_addr(i_addr & LN_NT_MIRROR_ADDR_MASK, o_addr);
@@ -23,7 +23,7 @@ VideoMemory::VideoMemory()
     // Palette
     {
         auto decode = [](const MappingEntry *i_entry, Address i_addr,
-                         Byte *&o_addr) -> ln::Error {
+                         Byte *&o_addr) -> nh::Error {
             VideoMemory *thiz = (VideoMemory *)i_entry->opaque;
 
             Address addr = (i_addr & LN_PALETTE_ADDR_MASK) | i_entry->begin;
@@ -45,7 +45,7 @@ VideoMemory::VideoMemory()
     // Invalid addresses
     {
         auto decode = [](const MappingEntry *i_entry, Address i_addr,
-                         Byte *&o_addr) -> ln::Error {
+                         Byte *&o_addr) -> nh::Error {
             VideoMemory *thiz = (VideoMemory *)i_entry->opaque;
 
             // Valid addresses are $0000-$3FFF; higher addresses will be
@@ -68,7 +68,7 @@ void
 VideoMemory::set_mirror_dyn(ModeCallback i_mode_cb)
 {
     auto decode = [i_mode_cb](const MappingEntry *i_entry, Address i_addr,
-                              Byte *&o_addr) -> ln::Error {
+                              Byte *&o_addr) -> nh::Error {
         VideoMemory *thiz = (VideoMemory *)i_entry->opaque;
 
         static_assert(sizeof(thiz->m_ram) == sizeof(Byte) * 2 * LN_NT_ONE_SIZE,
@@ -157,4 +157,4 @@ VideoMemory::get_byte(Address i_addr, Byte &o_val) const
     return err;
 }
 
-} // namespace ln
+} // namespace nh

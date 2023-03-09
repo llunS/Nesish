@@ -2,7 +2,7 @@
 
 // https://www.nesdev.org/wiki/APU_Sweep
 
-namespace ln {
+namespace nh {
 
 Sweep::Sweep(Divider &io_ch_timer, bool i_mode_1)
     : m_reload(false)
@@ -107,4 +107,4 @@ Sweep::target_reload() const
     return target;
 }
 
-} // namespace ln
+} // namespace nh

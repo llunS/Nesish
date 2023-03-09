@@ -4,7 +4,7 @@
 #include "console/debug/pattern_table.hpp"
 #include "console/debug/sprite.hpp"
 
-namespace ln_app {
+namespace sh {
 
 Texture::Texture()
     : m_tex(0)
@@ -53,7 +53,7 @@ Texture::genTexIf(int i_width, int i_height)
 }
 
 bool
-Texture::from_frame(const ln::FrameBuffer &i_frame_buf)
+Texture::from_frame(const nh::FrameBuffer &i_frame_buf)
 {
     if (!genTexIf(i_frame_buf.WIDTH, i_frame_buf.HEIGHT))
     {
@@ -70,7 +70,7 @@ Texture::from_frame(const ln::FrameBuffer &i_frame_buf)
 }
 
 bool
-Texture::from_ptn_tbl(const lnd::PatternTable &i_tbl)
+Texture::from_ptn_tbl(const nhd::PatternTable &i_tbl)
 {
     auto w = i_tbl.get_width();
     auto h = i_tbl.get_height();
@@ -89,7 +89,7 @@ Texture::from_ptn_tbl(const lnd::PatternTable &i_tbl)
 }
 
 bool
-Texture::from_sprite(const lnd::Sprite &i_sprite)
+Texture::from_sprite(const nhd::Sprite &i_sprite)
 {
     auto w = i_sprite.get_width();
     auto h = i_sprite.get_height();
@@ -125,4 +125,4 @@ Texture::texture() const
     return m_tex;
 }
 
-} // namespace ln_app
+} // namespace sh

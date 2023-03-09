@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ln {
+namespace nh {
 
 enum class Error {
     OK = 0,
@@ -17,6 +17,6 @@ enum class Error {
     RENDERING_API, // Rendering API error.
 };
 
-} // namespace ln
+} // namespace nh
 
-#define LN_FAILED(i_err) ((i_err) != ln::Error::OK)
+#define LN_FAILED(i_err) ((i_err) != nh::Error::OK)

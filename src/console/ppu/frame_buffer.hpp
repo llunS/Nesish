@@ -5,7 +5,7 @@
 #include "console/spec.hpp"
 #include "console/dllexport.h"
 
-namespace ln {
+namespace nh {
 
 struct FrameBuffer {
   public:
@@ -29,4 +29,4 @@ struct FrameBuffer {
     Color *m_buf;
 };
 
-} // namespace ln
+} // namespace nh

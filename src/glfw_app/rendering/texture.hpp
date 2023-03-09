@@ -5,15 +5,15 @@
 
 #include "glfw_app/glad/glad.h"
 
-namespace ln {
+namespace nh {
 struct FrameBuffer;
-} // namespace ln
-namespace lnd {
+} // namespace nh
+namespace nhd {
 struct PatternTable;
 struct Sprite;
-} // namespace lnd
+} // namespace nhd
 
-namespace ln_app {
+namespace sh {
 
 /// @brief Wrap an OpenGL texture resource
 struct Texture {
@@ -28,11 +28,11 @@ struct Texture {
 
   public:
     bool
-    from_frame(const ln::FrameBuffer &i_frame_buf);
+    from_frame(const nh::FrameBuffer &i_frame_buf);
     bool
-    from_ptn_tbl(const lnd::PatternTable &i_tbl);
+    from_ptn_tbl(const nhd::PatternTable &i_tbl);
     bool
-    from_sprite(const lnd::Sprite &i_sprite);
+    from_sprite(const nhd::Sprite &i_sprite);
 
     int
     get_width();
@@ -52,4 +52,4 @@ struct Texture {
     int m_height;
 };
 
-} // namespace ln_app
+} // namespace sh

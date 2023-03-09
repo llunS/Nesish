@@ -1,13 +1,13 @@
 #include "palette.hpp"
 
-namespace lnd {
+namespace nhd {
 
 Palette::Palette()
     : m_colors{}
 {
 }
 
-const lnd::Color &
+const nhd::Color &
 Palette::get_color(int i_idx) const
 {
     return m_colors[i_idx];
@@ -23,4 +23,4 @@ Palette::set_color(int i_idx, unsigned char i_index, unsigned char i_r,
     m_colors[i_idx].b = i_b;
 }
 
-} // namespace lnd
+} // namespace nhd

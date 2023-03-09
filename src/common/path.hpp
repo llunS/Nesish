@@ -4,7 +4,7 @@
 
 #include "common/dllexport.h"
 
-namespace ln {
+namespace nh {
 
 LN_COMMON_API
 std::string
@@ -18,4 +18,4 @@ LN_COMMON_API
 std::string
 join_exec_rel_path(const std::string &i_rel_path);
 
-} // namespace ln
+} // namespace nh

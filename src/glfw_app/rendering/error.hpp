@@ -1,9 +1,9 @@
 
 #pragma once
 
-namespace ln_app {
+namespace sh {
 
 bool
 checkGLError();
 
-} // namespace ln_app
+} // namespace sh

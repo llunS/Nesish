@@ -6,7 +6,7 @@
 #include "console/types.hpp"
 #include "common/error.hpp"
 
-namespace ln {
+namespace nh {
 
 /* @NOTE: Enumerators must be unique and are valid array index */
 enum class MemoryMappingPoint : unsigned char {
@@ -56,4 +56,4 @@ struct Memory : public MappableMemory<MemoryMappingPoint, LN_ADDRESSABLE_SIZE> {
     mutable Byte m_read_latch;
 };
 
-} // namespace ln
+} // namespace nh

@@ -1,7 +1,7 @@
 
 #include "mapping_entry.hpp"
 
-namespace ln {
+namespace nh {
 
 MappingEntry::MappingEntry(Address i_begin, Address i_end, bool i_readonly,
                            MappingDecodeFunc i_decode,
@@ -32,4 +32,4 @@ MappingEntry::MappingEntry(Address i_begin, Address i_end, bool i_readonly,
 {
 }
 
-} // namespace ln
+} // namespace nh

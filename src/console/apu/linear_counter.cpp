@@ -4,7 +4,7 @@
  * instead of half frame). */
 // https://www.nesdev.org/wiki/APU_Triangle
 
-namespace ln {
+namespace nh {
 
 LinearCounter::LinearCounter()
     : m_counter(0)
@@ -59,4 +59,4 @@ LinearCounter::set_reload_val(Byte i_reload)
     m_reload_val = i_reload;
 }
 
-} // namespace ln
+} // namespace nh

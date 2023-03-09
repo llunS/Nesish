@@ -8,7 +8,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Noise {
   public:
@@ -51,4 +51,4 @@ struct Noise {
     bool m_mode;
 };
 
-} // namespace ln
+} // namespace nh

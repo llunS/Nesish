@@ -5,11 +5,11 @@
 
 #include "glfw/glfw3.h"
 
-namespace ln_app {
+namespace sh {
 
 typedef int GLFWKey;
 
-struct Controller : public ln::Controller {
+struct Controller : public nh::Controller {
   public:
     Controller(GLFWwindow *window);
 
@@ -27,14 +27,14 @@ struct Controller : public ln::Controller {
 
   protected:
     virtual GLFWKey
-    map_key(ln::Key i_key) = 0;
+    map_key(nh::Key i_key) = 0;
 
   private:
     GLFWwindow *m_window;
 
     bool m_strobing;
     unsigned int m_strobe_idx; // valid only if "m_strobing" == false.
-    bool m_key_state[ln::KEY_SIZE];
+    bool m_key_state[nh::KEY_SIZE];
 
     bool m_8_bits_read;
 };
@@ -48,7 +48,7 @@ struct ControllerP1 : public Controller {
 
   protected:
     GLFWKey
-    map_key(ln::Key i_key) override;
+    map_key(nh::Key i_key) override;
 };
 
 struct ControllerP2 : public Controller {
@@ -60,7 +60,7 @@ struct ControllerP2 : public Controller {
 
   protected:
     GLFWKey
-    map_key(ln::Key i_key) override;
+    map_key(nh::Key i_key) override;
 };
 
-} // namespace ln_app
+} // namespace sh

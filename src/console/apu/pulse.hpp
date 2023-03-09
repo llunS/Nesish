@@ -10,7 +10,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Pulse {
   public:
@@ -52,4 +52,4 @@ struct Pulse {
     LengthCounter m_length;
 };
 
-} // namespace ln
+} // namespace nh

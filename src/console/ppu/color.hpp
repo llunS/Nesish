@@ -2,7 +2,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Color {
     Byte r;
@@ -10,4 +10,4 @@ struct Color {
     Byte b;
 };
 
-} // namespace ln
+} // namespace nh

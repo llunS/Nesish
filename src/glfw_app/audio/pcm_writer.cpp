@@ -2,7 +2,7 @@
 
 #include "common/vc_intrinsics.hpp"
 
-namespace ln_app {
+namespace sh {
 
 PCMWriter::PCMWriter()
     : m_file(nullptr)
@@ -69,4 +69,4 @@ PCMWriter::write_s16le(short i_val)
     return int(std::fwrite(bytes, 1, 2, m_file));
 }
 
-} // namespace ln_app
+} // namespace sh

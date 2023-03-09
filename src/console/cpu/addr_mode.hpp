@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ln {
+namespace nh {
 
 /// @brief Main category for address mode
 enum AddrMode {
@@ -20,4 +20,4 @@ enum AddrMode {
     REL, // Relative
 };
 
-} // namespace ln
+} // namespace nh

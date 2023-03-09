@@ -5,7 +5,7 @@
 #include "console/types.hpp"
 #include "console/apu/divider.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Envelope {
   public:
@@ -43,4 +43,4 @@ struct Envelope {
     Byte m_const_vol;
 };
 
-} // namespace ln
+} // namespace nh

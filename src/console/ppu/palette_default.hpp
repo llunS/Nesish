@@ -3,7 +3,7 @@
 #include "console/ppu/palette.hpp"
 #include "common/klass.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PaletteDefault : public Palette {
   public:
@@ -14,4 +14,4 @@ struct PaletteDefault : public Palette {
     to_rgb(PaletteColor i_color) const override;
 };
 
-} // namespace ln
+} // namespace nh

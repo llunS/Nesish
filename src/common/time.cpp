@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-namespace ln {
+namespace nh {
 
 Time_t
 get_now_micro()
@@ -15,4 +15,4 @@ get_now_micro()
     return timeSinceEpoch.count();
 }
 
-} // namespace ln
+} // namespace nh

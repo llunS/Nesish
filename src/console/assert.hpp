@@ -18,7 +18,7 @@
 
 #define LN_ASSERT_ERROR(...)                                                   \
     assert(false);                                                             \
-    LN_LOG_ERROR(ln::get_logger(), __VA_ARGS__)
+    LN_LOG_ERROR(nh::get_logger(), __VA_ARGS__)
 
 #define LN_ASSERT_FATAL_COND(i_cond, ...)                                      \
     if (!(i_cond))                                                             \
@@ -28,4 +28,4 @@
 
 #define LN_ASSERT_FATAL(...)                                                   \
     assert(false);                                                             \
-    LN_LOG_FATAL(ln::get_logger(), __VA_ARGS__)
+    LN_LOG_FATAL(nh::get_logger(), __VA_ARGS__)

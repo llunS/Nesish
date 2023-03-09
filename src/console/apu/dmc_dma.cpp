@@ -17,7 +17,7 @@
 #include "console/memory/memory.hpp"
 #include "console/apu/apu.hpp"
 
-namespace ln {
+namespace nh {
 
 DMCDMA::DMCDMA(const APUClock &i_clock, const Memory &i_memory, APU &o_apu)
     : m_clock(i_clock)
@@ -156,4 +156,4 @@ DMCDMA::rdy() const
     return m_rdy;
 }
 
-} // namespace ln
+} // namespace nh

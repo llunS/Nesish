@@ -6,7 +6,7 @@
 #define POSTRENDER_SL_IDX 261
 #define POSTRENDER_SL -1
 
-namespace ln {
+namespace nh {
 
 constexpr int Pipeline::SCANLINE_COUNT;
 
@@ -105,4 +105,4 @@ Pipeline::on_tick(Cycle i_curr, Cycle i_total)
     return 0; // unstoppable
 }
 
-} // namespace ln
+} // namespace nh

@@ -1,6 +1,6 @@
 #include "idle_ticker.hpp"
 
-namespace ln {
+namespace nh {
 
 IdleTicker::IdleTicker(Cycle i_total)
     : Tickable(i_total)
@@ -16,4 +16,4 @@ IdleTicker::on_tick(Cycle i_curr, Cycle i_total)
     return 1;
 }
 
-} // namespace ln
+} // namespace nh

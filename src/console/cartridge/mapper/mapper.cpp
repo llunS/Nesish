@@ -1,6 +1,6 @@
 #include "mapper.hpp"
 
-namespace ln {
+namespace nh {
 
 Mapper::Mapper(const INES::RomAccessor *i_accessor)
     : m_rom_accessor(i_accessor)
@@ -20,4 +20,4 @@ Mapper::unset_fixed_vh_mirror(VideoMemory *o_video_memory)
     o_video_memory->unset_mirror();
 }
 
-} // namespace ln
+} // namespace nh

@@ -4,7 +4,7 @@
 
 #include <cstdio>
 
-namespace ln_app {
+namespace sh {
 
 Shader::Shader()
     : m_id(0)
@@ -26,10 +26,10 @@ Shader::program() const
     return m_id;
 }
 
-ln::Error
+nh::Error
 Shader::compile(const char *i_vert, const char *i_frag)
 {
-    ln::Error err = ln::Error::OK;
+    nh::Error err = nh::Error::OK;
 
     GLuint vertex_shader = 0;
     GLuint fragment_shader = 0;
@@ -39,7 +39,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
     vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     if (checkGLError())
     {
-        err = ln::Error::RENDERING_API;
+        err = nh::Error::RENDERING_API;
         goto l_cleanup;
     }
     glShaderSource(vertex_shader, 1, &i_vert, NULL);
@@ -55,7 +55,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
                          "ERROR::SHADER::VERTEX::COMPILATION_FAILED: %s\n",
                          infoLog);
 
-            err = ln::Error::RENDERING_API;
+            err = nh::Error::RENDERING_API;
             goto l_cleanup;
         };
     }
@@ -64,7 +64,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
     fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     if (checkGLError())
     {
-        err = ln::Error::RENDERING_API;
+        err = nh::Error::RENDERING_API;
         goto l_cleanup;
     }
     glShaderSource(fragment_shader, 1, &i_frag, NULL);
@@ -80,7 +80,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
                          "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: %s\n",
                          infoLog);
 
-            err = ln::Error::RENDERING_API;
+            err = nh::Error::RENDERING_API;
             goto l_cleanup;
         };
     }
@@ -89,7 +89,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
     program = glCreateProgram();
     if (checkGLError())
     {
-        err = ln::Error::RENDERING_API;
+        err = nh::Error::RENDERING_API;
         goto l_cleanup;
     }
     glAttachShader(program, vertex_shader);
@@ -105,7 +105,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
             std::fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED: %s\n",
                          infoLog);
 
-            err = ln::Error::RENDERING_API;
+            err = nh::Error::RENDERING_API;
             goto l_cleanup;
         }
     }
@@ -130,4 +130,4 @@ l_cleanup:
     return err;
 }
 
-} // namespace ln_app
+} // namespace sh

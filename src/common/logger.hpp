@@ -7,7 +7,7 @@
 
 #define LN_DEFAULT_LOG_LEVEL spdlog::level::info
 
-namespace ln {
+namespace nh {
 
 LN_COMMON_API
 void
@@ -17,7 +17,7 @@ LN_COMMON_API
 spdlog::logger *
 get_logger();
 
-} // namespace ln
+} // namespace nh
 
 template <typename... Args>
 void

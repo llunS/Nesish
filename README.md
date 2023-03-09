@@ -1,4 +1,4 @@
-# LightNES
+# Nesish
 
 A NES emulator.
 

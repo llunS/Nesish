@@ -6,7 +6,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct DMCDMA;
 
@@ -78,4 +78,4 @@ struct DMC {
     bool m_irq;
 };
 
-} // namespace ln
+} // namespace nh

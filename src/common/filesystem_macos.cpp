@@ -2,7 +2,7 @@
 
 #include <sys/stat.h>
 
-namespace ln {
+namespace nh {
 
 bool
 file_exists(const std::string &i_path)
@@ -11,4 +11,4 @@ file_exists(const std::string &i_path)
     return (stat(i_path.c_str(), &st) == 0) && !(st.st_mode & S_IFDIR);
 }
 
-} // namespace ln
+} // namespace nh

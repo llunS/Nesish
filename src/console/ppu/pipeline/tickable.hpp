@@ -2,7 +2,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Tickable {
   public:
@@ -28,4 +28,4 @@ struct Tickable {
     Cycle m_total;
 };
 
-} // namespace ln
+} // namespace nh

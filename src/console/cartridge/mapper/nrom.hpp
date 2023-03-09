@@ -3,7 +3,7 @@
 #include "console/cartridge/mapper/mapper.hpp"
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct NROM : public Mapper {
   public:
@@ -27,4 +27,4 @@ struct NROM : public Mapper {
     Byte m_chr_ram[8 * 1024];
 };
 
-} // namespace ln
+} // namespace nh

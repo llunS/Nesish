@@ -12,7 +12,7 @@
 
 #define MAX_LOGS 5
 
-namespace ln {
+namespace nh {
 
 static spdlog::logger *g_logger;
 
@@ -31,7 +31,7 @@ init_logger(spdlog::level::level_enum i_level)
     }
 
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
-    auto logger = new spdlog::logger("LightNES", console_sink);
+    auto logger = new spdlog::logger("Nesish", console_sink);
     logger->set_level(i_level);
 
     auto log_filepath =
@@ -155,4 +155,4 @@ pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
     return join_exec_rel_path(i_log_exec_rel_path);
 }
 
-} // namespace ln
+} // namespace nh

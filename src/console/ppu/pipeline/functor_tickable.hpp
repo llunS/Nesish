@@ -5,7 +5,7 @@
 
 #include <functional>
 
-namespace ln {
+namespace nh {
 
 struct FunctorTickable : public Tickable {
   public:
@@ -21,4 +21,4 @@ struct FunctorTickable : public Tickable {
     CycleFunc m_func;
 };
 
-} // namespace ln
+} // namespace nh

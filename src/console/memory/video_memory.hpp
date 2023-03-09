@@ -6,7 +6,7 @@
 #include "console/types.hpp"
 #include <functional>
 
-namespace ln {
+namespace nh {
 
 /* @NOTE: Enumerators must be unique and are valid array index */
 enum class VideoMemoryMappingPoint : unsigned char {
@@ -54,4 +54,4 @@ struct VideoMemory
     Byte m_palette[LN_PALETTE_SIZE];
 };
 
-} // namespace ln
+} // namespace nh

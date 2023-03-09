@@ -1,6 +1,6 @@
 // @FIXME: Lesser constraints on stores/loads.
 
-namespace ln_app {
+namespace sh {
 
 template <unsigned int N>
 Channel<N>::Channel()
@@ -54,4 +54,4 @@ Channel<N>::c_try_receive(value_t &o_val)
     return true;
 }
 
-} // namespace ln_app
+} // namespace sh

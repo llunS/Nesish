@@ -5,7 +5,7 @@
 #include "console/ppu/pipeline/functor_tickable.hpp"
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct PipelineAccessor;
 
@@ -61,4 +61,4 @@ struct SpEvalFetch : public Tickable {
                        PipelineAccessor *io_accessor, Context *io_ctx);
 };
 
-} // namespace ln
+} // namespace nh

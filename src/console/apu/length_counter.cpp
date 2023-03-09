@@ -4,7 +4,7 @@
 
 // https://www.nesdev.org/wiki/APU_Length_Counter
 
-namespace ln {
+namespace nh {
 
 LengthCounter::LengthCounter()
     : m_counter(0)
@@ -110,4 +110,4 @@ LengthCounter::check_load(Byte i_index)
     m_counter = length_table[i_index];
 }
 
-} // namespace ln
+} // namespace nh

@@ -6,7 +6,7 @@
 
 #include <limits>
 
-namespace ln {
+namespace nh {
 
 PipelineAccessor::PipelineAccessor(PPU *i_ppu)
     : m_ppu(i_ppu)
@@ -68,7 +68,7 @@ PipelineAccessor::get_memory()
     return m_ppu->m_memory;
 }
 
-ln::Error
+nh::Error
 PipelineAccessor::get_color_byte(Address i_addr, Byte &o_val)
 {
     auto error = get_memory()->get_byte(i_addr, o_val);
@@ -155,7 +155,7 @@ PipelineAccessor::get_sliver_addr(bool i_tbl_right, Byte i_tile_idx,
     return sliver_addr;
 }
 
-ln::Error
+nh::Error
 PipelineAccessor::get_ptn_sliver(bool i_tbl_right, Byte i_tile_idx,
                                  bool i_upper, Byte i_fine_y,
                                  const VideoMemory *i_vram, Byte &o_val)
@@ -192,7 +192,7 @@ PipelineAccessor::resolve_sp_tile(Byte i_tile_byte, bool i_8x16, bool i_flip_y,
 bool
 PipelineAccessor::capture_palette_on()
 {
-    return lnd::is_debug_on(m_ppu->m_debug_flags, lnd::DBG_PALETTE);
+    return nhd::is_debug_on(m_ppu->m_debug_flags, nhd::DBG_PALETTE);
 }
 
 void
@@ -201,7 +201,7 @@ PipelineAccessor::capture_palette()
     for (decltype(m_ppu->m_palette_snap.color_count()) i = 0;
          i < m_ppu->m_palette_snap.color_count(); ++i)
     {
-        static_assert(lnd::Palette::color_count() == 32,
+        static_assert(nhd::Palette::color_count() == 32,
                       "Might overflow below.");
         // VRAM addr
         Address color_addr = Address(LN_PALETTE_ADDR_HEAD + i);
@@ -216,7 +216,7 @@ PipelineAccessor::capture_palette()
 bool
 PipelineAccessor::capture_oam_on()
 {
-    return lnd::is_debug_on(m_ppu->m_debug_flags, lnd::DBG_OAM);
+    return nhd::is_debug_on(m_ppu->m_debug_flags, nhd::DBG_OAM);
 }
 
 void
@@ -230,7 +230,7 @@ PipelineAccessor::capture_oam()
 }
 
 void
-PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
+PipelineAccessor::update_oam_sprite(nhd::Sprite &o_sprite, int i_idx)
 {
     // Assuming OAMADDR starts at 0.
     Byte byte_idx_start = Byte(i_idx * 4);
@@ -326,20 +326,20 @@ PipelineAccessor::update_oam_sprite(lnd::Sprite &o_sprite, int i_idx)
 bool
 PipelineAccessor::capture_ptn_tbls_on()
 {
-    return lnd::is_debug_on(m_ppu->m_debug_flags, lnd::DBG_PATTERN);
+    return nhd::is_debug_on(m_ppu->m_debug_flags, nhd::DBG_PATTERN);
 }
 
 void
 PipelineAccessor::capture_ptn_tbls()
 {
-    auto cap_tbl = [this](bool i_right, lnd::PatternTable &o_tbl) -> void {
-        static_assert(lnd::PatternTable::get_tiles() == 16 * 16,
+    auto cap_tbl = [this](bool i_right, nhd::PatternTable &o_tbl) -> void {
+        static_assert(nhd::PatternTable::get_tiles() == 16 * 16,
                       "Incorrect loop count");
         static_assert(std::numeric_limits<int>::max() >= 16 * 16,
                       "Type of loop variable too small");
         for (int tile_idx = 0; tile_idx < 16 * 16; ++tile_idx)
         {
-            static_assert(lnd::PatternTable::get_tile_height() == 8,
+            static_assert(nhd::PatternTable::get_tile_height() == 8,
                           "Incorrect loop count");
             for (Byte fine_y = 0; fine_y < 8; ++fine_y)
             {
@@ -368,7 +368,7 @@ PipelineAccessor::capture_ptn_tbls()
                 }
 
                 /* Now that we have a row of data available */
-                static_assert(lnd::PatternTable::get_tile_width() == 8,
+                static_assert(nhd::PatternTable::get_tile_width() == 8,
                               "Incorrect loop count");
                 for (int fine_x = 0; fine_x < 8; ++fine_x)
                 {
@@ -403,4 +403,4 @@ PipelineAccessor::capture_ptn_tbls()
     cap_tbl(true, m_ppu->m_ptn_tbl_r_snap);
 }
 
-} // namespace ln
+} // namespace nh

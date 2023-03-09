@@ -8,7 +8,7 @@
 #include <limits>
 #include <cstring>
 
-namespace ln {
+namespace nh {
 
 struct OutputColor {
   public:
@@ -375,4 +375,4 @@ pv_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
                                        output_clr);
 }
 
-} // namespace ln
+} // namespace nh

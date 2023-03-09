@@ -66,5 +66,5 @@ target_compile_definitions(${module_name} PUBLIC -DGLFW_INCLUDE_NONE)
 # --------------------------------------------
 
 include(xform_shader)
-xform_shader(resources/shader_in/screen_rect.vert resources/shader ln_app)
-xform_shader(resources/shader_in/screen_rect.frag resources/shader ln_app)
+xform_shader(resources/shader_in/screen_rect.vert resources/shader sh)
+xform_shader(resources/shader_in/screen_rect.frag resources/shader sh)

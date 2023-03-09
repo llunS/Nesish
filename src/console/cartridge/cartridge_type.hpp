@@ -1,9 +1,9 @@
 #pragma once
 
-namespace ln {
+namespace nh {
 
 enum class CartridgeType {
     INES,
 };
 
-} // namespace ln
+} // namespace nh

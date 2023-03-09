@@ -3,7 +3,7 @@
 #include "console/ppu/pipeline/tickable.hpp"
 #include "common/klass.hpp"
 
-namespace ln {
+namespace nh {
 
 struct IdleTicker : public Tickable {
   public:
@@ -14,4 +14,4 @@ struct IdleTicker : public Tickable {
     on_tick(Cycle i_curr, Cycle i_total) override;
 };
 
-} // namespace ln
+} // namespace nh

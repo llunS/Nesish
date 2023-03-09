@@ -8,7 +8,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Triangle {
   public:
@@ -48,4 +48,4 @@ struct Triangle {
     unsigned int m_seq_idx;
 };
 
-} // namespace ln
+} // namespace nh

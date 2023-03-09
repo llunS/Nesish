@@ -4,7 +4,7 @@
 
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct Divider {
   public:
@@ -32,4 +32,4 @@ struct Divider {
     Byte2 m_ctr;
 };
 
-} // namespace ln
+} // namespace nh

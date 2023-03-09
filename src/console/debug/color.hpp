@@ -2,7 +2,7 @@
 
 #include "common/klass.hpp"
 
-namespace lnd {
+namespace nhd {
 
 struct Color {
   public:
@@ -18,4 +18,4 @@ struct Color {
     unsigned char b;
 };
 
-} // namespace lnd
+} // namespace nhd

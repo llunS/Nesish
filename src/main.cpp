@@ -36,21 +36,21 @@ main(int argc, char **argv)
         CLI11_PARSE(app, argc, argv);
     }
 
-    ln::init_logger(log_level);
+    nh::init_logger(log_level);
 
-    ln_app::AppOpt app_opts = ln_app::OPT_NONE;
+    sh::AppOpt app_opts = sh::OPT_NONE;
     if (debug_win)
     {
-        app_opts |= ln_app::OPT_DEBUG_WIN;
+        app_opts |= sh::OPT_DEBUG_WIN;
     }
     if (log_pcm)
     {
-        app_opts |= ln_app::OPT_PCM;
+        app_opts |= sh::OPT_PCM;
     }
     if (audio_enabled)
     {
-        app_opts |= ln_app::OPT_AUDIO;
+        app_opts |= sh::OPT_AUDIO;
     }
 
-    return ln_app::run_app(rom_path, app_opts);
+    return sh::run_app(rom_path, app_opts);
 }

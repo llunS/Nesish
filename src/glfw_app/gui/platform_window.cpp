@@ -4,7 +4,7 @@
 
 #include "glfw_app/glad/glad.h"
 
-namespace ln_app {
+namespace sh {
 
 PlatformWindow::PlatformWindow()
     : m_win(nullptr)
@@ -101,4 +101,4 @@ PlatformWindow::updateViewportSize()
     glViewport(0, 0, width, height);
 }
 
-} // namespace ln_app
+} // namespace sh

@@ -7,7 +7,7 @@
 
 #include <cstring>
 
-namespace ln {
+namespace nh {
 
 static constexpr int SEC_OAM_CLEAR_CYCLES = 64;
 
@@ -479,4 +479,4 @@ SpEvalFetch::pv_sp_fetch_reload(Cycle i_curr, Cycle i_total,
     return 1;
 }
 
-} // namespace ln
+} // namespace nh

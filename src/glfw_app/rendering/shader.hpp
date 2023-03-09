@@ -6,7 +6,7 @@
 
 #include "glfw_app/glad/glad.h"
 
-namespace ln_app {
+namespace sh {
 
 struct Shader {
   public:
@@ -14,7 +14,7 @@ struct Shader {
     ~Shader();
     LN_KLZ_DELETE_COPY_MOVE(Shader);
 
-    ln::Error
+    nh::Error
     compile(const char *i_vert, const char *i_frag);
 
     GLuint
@@ -24,4 +24,4 @@ struct Shader {
     GLuint m_id;
 };
 
-} // namespace ln_app
+} // namespace sh

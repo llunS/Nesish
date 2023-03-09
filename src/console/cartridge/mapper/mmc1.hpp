@@ -3,7 +3,7 @@
 #include "console/cartridge/mapper/mapper.hpp"
 #include "console/types.hpp"
 
-namespace ln {
+namespace nh {
 
 struct MMC1 : public Mapper {
   public:
@@ -55,4 +55,4 @@ struct MMC1 : public Mapper {
     bool m_no_prg_banking_32K;
 };
 
-} // namespace ln
+} // namespace nh

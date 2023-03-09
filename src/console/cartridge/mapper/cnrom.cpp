@@ -3,7 +3,7 @@
 #define LN_128_PRG_RAM_SIZE 16 * 1024
 #define LN_256_PRG_RAM_SIZE 32 * 1024
 
-namespace ln {
+namespace nh {
 
 CNROM::CNROM(const INES::RomAccessor *i_accessor)
     : Mapper{i_accessor}
@@ -51,7 +51,7 @@ CNROM::map_memory(Memory *o_memory, VideoMemory *o_video_memory)
         m_rom_accessor->get_prg_rom(&mem_base, &mem_size);
         auto decode = [mem_base, mem_size](const MappingEntry *i_entry,
                                            Address i_addr,
-                                           Byte *&o_addr) -> ln::Error {
+                                           Byte *&o_addr) -> nh::Error {
             // address mirroring
             Address rel_address = (i_addr - i_entry->begin);
             if (mem_size == LN_128_PRG_RAM_SIZE)
@@ -119,4 +119,4 @@ CNROM::unmap_memory(Memory *o_memory, VideoMemory *o_video_memory)
     unset_fixed_vh_mirror(o_video_memory);
 }
 
-} // namespace ln
+} // namespace nh

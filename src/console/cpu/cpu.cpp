@@ -8,7 +8,7 @@
 
 #define LN_BRK_OPCODE 0
 
-namespace ln {
+namespace nh {
 
 CPU::CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu)
     : m_memory(i_memory)
@@ -409,7 +409,7 @@ void
 CPU::push_byte(Byte i_byte)
 {
     // It may not actually write.
-    LN_LOG_TRACE(ln::get_logger(), "Push byte: {:02X}", i_byte);
+    LN_LOG_TRACE(nh::get_logger(), "Push byte: {:02X}", i_byte);
 
     set_byte(Memory::STACK_PAGE_MASK | S, i_byte);
     // The pointer decrement happens regardless of write or not
@@ -433,7 +433,7 @@ Byte
 CPU::post_pop_byte()
 {
     Byte byte = get_byte(Memory::STACK_PAGE_MASK | S);
-    LN_LOG_TRACE(ln::get_logger(), "Pop byte: {:02X}", byte);
+    LN_LOG_TRACE(nh::get_logger(), "Pop byte: {:02X}", byte);
     return byte;
 }
 
@@ -481,7 +481,7 @@ CPU::test_flag(StatusFlag i_flag, bool i_cond)
 void
 CPU::halt()
 {
-    LN_LOG_INFO(ln::get_logger(), "Halting...");
+    LN_LOG_INFO(nh::get_logger(), "Halting...");
 
     m_instr_halt = true;
 }
@@ -543,4 +543,4 @@ CPU::in_reset() const
     return /*in_hardware_irq() &&*/ m_irq_no_mem_write;
 }
 
-} // namespace ln
+} // namespace nh
