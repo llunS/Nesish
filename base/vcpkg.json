@@ -1,0 +1,15 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "nesish-base",
+    "version-semver": "0.1.0",
+    "dependencies": [
+        "gtest"
+    ],
+    "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
+    "overrides": [
+        {
+            "name": "gtest",
+            "version": "1.11.0"
+        }
+    ]
+}

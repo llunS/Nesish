@@ -1,0 +1,51 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "nesish-shell",
+    "version-semver": "0.1.0",
+    "dependencies": [
+        "spdlog",
+        "cli11",
+        "glfw3",
+        {
+            "name": "imgui",
+            "features": [
+                "glfw-binding",
+                "opengl3-binding"
+            ]
+        },
+        "rtaudio",
+        "gtest",
+        "fmt"
+    ],
+    "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
+    "overrides": [
+        {
+            "name": "spdlog",
+            "version": "1.11.0"
+        },
+        {
+            "name": "cli11",
+            "version": "2.1.1"
+        },
+        {
+            "name": "glfw3",
+            "version": "3.3.6"
+        },
+        {
+            "name": "imgui",
+            "version": "1.86"
+        },
+        {
+            "name": "rtaudio",
+            "version": "2021-11-16"
+        },
+        {
+            "name": "gtest",
+            "version": "1.11.0"
+        },
+        {
+            "name": "fmt",
+            "version": "9.1.0"
+        }
+    ]
+}
