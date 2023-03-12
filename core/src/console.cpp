@@ -25,6 +25,7 @@ Console::Console(NHLogger *i_logger)
     , m_ctrls{}
     , m_logger(i_logger)
     , m_debug_flags(NHD_DBG_OFF)
+    , m_time(0)
 {
     hard_wire();
 }
@@ -167,7 +168,7 @@ Console::read_ctrl_reg(CtrlReg i_reg)
             {
                 auto ctrl = m_ctrls[index];
                 // @TODO: Other bits
-                Byte primaryBit{0};
+                bool primaryBit{0};
                 if (!ctrl)
                 {
                     // Report 0 for unconnected controller.
@@ -176,10 +177,10 @@ Console::read_ctrl_reg(CtrlReg i_reg)
                 }
                 else
                 {
-                    primaryBit = ctrl->report(ctrl->user);
+                    primaryBit = (bool)ctrl->report(ctrl->user);
                 }
                 // @NOTE: Other bits are 0 as initialized.
-                val = (val & 0xFE) | primaryBit;
+                val = (val & 0xFE) | Byte(primaryBit);
             }
         }
         break;
@@ -305,7 +306,9 @@ Console::power_up()
     m_dmc_dma.power_up();
     m_apu_clock.power_up();
 
-    reset_internal();
+    m_time = 0;
+
+    reset_trivial();
 }
 
 void
@@ -328,11 +331,11 @@ Console::reset()
     m_dmc_dma.reset();
     m_apu_clock.reset();
 
-    reset_internal();
+    reset_trivial();
 }
 
 void
-Console::reset_internal()
+Console::reset_trivial()
 {
     for (std::underlying_type<CtrlReg>::type i = 0; i < CtrlReg::SIZE; ++i)
     {
@@ -347,16 +350,13 @@ Console::reset_internal()
     }
 }
 
-double
-Console::elapsed(Cycle i_ticks)
-{
-    return double(i_ticks) / NH_CPU_HZ; // s
-}
-
 Cycle
-Console::ticks(double i_duration)
+Console::advance(double i_delta)
 {
-    return Cycle(NH_CPU_HZ * i_duration);
+    double next = m_time + i_delta;
+    Cycle cpu_ticks = Cycle(next * NH_CPU_HZ) - Cycle(m_time * NH_CPU_HZ);
+    m_time = next;
+    return cpu_ticks;
 }
 
 bool
@@ -413,6 +413,12 @@ Console::tick(bool *o_cpu_instr)
 
     // APU generates a sample every CPU cycle.
     return true;
+}
+
+double
+Console::elapsed(Cycle i_ticks)
+{
+    return double(i_ticks) / NH_CPU_HZ; // s
 }
 
 const FrameBuffer &

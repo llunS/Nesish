@@ -67,17 +67,11 @@ nh_reset(NHConsole console)
     nh_console->reset();
 }
 
-double
-nh_elapsed(NHConsole console, NHCycle ticks)
-{
-    NH_DECL_CONSOLE(console);
-    return nh_console->elapsed(ticks);
-}
 NHCycle
-nh_ticks(NHConsole console, double duration)
+nh_advance(NHConsole console, double delta)
 {
     NH_DECL_CONSOLE(console);
-    return nh_console->ticks(duration);
+    return nh_console->advance(delta);
 }
 
 int
@@ -91,6 +85,13 @@ nh_tick(NHConsole console, int *cpu_instr)
         *cpu_instr = b1;
     }
     return b0;
+}
+
+double
+nh_elapsed(NHConsole console, NHCycle ticks)
+{
+    NH_DECL_CONSOLE(console);
+    return nh_console->elapsed(ticks);
 }
 
 int

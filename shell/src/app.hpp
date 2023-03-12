@@ -9,7 +9,7 @@ enum AppOpt {
     OPT_NONE = 0,
     OPT_DEBUG_WIN = 1 << 0, // With debug window
     OPT_PCM = 1 << 1,       // Generate audio pcm file
-    OPT_AUDIO = 1 << 2,     // Experimental audio support
+    OPT_AUDIO = 1 << 2,     // WIP audio
 };
 
 inline AppOpt &

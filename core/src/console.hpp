@@ -43,18 +43,16 @@ struct Console {
     void
     reset();
 
-    /// @return How many seconds have passed for input ticks
-    double
-    elapsed(Cycle i_ticks);
-    /// @param i_duration In seconds
-    /// @return How many ticks are generated for input duration
     Cycle
-    ticks(double i_duration);
+    advance(double i_delta);
     /// @brief Advance 1 CPU tick
     /// @param o_cpu_instr If a CPU instruction has completed
     /// @return If a new audio sample is available
     bool
     tick(bool *o_cpu_instr = nullptr);
+    /// @return How many seconds have passed for input ticks
+    double
+    elapsed(Cycle i_ticks);
 
     const FrameBuffer &
     get_frame() const;
@@ -107,7 +105,7 @@ struct Console {
 
   private:
     void
-    reset_internal();
+    reset_trivial();
 
   private:
     CPU m_cpu;
@@ -131,6 +129,9 @@ struct Console {
 
   private:
     NHDFlags m_debug_flags;
+
+  private:
+    double m_time;
 };
 
 } // namespace nh

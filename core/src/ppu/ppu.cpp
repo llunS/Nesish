@@ -68,7 +68,7 @@ PPU::power_up()
      * CHR RAM
      */
 
-    reset_internal();
+    reset_trivial();
 }
 
 void
@@ -90,11 +90,11 @@ PPU::reset()
      * CHR RAM
      */
 
-    reset_internal();
+    reset_trivial();
 }
 
 void
-PPU::reset_internal()
+PPU::reset_trivial()
 {
     v = t = x = 0;
 

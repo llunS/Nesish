@@ -102,13 +102,12 @@ nh_power_up(NHConsole console);
 NH_API void
 nh_reset(NHConsole console);
 
-NH_API double
-nh_elapsed(NHConsole console, NHCycle ticks);
 NH_API NHCycle
-nh_ticks(NHConsole console, double duration);
-
+nh_advance(NHConsole console, double delta);
 NH_API int
 nh_tick(NHConsole console, int *cpu_instr);
+NH_API double
+nh_elapsed(NHConsole console, NHCycle ticks);
 
 typedef struct NHFrameTy *NHFrame;
 

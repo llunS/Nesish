@@ -14,5 +14,12 @@ function(inc_test i_test)
     gtest_discover_tests(${tgt_name})
 endfunction()
 
+if (MSVC)
+    add_compile_options(
+        # suppress some warnings
+        /wd6326
+    )
+endif()
+
 inc_test(path_test)
 inc_test(filesystem_test)

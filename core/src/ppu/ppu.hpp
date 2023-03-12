@@ -104,7 +104,7 @@ struct PPU {
 
   private:
     void
-    reset_internal();
+    reset_trivial();
 
   private:
     Byte m_regs[Register::SIZE];

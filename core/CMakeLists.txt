@@ -7,6 +7,7 @@ project(Nesish)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN hidden)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -16,12 +17,38 @@ if (MSVC)
         /W4 # warning level 4 is enough
         /WX
         /analyze # enable code analysis warnings
+        # suppress some warnings
+        /wd6285
+        # optimizations
+        $<$<CONFIG:Release>:/GL>
+        $<$<CONFIG:Release>:/O2>
+    )
+    add_link_options(
+        $<$<CONFIG:Release>:/LTCG>
     )
 else()
     # lots of warnings and all warnings as errors
-    add_compile_options(-Wall -Wextra -pedantic -Werror)
+    add_compile_options(
+        -Wall -Wextra -pedantic -Werror
+        # optimizations
+        $<$<CONFIG:Release>:-flto=thin>
+    )
+    add_link_options(
+        $<$<CONFIG:Release>:-flto=thin>
+    )
     # suppress some warnings
     add_compile_options(-Wno-reorder-ctor)
+endif()
+
+# Put binary outputs to single directory
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+endif()
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+endif()
+if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 endif()
 
 # Add cmake scripts
@@ -122,7 +149,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 target_link_libraries(${tgt_name} PRIVATE NesishBase)
 
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(${tgt_name} PRIVATE fmt::fmt-header-only)
+target_link_libraries(${tgt_name} PRIVATE fmt::fmt)
 
 
 # -- Tests

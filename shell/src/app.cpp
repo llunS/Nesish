@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <memory>
+#include <chrono>
 
 // @FIXME: spdlog will include windows header files, we need to include them
 // before "glfw3.h" so that glfw won't redefine symbols.
@@ -14,19 +15,19 @@
 
 #include "audio/resampler.hpp"
 #include "nhbase/path.hpp"
-#include "nhbase/time.hpp"
 #include "audio/pcm_writer.hpp"
 #include "audio/channel.hpp"
 #include "rtaudio/RtAudio.h"
 
+#define SH_FRM_TIME (1.0 / 60.0)
 #define SH_AUDIO_SAMPLE_RATE 48000
-#define SH_AUDIO_BUF_SIZE 1024
-#define SH_AUDIO_RESAMPLE_BUF_SIZE SH_AUDIO_SAMPLE_RATE / 10
+#define SH_AUDIO_BUF_SIZE                                                      \
+    512 // previous power of 2 of (SH_FRM_TIME * SH_AUDIO_SAMPLE_RATE)
+#define SH_AUDIO_RESAMPLE_BUF_SIZE (SH_AUDIO_SAMPLE_RATE / 10)
 #define SH_AUDIO_DYN_D 0.005
+#define SH_AUDIO_DYN 0
 
 namespace sh {
-
-static constexpr double FRAME_TIME = 1.0 / 60.0;
 
 typedef Channel<SH_AUDIO_BUF_SIZE> AudioChannel;
 
@@ -156,12 +157,10 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     }
     /* Main loop */
     {
-        constexpr double S_TO_US = 1000.0 * 1000.0;
-        constexpr double FRAME_TIME_US = FRAME_TIME * S_TO_US;
-
-        double currTimeUS = nb::get_now_micro();
-        double nextEmulateTimeUS = currTimeUS;
-        double nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
+        auto currTime = std::chrono::steady_clock::now();
+        auto nextEmulateTime = currTime + std::chrono::duration<double>(0.0);
+        auto nextRenderTime =
+            currTime + std::chrono::duration<double>(SH_FRM_TIME);
 
         while (emu_win)
         {
@@ -183,12 +182,13 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
             }
 
             /* Emulate */
-            currTimeUS = nb::get_now_micro();
+            currTime = std::chrono::steady_clock::now();
             if (!(dbg_win && dbg_win->isPaused()) &&
-                currTimeUS >= nextEmulateTimeUS)
+                currTime >= nextEmulateTime)
             {
                 if (enable_audio)
                 {
+#if SH_AUDIO_DYN
                     /* Calculate target resample ratio */
                     double resample_ratio =
                         1. + (SH_AUDIO_BUF_SIZE - 2. * audio_ch.p_size()) /
@@ -199,7 +199,10 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                     int target_sample_rate =
                         int(SH_AUDIO_SAMPLE_RATE * double(target_bufsize) /
                             SH_AUDIO_BUF_SIZE);
-
+#else
+#define target_bufsize SH_AUDIO_BUF_SIZE
+#define target_sample_rate SH_AUDIO_SAMPLE_RATE
+#endif
                     if (!resampler.set_rates(nh_get_sample_rate(console),
                                              target_sample_rate))
                     {
@@ -240,25 +243,25 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                         }
                     }
 
-                    double emualteTimeUS =
-                        nh_elapsed(console, cpu_ticks) * S_TO_US;
-                    nextEmulateTimeUS = currTimeUS + emualteTimeUS;
+                    double emualteTime = nh_elapsed(console, cpu_ticks);
+                    nextEmulateTime =
+                        currTime + std::chrono::duration<double>(emualteTime);
                 }
                 else
                 {
-                    NHCycle ticks = nh_ticks(console, 0.002);
+                    NHCycle ticks = nh_advance(console, SH_FRM_TIME);
                     for (decltype(ticks) i = 0; i < ticks; ++i)
                     {
                         nh_tick(console, nullptr);
                     }
 
-                    double emualteTimeUS = nh_elapsed(console, ticks) * S_TO_US;
-                    nextEmulateTimeUS = currTimeUS + emualteTimeUS;
+                    nextEmulateTime =
+                        currTime + std::chrono::duration<double>(SH_FRM_TIME);
                 }
             }
 
             /* Render, AT MOST at fixed rate */
-            if (currTimeUS >= nextRenderTimeUS)
+            if (currTime >= nextRenderTime)
             {
                 // Don't bother to render emulator if paused.
                 if (!(dbg_win && dbg_win->isPaused()))
@@ -273,7 +276,8 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
                     dbg_win->render(console);
                 }
 
-                nextRenderTimeUS = currTimeUS + FRAME_TIME_US;
+                nextRenderTime =
+                    currTime + std::chrono::duration<double>(SH_FRM_TIME);
             }
         }
     }
@@ -298,9 +302,9 @@ l_end:
         dbg_win.reset();
     }
 
-    nh_release_console(console);
-
     glfwTerminate();
+
+    nh_release_console(console);
 
     return err;
 }
