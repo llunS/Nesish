@@ -56,12 +56,13 @@ audio_playback(void *outputBuffer, void *inputBuffer,
 struct ChannelData {
     AudioChannel *ch;
     bool done;
+    Logger *logger;
 };
 
 int
-run_app(const std::string &i_rom_path, AppOpt i_opts)
+run_app(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
 {
-    NHLogger logger{pv_log, nullptr, sh::get_log_level()};
+    NHLogger logger{pv_log, i_logger, i_logger->level};
     NHConsole console = nh_new_console(&logger);
     if (!NH_VALID(console))
     {
@@ -71,7 +72,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     NHErr nh_err = nh_insert_cart(console, i_rom_path.c_str());
     if (NH_FAILED(nh_err))
     {
-        SH_LOG_ERROR(sh::get_logger(), "Failed to load cartridge: {}", nh_err);
+        SH_LOG_ERROR(i_logger, "Failed to load cartridge: {}", nh_err);
         nh_release_console(console);
         return 1;
     }
@@ -94,7 +95,7 @@ run_app(const std::string &i_rom_path, AppOpt i_opts)
     }
     Resampler resampler{SH_AUDIO_RESAMPLE_BUF_SIZE};
     AudioChannel audio_ch;
-    ChannelData ch_data{&audio_ch, false};
+    ChannelData ch_data{&audio_ch, false, i_logger};
     RtAudio dac;
     PCMWriter pcm_writer;
     bool enable_audio = i_opts & sh::OPT_AUDIO;
@@ -398,15 +399,16 @@ audio_playback(void *outputBuffer, void *inputBuffer,
     (void)(inputBuffer);
     (void)(streamTime);
 
+    ChannelData *ch_data = (ChannelData *)userData;
+
     if (status)
     {
-        SH_LOG_INFO(sh::get_logger(),
+        SH_LOG_INFO(ch_data->logger,
                     "Stream underflow for buffer of {} detected!",
                     nBufferFrames);
     }
 
     float *buffer = (float *)outputBuffer;
-    ChannelData *ch_data = (ChannelData *)userData;
     // Write interleaved audio data.
     for (unsigned int i = 0; i < nBufferFrames; ++i)
     {
@@ -427,26 +429,26 @@ audio_playback(void *outputBuffer, void *inputBuffer,
 void
 pv_log(NHLogLevel level, const char *msg, void *user)
 {
-    (void)(user);
+    sh::Logger *logger = static_cast<sh::Logger *>(user);
     switch (level)
     {
         case NH_LOG_FATAL:
-            sh::get_logger()->critical(msg);
+            SH_LOG_FATAL(logger, msg);
             break;
         case NH_LOG_ERROR:
-            sh::get_logger()->error(msg);
+            SH_LOG_ERROR(logger, msg);
             break;
         case NH_LOG_WARN:
-            sh::get_logger()->warn(msg);
+            SH_LOG_WARN(logger, msg);
             break;
         case NH_LOG_INFO:
-            sh::get_logger()->info(msg);
+            SH_LOG_INFO(logger, msg);
             break;
         case NH_LOG_DEBUG:
-            sh::get_logger()->debug(msg);
+            SH_LOG_DEBUG(logger, msg);
             break;
         case NH_LOG_TRACE:
-            sh::get_logger()->trace(msg);
+            SH_LOG_TRACE(logger, msg);
             break;
 
         default:

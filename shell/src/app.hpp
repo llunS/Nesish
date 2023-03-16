@@ -4,6 +4,10 @@
 #include <type_traits>
 
 namespace sh {
+struct Logger;
+} // namespace sh
+
+namespace sh {
 
 enum AppOpt {
     OPT_NONE = 0,
@@ -21,6 +25,6 @@ operator|=(AppOpt &a, AppOpt b)
 }
 
 int
-run_app(const std::string &i_rom_path, AppOpt i_opts);
+run_app(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger);
 
 } // namespace sh

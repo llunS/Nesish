@@ -14,27 +14,24 @@
 
 namespace sh {
 
-static spdlog::logger *g_logger;
-static NHLogLevel g_log_level = SH_DEFAULT_LOG_LEVEL;
-
 static std::string
 pv_log_file_rel_exec_path();
 static std::string
 pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
-                        spdlog::logger *i_logger);
+                        Logger *i_logger);
 
-void
-init_logger(NHLogLevel i_level)
+Logger::Logger()
 {
-    if (g_logger)
-    {
-        return;
-    }
+}
 
-    g_log_level = i_level;
-
+Logger *
+Logger::create(NHLogLevel i_level)
+{
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
     auto logger = new spdlog::logger("Nesish", console_sink);
+    auto sh_logger = new Logger();
+    sh_logger->logger = logger;
+    sh_logger->level = i_level;
 
     switch (i_level)
     {
@@ -62,8 +59,8 @@ init_logger(NHLogLevel i_level)
             break;
     }
 
-    auto log_filepath =
-        pv_backup_previous_logs(pv_log_file_rel_exec_path(), MAX_LOGS, logger);
+    auto log_filepath = pv_backup_previous_logs(pv_log_file_rel_exec_path(),
+                                                MAX_LOGS, sh_logger);
     if (!log_filepath.empty())
     {
         try
@@ -72,38 +69,29 @@ init_logger(NHLogLevel i_level)
                 std::make_shared<spdlog::sinks::basic_file_sink_st>(
                     log_filepath, true);
             logger->sinks().push_back(std::move(file_sink));
-            SH_LOG_INFO(logger, "Log file at: {}", log_filepath);
+            SH_LOG_INFO(sh_logger, "Log file at: {}", log_filepath);
         }
         catch (const spdlog::spdlog_ex &e)
         {
-            SH_LOG_ERROR(logger, "Failed to create log file: {}, {}",
+            SH_LOG_ERROR(sh_logger, "Failed to create log file: {}, {}",
                          log_filepath, e.what());
         }
     }
     else
     {
-        SH_LOG_ERROR(logger, "Failed to create log file: {}",
+        SH_LOG_ERROR(sh_logger, "Failed to create log file: {}",
                      std::string("./") + pv_log_file_rel_exec_path());
     }
 
-    g_logger = logger;
+    return sh_logger;
 }
 
-spdlog::logger *
-get_logger()
+Logger::~Logger()
 {
-    if (!g_logger)
+    if (logger)
     {
-        init_logger(SH_DEFAULT_LOG_LEVEL);
+        delete logger;
     }
-
-    return g_logger;
-}
-
-NHLogLevel
-get_log_level()
-{
-    return g_log_level;
 }
 
 std::string
@@ -114,7 +102,7 @@ pv_log_file_rel_exec_path()
 
 std::string
 pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
-                        spdlog::logger *i_logger)
+                        Logger *i_logger)
 {
     // sanity checks.
     if (i_log_exec_rel_path.empty())

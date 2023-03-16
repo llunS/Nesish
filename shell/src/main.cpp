@@ -3,6 +3,7 @@
 #include "app.hpp"
 
 #include <string>
+#include <memory>
 
 int
 main(int argc, char **argv)
@@ -32,7 +33,7 @@ main(int argc, char **argv)
         CLI11_PARSE(app, argc, argv);
     }
 
-    sh::init_logger(log_level);
+    std::unique_ptr<sh::Logger> logger{sh::Logger::create(log_level)};
 
     sh::AppOpt app_opts = sh::OPT_NONE;
     if (debug_win)
@@ -48,5 +49,5 @@ main(int argc, char **argv)
         app_opts |= sh::OPT_AUDIO;
     }
 
-    return sh::run_app(rom_path, app_opts);
+    return sh::run_app(rom_path, app_opts, logger.get());
 }
