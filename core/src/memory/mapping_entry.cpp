@@ -9,11 +9,11 @@ MappingEntry::MappingEntry(Address i_begin, Address i_end, bool i_readonly,
                            MappingSetByteFunc i_set_byte, void *i_opaque)
     : begin(i_begin)
     , end(i_end)
+    , opaque(i_opaque)
     , readonly(i_readonly)
     , decode(i_decode)
     , get_byte(i_get_byte)
     , set_byte(i_set_byte)
-    , opaque(i_opaque)
 {
 }
 

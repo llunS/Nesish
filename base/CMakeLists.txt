@@ -16,37 +16,7 @@ endif()
 
 # -- Global compiler/linker options/flags
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN hidden)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Warnings as errors
-if (MSVC)
-    add_compile_options(
-        /W4 # warning level 4 is enough
-        /WX
-        /analyze # enable code analysis warnings
-        # optimizations
-        $<$<CONFIG:Release>:/GL>
-        $<$<CONFIG:Release>:/O2>
-    )
-    add_link_options(
-        $<$<CONFIG:Release>:/LTCG>
-    )
-else()
-    # lots of warnings and all warnings as errors
-    add_compile_options(
-        -Wall -Wextra -pedantic -Werror
-        # optimizations
-        $<$<CONFIG:Release>:-flto=thin>
-    )
-    add_link_options(
-        $<$<CONFIG:Release>:-flto=thin>
-    )
-endif()
 
 # Put binary outputs to single directory
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
@@ -77,6 +47,10 @@ endif()
 
 set(tgt_name NesishBase)
 add_library(${tgt_name} SHARED)
+include(target_utils)
+add_cxx(${tgt_name} 11)
+add_warnings(${tgt_name})
+add_opts(${tgt_name})
 
 include(gen_dllexport_header)
 gen_dllexport_header(${tgt_name} ${CMAKE_CURRENT_SOURCE_DIR}/public/nhbase NB)

@@ -4,39 +4,7 @@ project(NesishShell)
 
 # -- Global compiler/linker options/flags
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN hidden)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Warnings as errors
-if (MSVC)
-    add_compile_options(
-        /W4 # warning level 4 is enough
-        /WX
-        /analyze # enable code analysis warnings
-        # suppress some warnings
-        /wd6285
-        # optimizations
-        $<$<CONFIG:Release>:/GL>
-        $<$<CONFIG:Release>:/O2>
-    )
-    add_link_options(
-        $<$<CONFIG:Release>:/LTCG>
-    )
-else()
-    # lots of warnings and all warnings as errors
-    add_compile_options(
-        -Wall -Wextra -pedantic -Werror
-        # optimizations
-        $<$<CONFIG:Release>:-flto=thin>
-    )
-    add_link_options(
-        $<$<CONFIG:Release>:-flto=thin>
-    )
-endif()
 
 # Put binary outputs to single directory
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
@@ -58,6 +26,11 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 set(tgt_name NesishShell)
 add_executable(${tgt_name})
 set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME Nesish)
+include(target_utils)
+add_cxx(${tgt_name} 11)
+add_warnings(${tgt_name})
+add_vc_compile_opts(${tgt_name} /wd6285)
+add_opts(${tgt_name})
 
 # --- Include directories
 
@@ -82,11 +55,6 @@ list(APPEND sources src/gui/rect_cut.cpp)
 
 list(APPEND sources src/logger.cpp)
 
-list(APPEND sources 3rd/blip_buf/blip_buf.c)
-# 3rd-Party code
-if (MSVC)
-    set_source_files_properties(3rd/blip_buf/blip_buf.c PROPERTIES COMPILE_OPTIONS "/WX-")
-endif()
 list(APPEND sources src/audio/resampler.cpp)
 list(APPEND sources src/audio/pcm_writer.cpp)
 
@@ -105,11 +73,13 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 # @TODO: Further separation of projects
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 add_subdirectory(3rd/glad)
+add_subdirectory(3rd/blip_buf)
 
 target_link_libraries(${tgt_name} PRIVATE
     glfw
     imgui::imgui
     glad
+    blip_buf
     RtAudio::rtaudio
     spdlog::spdlog_header_only
     Nesish
