@@ -3,6 +3,9 @@
 #include "nesish/nesish.h"
 #include "nhbase/klass.hpp"
 
+#ifdef NDEBUG
+#define SPDLOG_NO_SOURCE_LOC
+#endif
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include "spdlog/spdlog.h"
 

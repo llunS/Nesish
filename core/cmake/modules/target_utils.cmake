@@ -37,19 +37,19 @@ endfunction()
 function(add_opts i_tgt)
     if(MSVC)
         target_compile_options(${i_tgt} PRIVATE
-            $<$<CONFIG:Release>:/GL>
-            $<$<CONFIG:Release>:/O2>
+            $<$<CONFIG:Release,RelWithDebInfo>:/GL>
+            $<$<CONFIG:Release,RelWithDebInfo>:/O2>
         )
         target_link_options(${i_tgt} PRIVATE
-            $<$<CONFIG:Release>:/LTCG>
+            $<$<CONFIG:Release,RelWithDebInfo>:/LTCG>
         )
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
         OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${i_tgt} PRIVATE
-            $<$<CONFIG:Release>:-flto=thin>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
         )
         target_link_options(${i_tgt} PRIVATE
-            $<$<CONFIG:Release>:-flto=thin>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
         )
     else()
         # @TODO
