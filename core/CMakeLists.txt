@@ -35,6 +35,7 @@ endif()
 
 set(tgt_name Nesish)
 add_library(${tgt_name} SHARED)
+set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME NesishCore)
 include(target_utils)
 add_cxx(${tgt_name} 11)
 add_warnings(${tgt_name})

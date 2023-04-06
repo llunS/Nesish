@@ -155,14 +155,14 @@ struct PPU {
         // ------ Sprite
         // pre-fetch
         Byte sec_oam[NH_SEC_OAM_SIZE];
-        bool with_sp0; // sprites to render include sprite 0
-        // fetch
+        // fetch and register reload
         Byte sf_sp_pattern_lower[NH_MAX_VISIBLE_SP_NUM];
         Byte sf_sp_pattern_upper[NH_MAX_VISIBLE_SP_NUM];
         Byte sp_attr[NH_MAX_VISIBLE_SP_NUM];
         Byte sp_pos_x[NH_MAX_VISIBLE_SP_NUM];
-        // rendering
-        Byte sp_active_counter[NH_MAX_VISIBLE_SP_NUM];
+        // metadata passed on to rendering stage on next scanline
+        Byte sp_count; // how many sprites are in range
+        bool with_sp0; // sprites to render include sprite 0
     } m_pipeline_ctx;
     Pipeline *m_pipeline;
 

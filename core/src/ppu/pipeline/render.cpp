@@ -7,6 +7,7 @@
 
 #include <limits>
 #include <cstring>
+#include <numeric>
 
 namespace nh {
 
@@ -36,7 +37,7 @@ static constexpr OutputColor ColorEmpty = {{0x00, 0x00, 0x00}, 0x00};
 static OutputColor
 pv_bg_render(PipelineAccessor *io_accessor);
 static OutputColor
-pv_sp_render(PipelineAccessor *io_accessor);
+pv_sp_render(PipelineAccessor *io_accessor, Render::Context *io_ctx);
 static void
 pv_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
          const OutputColor &i_sp_clr);
@@ -45,6 +46,9 @@ Render::Render(PipelineAccessor *io_accessor)
     : Tickable(NH_SCANLINE_CYCLES)
     , m_accessor(io_accessor)
 {
+    m_ctx.to_draw_sps_f.reserve(NH_MAX_VISIBLE_SP_NUM);
+    m_ctx.to_draw_sps_b.reserve(NH_MAX_VISIBLE_SP_NUM);
+    m_ctx.active_sps.reserve(NH_MAX_VISIBLE_SP_NUM);
 }
 
 Cycle
@@ -64,31 +68,46 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
             }
             m_accessor->get_context().pixel_col = 0;
 
-            // reset active counters
-            std::memset(m_accessor->get_context().sp_active_counter, 0,
-                        sizeof(m_accessor->get_context().sp_active_counter));
+            m_ctx.to_draw_sps_f.clear();
+            if (m_accessor->get_context().sp_count)
+            {
+                m_ctx.to_draw_sps_f.resize(m_accessor->get_context().sp_count);
+                std::iota(m_ctx.to_draw_sps_f.begin(),
+                          m_ctx.to_draw_sps_f.end(), 0);
+            }
+            m_ctx.to_draw_sps_b.clear();
         }
 
-        /* decrement sprite X counters */
-        for (decltype(NH_MAX_VISIBLE_SP_NUM) i = 0; i < NH_MAX_VISIBLE_SP_NUM;
-             ++i)
+        /* Get active sprites */
+        m_ctx.active_sps.clear();
+        if (!m_ctx.to_draw_sps_f.empty())
         {
-            // No need to worry abount activated more than once, cause it
-            // lasts only ONE 256-cycle loop.
-            if (m_accessor->get_context().sp_pos_x[i] == 0)
+            // cur_x is in range [0, 256)
+            Byte cur_x = Byte(i_curr - 2);
+            for (const auto &sp_idx : m_ctx.to_draw_sps_f)
             {
-                // Left-over sprites can get activated (if we write it
-                // this way, with X value being 0xFF), but their pattern data
-                // will be transparent (0x00), so they contribute to no final
-                // visuals AND won't mess up sprite 0 hit flag.
-                // We do this for simplicity of implementation, change it if
-                // performance issues arise.
-                m_accessor->get_context().sp_active_counter[i] =
-                    NH_PATTERN_TILE_WIDTH;
+                Byte sp_x = m_accessor->get_context().sp_pos_x[sp_idx];
+                if (sp_x <= cur_x && (sp_x >= 256 - 8 || cur_x < sp_x + 8))
+                {
+                    Byte fine_x = cur_x - sp_x;
+                    // sprite with lower index gets pushed first, which ensures
+                    // correct priority among sprites.
+                    m_ctx.active_sps.push_back({sp_idx, fine_x});
+
+                    m_ctx.to_draw_sps_b.push_back(sp_idx);
+                }
+                else if (sp_x < 256 - 8 && cur_x >= sp_x + 8)
+                {
+                    // drop this sprite
+                }
+                else
+                {
+                    m_ctx.to_draw_sps_b.push_back(sp_idx);
+                }
             }
-            // Decrement it for simplicity, cause it gets reset every single
-            // 256-cycle loop.
-            --m_accessor->get_context().sp_pos_x[i];
+            // cleanup useless slots
+            m_ctx.to_draw_sps_b.swap(m_ctx.to_draw_sps_f);
+            m_ctx.to_draw_sps_b.clear();
         }
 
         /* rendering */
@@ -118,7 +137,7 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
                 bg_clr.pattern = 0;
             }
 
-            OutputColor sp_clr = pv_sp_render(m_accessor);
+            OutputColor sp_clr = pv_sp_render(m_accessor, &m_ctx);
             // Don't draw sprites on the first visible scanline,
             // since sprite evaluation doesn't occur on pre-render scanline
             // and thus no valid data is available for rendering.
@@ -181,7 +200,7 @@ pv_bg_render(PipelineAccessor *io_accessor)
     }
     Byte2 bit_shift_and_mask = 0x8000 >> io_accessor->get_x();
 
-    /* 2. Get palette idx */
+    /* 2. Get palette index */
     auto &ctx = io_accessor->get_context();
     bool palette_idx_lower_bit =
         ctx.sf_bg_palette_idx_lower & bit_shift_and_mask;
@@ -224,7 +243,7 @@ pv_bg_render(PipelineAccessor *io_accessor)
 }
 
 OutputColor
-pv_sp_render(PipelineAccessor *io_accessor)
+pv_sp_render(PipelineAccessor *io_accessor, Render::Context *io_ctx)
 {
     // Although the COLOR of "ColorEmpty" may be a valid value for sprite
     // 0, but the pattern member being a transparent value ensures that it won't
@@ -232,52 +251,24 @@ pv_sp_render(PipelineAccessor *io_accessor)
     // rendered at this pixel.
     OutputColor color = ColorEmpty;
 
-    bool got = false;
     // search for the first non-transparent pixel among activated sprites.
-    for (decltype(NH_MAX_VISIBLE_SP_NUM) i = 0; i < NH_MAX_VISIBLE_SP_NUM; ++i)
+    for (decltype(io_ctx->active_sps.size()) idx = 0;
+         idx < io_ctx->active_sps.size(); ++idx)
     {
+        auto i = io_ctx->active_sps[idx].first; // sprite index of [0, 7)
+        auto fine_x = io_ctx->active_sps[idx].second;
+
         auto &ctx = io_accessor->get_context();
-
-        /* checks for programming errors */
-        if (ctx.sp_active_counter[i] < 0 ||
-            ctx.sp_active_counter[i] > NH_PATTERN_TILE_WIDTH)
-        {
-            NH_ASSERT_FATAL(io_accessor->get_logger(),
-                            "Wrong active counter management: {}",
-                            ctx.sp_active_counter[i]);
-        }
-
-        // Skip inactivated one or done one.
-        if (!ctx.sp_active_counter[i])
-        {
-            continue;
-        }
-        // No need to execute logic below.
-        // However, the active counter must still be decremented for active ones
-        // that are not chosen.
-        --ctx.sp_active_counter[i];
-        if (got)
-        {
-            continue;
-        }
-
-        /* 0. Get fine x */
-        // @NOTE: Flipping of both X and Y was done in the fetch stage already.
-        Byte fine_x = NH_PATTERN_TILE_WIDTH - ctx.sp_active_counter[i] - 1;
-
         /* 1. Bit selection mask by finx X scroll */
-        if (fine_x > 7)
-        {
-            NH_ASSERT_FATAL(io_accessor->get_logger(),
-                            "Invalid sprite X value: {}", fine_x);
-        }
+        // fine_x must have been in range [0, 8)
         Byte bit_shift_and_mask = 0x80 >> fine_x;
 
-        /* 2. Get palette idx */
+        /* 2. Get palette index */
         // 2-bit
         Byte palette_idx = ctx.sp_attr[i] & 0x03;
 
         /* 3. Get pattern data (i.e. index into palette) */
+        // @NOTE: Flipping of both X and Y was done in the fetch stage already.
         bool pattern_data_lower_bit =
             ctx.sf_sp_pattern_lower[i] & bit_shift_and_mask;
         bool pattern_data_upper_bit =
@@ -324,7 +315,8 @@ pv_sp_render(PipelineAccessor *io_accessor)
         // If this line includes sprite 0, it must be at index 0.
         color = {pixel, pattern_data, (ctx.sp_attr[i] & 0x20) != 0,
                  i == 0 && io_accessor->get_context().with_sp0};
-        got = true;
+        // Got non-transparent pixel
+        break;
     }
 
     return color;

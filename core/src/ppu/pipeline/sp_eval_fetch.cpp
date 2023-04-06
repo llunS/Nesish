@@ -77,13 +77,18 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
 
         case 257:
         {
-            m_ctx.sec_oam_read_idx = 0;
+            // Sprite evaluation is done already at tick 257
 
             // @NOTE: Pass out the flag at fetch stage (not eval stage), in case
             // the flag is used by current scanline instead of the next one.
             // In other words, "with_sp0" should not be overwritten in rendering
             // stage (while it's in use).
+            // This relys on the fact that Render is ticked before SpEvalFetch.
             m_accessor->get_context().with_sp0 = m_ctx.sp0_in_range;
+            // The same applies to "sp_count"
+            m_accessor->get_context().sp_count = m_ctx.sp_got;
+
+            m_ctx.sec_oam_read_idx = 0;
         }
         // fall through
         case 265:
