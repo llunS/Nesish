@@ -4,6 +4,7 @@
 #include "nhbase/klass.hpp"
 #include "spec.hpp"
 #include "types.hpp"
+
 #include <functional>
 
 namespace nh {
@@ -47,6 +48,9 @@ struct VideoMemory
   public:
     NHErr
     get_byte(Address i_addr, Byte &o_val) const;
+
+    Byte
+    get_palette_byte(int i_idx);
 
   private:
     // https://www.nesdev.org/wiki/PPU_memory_map

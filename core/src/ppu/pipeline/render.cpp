@@ -116,13 +116,8 @@ Render::on_tick(Cycle i_curr, Cycle i_total)
             // https://www.nesdev.org/wiki/PPU_palettes#The_background_palette_hack
 
             auto get_backdrop_clr = [](PipelineAccessor *io_accessor) -> Color {
-                Byte backdrop_byte = 0;
-                auto error = io_accessor->get_color_byte(
-                    NH_PALETTE_ADDR_BG_BACKDROP, backdrop_byte);
-                if (NH_FAILED(error))
-                {
-                    backdrop_byte = 0x30; // set it to white to be apparent.
-                }
+                Byte backdrop_byte =
+                    io_accessor->get_color_byte(NH_PALETTE_BACKDROP_IDX);
                 Color backdrop =
                     io_accessor->get_palette().to_rgb(backdrop_byte);
                 return backdrop;
@@ -218,23 +213,12 @@ pv_bg_render(PipelineAccessor *io_accessor)
         (Byte(pattern_data_upper_bit) << 1) | Byte(pattern_data_lower_bit);
 
     /* 4. get palette index color */
-    Address idx_color_addr =
-        NH_PALETTE_ADDR_BG_OR_MASK | (palette_idx << 2) | pattern_data;
     // @TODO: Background palette hack
-    if ((idx_color_addr & NH_PALETTE_ADDR_BACKDROP_MASK) ==
-        NH_PALETTE_ADDR_BG_BACKDROP)
-    {
-        idx_color_addr = NH_PALETTE_ADDR_BG_BACKDROP;
-    }
-    Byte idx_color_byte;
-    auto error = io_accessor->get_color_byte(idx_color_addr, idx_color_byte);
-    if (NH_FAILED(error))
-    {
-        NH_ASSERT_FATAL(io_accessor->get_logger(),
-                        "Failed to fetch palette color byte for bg: {}",
-                        idx_color_addr);
-        idx_color_byte = 0x30; // set it to white to be apparent.
-    }
+    constexpr int palette_sp = false;
+    int color_idx = pattern_data
+                        ? (palette_sp << 4) | (palette_idx << 2) | pattern_data
+                        : NH_PALETTE_BACKDROP_IDX;
+    Byte idx_color_byte = io_accessor->get_color_byte(color_idx);
 
     /* 5. conversion from index color to RGB color */
     Color pixel = io_accessor->get_palette().to_rgb(idx_color_byte);
@@ -284,24 +268,12 @@ pv_sp_render(PipelineAccessor *io_accessor, Render::Context *io_ctx)
         }
 
         /* 4. get palette index color */
-        Address idx_color_addr =
-            NH_PALETTE_ADDR_SP_OR_MASK | (palette_idx << 2) | pattern_data;
         // @TODO: Background palette hack
-        if ((idx_color_addr & NH_PALETTE_ADDR_BACKDROP_MASK) ==
-            NH_PALETTE_ADDR_BG_BACKDROP)
-        {
-            idx_color_addr = NH_PALETTE_ADDR_BG_BACKDROP;
-        }
-        Byte idx_color_byte;
-        auto error =
-            io_accessor->get_color_byte(idx_color_addr, idx_color_byte);
-        if (NH_FAILED(error))
-        {
-            NH_ASSERT_FATAL(io_accessor->get_logger(),
-                            "Failed to fetch palette color byte for sp: {}",
-                            idx_color_addr);
-            idx_color_byte = 0x30; // set it to white to be apparent.
-        }
+        constexpr int palette_sp = true;
+        int color_idx =
+            pattern_data ? (palette_sp << 4) | (palette_idx << 2) | pattern_data
+                         : NH_PALETTE_BACKDROP_IDX;
+        Byte idx_color_byte = io_accessor->get_color_byte(color_idx);
 
         /* 5. conversion from index color to RGB color */
         Color pixel = io_accessor->get_palette().to_rgb(idx_color_byte);

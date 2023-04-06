@@ -158,4 +158,10 @@ VideoMemory::get_byte(Address i_addr, Byte &o_val) const
     return err;
 }
 
+Byte
+VideoMemory::get_palette_byte(int i_idx)
+{
+    return m_palette[i_idx];
+}
+
 } // namespace nh

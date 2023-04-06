@@ -74,19 +74,16 @@ PipelineAccessor::get_memory()
     return m_ppu->m_memory;
 }
 
-NHErr
-PipelineAccessor::get_color_byte(Address i_addr, Byte &o_val)
+Byte
+PipelineAccessor::get_color_byte(int i_idx)
 {
-    auto error = get_memory()->get_byte(i_addr, o_val);
-    if (!NH_FAILED(error))
+    auto byte = get_memory()->get_palette_byte(i_idx);
+    // grayscale
+    if (get_register(PPU::PPUMASK) & 0x01)
     {
-        // grayscale
-        if (get_register(PPU::PPUMASK) & 0x01)
-        {
-            o_val &= 0x30;
-        }
+        byte &= 0x30;
     }
-    return error;
+    return byte;
 }
 
 const Palette &
@@ -209,11 +206,7 @@ PipelineAccessor::capture_palette()
     {
         static_assert(nhd::Palette::color_count() == 32,
                       "Might overflow below.");
-        // VRAM addr
-        Address color_addr = Address(NH_PALETTE_ADDR_HEAD + i);
-        Byte color_byte = 0;
-        (void)get_color_byte(color_addr, color_byte);
-
+        Byte color_byte = get_color_byte(i);
         Color clr = get_palette().to_rgb(color_byte);
         m_ppu->m_palette_snap.set_color(i, color_byte, clr.r, clr.g, clr.b);
     }
@@ -305,14 +298,7 @@ PipelineAccessor::update_oam_sprite(nhd::Sprite &o_sprite, int i_idx)
         for (int fine_x = 0; fine_x < 8; ++fine_x)
         {
             auto get_palette_color = [this](int i_idx) {
-                // VRAM addr
-                Address color_addr = Address(NH_PALETTE_ADDR_HEAD + i_idx);
-                Byte color_byte = 0;
-                auto error = this->get_color_byte(color_addr, color_byte);
-                if (NH_FAILED(error))
-                {
-                    color_byte = 0x30; // set it to white to be apparent.
-                }
+                Byte color_byte = this->get_color_byte(i_idx);
                 Color clr = this->get_palette().to_rgb(color_byte);
                 return clr;
             };
@@ -379,17 +365,7 @@ PipelineAccessor::capture_ptn_tbls()
                 for (int fine_x = 0; fine_x < 8; ++fine_x)
                 {
                     auto get_palette_color = [this](int i_idx) {
-                        // VRAM addr
-                        Address color_addr =
-                            Address(NH_PALETTE_ADDR_HEAD + i_idx);
-                        Byte color_byte = 0;
-                        auto error =
-                            this->get_color_byte(color_addr, color_byte);
-                        if (NH_FAILED(error))
-                        {
-                            color_byte =
-                                0x30; // set it to white to be apparent.
-                        }
+                        Byte color_byte = this->get_color_byte(i_idx);
                         Color clr = this->get_palette().to_rgb(color_byte);
                         return clr;
                     };

@@ -48,17 +48,12 @@
 #define NH_NT_MIRROR_ADDR_MASK 0xEFFF
 
 #define NH_PALETTE_SIZE 32
-#define NH_PALETTE_ADDR_BG_BACKDROP 0x3F00
-#define NH_PALETTE_ADDR_BACKDROP_MASK 0xFFE3 // & to backdrop
+#define NH_PALETTE_BACKDROP_IDX 0
 #define NH_PALETTE_ADDR_HEAD 0x3F00
 #define NH_PALETTE_ADDR_TAIL 0x3FFF
 #define NH_PALETTE_ADDR_MASK 0x001F        // rightmost 5 bits
 #define NH_PALETTE_ADDR_MIRROR_MASK 0x0003 // rightmost 2 bits (modulo 4)
 #define NH_PALETTE_ADDR_BG_MASK 0xFF0F     // & to background palette
-// used to get background palette color
-#define NH_PALETTE_ADDR_BG_OR_MASK 0x3F00
-// used to get sprite palette color
-#define NH_PALETTE_ADDR_SP_OR_MASK 0x3F10
 
 #define NH_PPU_INVALID_ADDR_HEAD 0x4000
 #define NH_PPU_INVALID_ADDR_TAIL 0xFFFF

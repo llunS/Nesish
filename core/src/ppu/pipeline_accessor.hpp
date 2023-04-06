@@ -41,8 +41,8 @@ struct PipelineAccessor final {
     VideoMemory *
     get_memory();
 
-    NHErr
-    get_color_byte(Address i_addr, Byte &o_val);
+    Byte
+    get_color_byte(int i_idx);
     const Palette &
     get_palette();
 
