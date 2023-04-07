@@ -1,31 +1,22 @@
 #pragma once
 
-#include "ppu/pipeline/tickable.hpp"
 #include "nhbase/klass.hpp"
-#include "ppu/pipeline/functor_tickable.hpp"
 #include "types.hpp"
 
 namespace nh {
 
 struct PipelineAccessor;
 
-struct SpEvalFetch : public Tickable {
+struct SpEvalFetch {
   public:
-    SpEvalFetch(PipelineAccessor *io_accessor, bool i_fetch_only);
+    SpEvalFetch(PipelineAccessor *io_accessor);
     NB_KLZ_DELETE_COPY_MOVE(SpEvalFetch);
 
     void
-    reset() override;
-    Cycle
-    on_tick(Cycle i_curr, Cycle i_total) override;
+    tick(Cycle i_col);
 
   private:
     PipelineAccessor *m_accessor;
-    const bool m_fetch_only;
-
-    FunctorTickable m_sec_oam_clear;
-    FunctorTickable m_eval;
-    FunctorTickable m_fetch_reload;
 
     struct Context {
         /* eval */
@@ -50,15 +41,13 @@ struct SpEvalFetch : public Tickable {
     } m_ctx;
 
   private:
-    static Cycle
-    pv_sec_oam_clear(Cycle i_curr, Cycle i_total,
-                     PipelineAccessor *io_accessor);
-    static Cycle
-    pv_sp_eval(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor,
-               Context *io_ctx);
-    static Cycle
-    pv_sp_fetch_reload(Cycle i_curr, Cycle i_total,
-                       PipelineAccessor *io_accessor, Context *io_ctx);
+    static void
+    pv_sec_oam_clear(Cycle i_step, PipelineAccessor *io_accessor);
+    static void
+    pv_sp_eval(Cycle i_step, PipelineAccessor *io_accessor, Context *io_ctx);
+    static void
+    pv_sp_fetch_reload(Cycle i_step, PipelineAccessor *io_accessor,
+                       Context *io_ctx);
 };
 
 } // namespace nh

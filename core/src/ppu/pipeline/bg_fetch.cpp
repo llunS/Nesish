@@ -11,8 +11,8 @@ namespace nh {
 
 static void
 pv_nt_byte_fetch(PipelineAccessor *io_accessor);
-static Cycle
-pv_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor);
+static void
+pv_tile_fetch(Cycle i_step, PipelineAccessor *io_accessor);
 
 static void
 pv_shift_regs_shift(PipelineAccessor *io_accessor);
@@ -20,35 +20,23 @@ static void
 pv_shift_regs_reload(PipelineAccessor *io_accessor);
 
 BgFetch::BgFetch(PipelineAccessor *io_accessor)
-    : Tickable(NH_SCANLINE_CYCLES)
-    , m_accessor(io_accessor)
-    , m_bg_tile_fetch(8, std::bind(pv_tile_fetch, std::placeholders::_1,
-                                   std::placeholders::_2, io_accessor))
+    : m_accessor(io_accessor)
 {
-    m_bg_tile_fetch.set_done();
 }
 
 void
-BgFetch::reset()
+BgFetch::tick(Cycle i_col)
 {
-    Tickable::reset();
-
-    m_bg_tile_fetch.set_done();
-}
-
-Cycle
-BgFetch::on_tick(Cycle i_curr, Cycle i_total)
-{
-    (void)(i_total);
+    // i_col: [1, 257] | [321, 340]
 
     // @NOTE: shift registers shift should happen before shift registers reload
-    if ((2 <= i_curr && i_curr <= 257) || (322 <= i_curr && i_curr <= 337))
+    if ((2 <= i_col && i_col <= 257) || (322 <= i_col && i_col <= 337))
     {
         /* shift */
         pv_shift_regs_shift(m_accessor);
     }
 
-    switch (i_curr)
+    switch (i_col)
     {
         case 256:
         {
@@ -201,54 +189,15 @@ BgFetch::on_tick(Cycle i_curr, Cycle i_total)
     }
 
     // @NOTE: shift registers reload should happen before tile fetch
-    switch (i_curr)
+    if (1 <= i_col && i_col <= 256)
     {
-        case 1:
-        case 9:
-        case 17:
-        case 25:
-        case 33:
-        case 41:
-        case 49:
-        case 57:
-        case 65:
-        case 73:
-        case 81:
-        case 89:
-        case 97:
-        case 105:
-        case 113:
-        case 121:
-        case 129:
-        case 137:
-        case 145:
-        case 153:
-        case 161:
-        case 169:
-        case 177:
-        case 185:
-        case 193:
-        case 201:
-        case 209:
-        case 217:
-        case 225:
-        case 233:
-        case 241:
-        case 249:
-        /* first two tiles on next scanline */
-        case 321:
-        case 329:
-        {
-            m_bg_tile_fetch.reset();
-        }
-        break;
-
-        default:
-            break;
+        pv_tile_fetch((i_col - 1) % 8, m_accessor);
     }
-    m_bg_tile_fetch.tick();
-
-    return 1;
+    /* first two tiles on next scanline */
+    else if (321 <= i_col && i_col <= 336)
+    {
+        pv_tile_fetch((i_col - 321) % 8, m_accessor);
+    }
 }
 
 void
@@ -270,10 +219,10 @@ pv_nt_byte_fetch(PipelineAccessor *io_accessor)
     io_accessor->get_context().bg_nt_byte = byte;
 }
 
-Cycle
-pv_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
+void
+pv_tile_fetch(Cycle i_step, PipelineAccessor *io_accessor)
 {
-    (void)(i_total);
+    // i_step: [0, 8)
 
     /* fetch pattern table tile byte */
     auto get_pattern_sliver = [](PipelineAccessor *io_accessor,
@@ -297,7 +246,7 @@ pv_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
         return byte;
     };
 
-    switch (i_curr)
+    switch (i_step)
     {
         case 1:
         {
@@ -358,8 +307,6 @@ pv_tile_fetch(Cycle i_curr, Cycle i_total, PipelineAccessor *io_accessor)
         default:
             break;
     }
-
-    return 1;
 }
 
 void

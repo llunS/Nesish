@@ -9,73 +9,44 @@
 
 namespace nh {
 
-static constexpr int SEC_OAM_CLEAR_CYCLES = 64;
-
-SpEvalFetch::SpEvalFetch(PipelineAccessor *io_accessor, bool i_fetch_only)
-    : Tickable(NH_SCANLINE_CYCLES)
-    , m_accessor(io_accessor)
-    , m_fetch_only(i_fetch_only)
-    , m_sec_oam_clear(SEC_OAM_CLEAR_CYCLES,
-                      std::bind(pv_sec_oam_clear, std::placeholders::_1,
-                                std::placeholders::_2, io_accessor))
-    , m_eval(192, std::bind(pv_sp_eval, std::placeholders::_1,
-                            std::placeholders::_2, io_accessor, &m_ctx))
-    , m_fetch_reload(8, std::bind(pv_sp_fetch_reload, std::placeholders::_1,
-                                  std::placeholders::_2, io_accessor, &m_ctx))
+SpEvalFetch::SpEvalFetch(PipelineAccessor *io_accessor)
+    : m_accessor(io_accessor)
 {
-    m_sec_oam_clear.set_done();
-    m_eval.set_done();
-    m_fetch_reload.set_done();
 }
 
 void
-SpEvalFetch::reset()
+SpEvalFetch::tick(Cycle i_col)
 {
-    Tickable::reset();
+    // i_col
+    // [1, 320] for visible line
+    // [257, 320] for pre-render line
 
-    m_sec_oam_clear.set_done();
-    m_eval.set_done();
-    m_fetch_reload.set_done();
-}
-
-Cycle
-SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
-{
-    (void)(i_total);
-
-    switch (i_curr)
+    if (1 <= i_col && i_col <= 64)
     {
-        case 1:
+        pv_sec_oam_clear(i_col - 1, m_accessor);
+    }
+    else if (65 <= i_col && i_col <= 256)
+    {
+        if (65 == i_col)
         {
-            if (!m_fetch_only)
-            {
-                m_sec_oam_clear.reset();
-            }
+            Byte oam_addr = m_accessor->get_register(PPU::OAMADDR);
+            m_ctx.sec_oam_write_idx = 0;
+            m_ctx.cp_counter = 0;
+            // Perhaps we shouldn't cache this either
+            m_ctx.init_oam_addr = oam_addr;
+            m_ctx.n = m_ctx.m = 0;
+            m_ctx.n_overflow = false;
+            m_ctx.sp_got = 0;
+            m_ctx.sp_overflow = false;
+            m_ctx.sec_oam_written = false;
+            m_ctx.sp0_in_range = false;
         }
-        break;
 
-        case 65:
-        {
-            if (!m_fetch_only)
-            {
-                m_eval.reset();
-
-                Byte oam_addr = m_accessor->get_register(PPU::OAMADDR);
-                m_ctx.sec_oam_write_idx = 0;
-                m_ctx.cp_counter = 0;
-                // Perhaps we shouldn't cache this either
-                m_ctx.init_oam_addr = oam_addr;
-                m_ctx.n = m_ctx.m = 0;
-                m_ctx.n_overflow = false;
-                m_ctx.sp_got = 0;
-                m_ctx.sp_overflow = false;
-                m_ctx.sec_oam_written = false;
-                m_ctx.sp0_in_range = false;
-            }
-        }
-        break;
-
-        case 257:
+        pv_sp_eval(i_col - 65, m_accessor, &m_ctx);
+    }
+    else if (257 <= i_col && i_col <= 320)
+    {
+        if (257 == i_col)
         {
             // Sprite evaluation is done already at tick 257
 
@@ -90,40 +61,15 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
 
             m_ctx.sec_oam_read_idx = 0;
         }
-        // fall through
-        case 265:
-        case 273:
-        case 281:
-        case 289:
-        case 297:
-        case 305:
-        case 313:
+
+        if (m_accessor->rendering_enabled())
         {
-            if (m_accessor->rendering_enabled())
-            {
-                // 8 cycles each for 8 sprites.
-                m_fetch_reload.reset();
-            }
+            pv_sp_fetch_reload((i_col - 257) % 8, m_accessor, &m_ctx);
         }
-        break;
 
-#if 1
-// Cycles 321-340+0: Read the first byte in secondary OAM (while the PPU fetches
-// the first two background tiles for the next scanline)
-// We don't emulate it.
-#endif
-
-        default:
-            break;
-    }
-    m_sec_oam_clear.tick();
-    m_eval.tick();
-    m_fetch_reload.tick();
-
-    /* do some checks */
-    switch (i_curr)
-    {
-        case 320:
+#ifndef NDEBUG
+        /* do some checks */
+        if (320 == i_col)
         {
             if (m_accessor->rendering_enabled() &&
                 m_ctx.sec_oam_read_idx != NH_SEC_OAM_SIZE)
@@ -133,41 +79,36 @@ SpEvalFetch::on_tick(Cycle i_curr, Cycle i_total)
                                 m_ctx.sec_oam_read_idx);
             }
         }
-        break;
-
-        default:
-            break;
+#endif
     }
 
-    return 1;
+#if 1
+// Cycles 321-340+0: Read the first byte in secondary OAM (while the PPU fetches
+// the first two background tiles for the next scanline)
+// We don't emulate it.
+#endif
 }
 
-Cycle
-SpEvalFetch::pv_sec_oam_clear(Cycle i_curr, Cycle i_total,
-                              PipelineAccessor *io_accessor)
+void
+SpEvalFetch::pv_sec_oam_clear(Cycle i_step, PipelineAccessor *io_accessor)
 {
-    (void)(i_total);
+    // i_step: [0, 64)
 
-    static_assert(SEC_OAM_CLEAR_CYCLES ==
-                      2 * sizeof(io_accessor->get_context().sec_oam),
-                  "Wrong timing for secondary OAM clear.");
-    if (i_curr % 2 == 0)
+    if (i_step % 2 == 0)
     {
         // read from OAMDATA, we don't emulate it.
     }
     else
     {
-        io_accessor->get_context().sec_oam[i_curr / 2] = 0xFF;
+        io_accessor->get_context().sec_oam[i_step / 2] = 0xFF;
     }
-
-    return 1;
 }
 
-Cycle
-SpEvalFetch::pv_sp_eval(Cycle i_curr, Cycle i_total,
-                        PipelineAccessor *io_accessor, Context *io_ctx)
+void
+SpEvalFetch::pv_sp_eval(Cycle i_step, PipelineAccessor *io_accessor,
+                        Context *io_ctx)
 {
-    (void)(i_total);
+    // i_step: [0, 192)
 
 #if 1 // local functions
     auto got_8_sp = [](Context *io_ctx) -> bool { return io_ctx->sp_got >= 8; };
@@ -250,7 +191,7 @@ SpEvalFetch::pv_sp_eval(Cycle i_curr, Cycle i_total,
     if (io_accessor->rendering_enabled())
     {
         // read cycle
-        if (i_curr % 2 == 0)
+        if (i_step % 2 == 0)
         {
             Byte oam_addr = io_accessor->get_register(PPU::OAMADDR);
             io_ctx->sp_eval_bus = io_accessor->get_oam_byte(oam_addr);
@@ -340,15 +281,13 @@ SpEvalFetch::pv_sp_eval(Cycle i_curr, Cycle i_total,
             }
         }
     }
-
-    return 1;
 }
 
-Cycle
-SpEvalFetch::pv_sp_fetch_reload(Cycle i_curr, Cycle i_total,
-                                PipelineAccessor *io_accessor, Context *io_ctx)
+void
+SpEvalFetch::pv_sp_fetch_reload(Cycle i_step, PipelineAccessor *io_accessor,
+                                Context *io_ctx)
 {
-    (void)(i_total);
+    // i_step: [0, 8)
 
     auto read_sec_oam = [](PipelineAccessor *io_accessor,
                            Context *io_ctx) -> Byte {
@@ -411,7 +350,7 @@ SpEvalFetch::pv_sp_fetch_reload(Cycle i_curr, Cycle i_total,
         return ptn_byte;
     };
 
-    switch (i_curr)
+    switch (i_step)
     {
         // The first 2 ticks seem to be unspecified in the nesdev
         // forum, we are just guessing here.
@@ -483,8 +422,6 @@ SpEvalFetch::pv_sp_fetch_reload(Cycle i_curr, Cycle i_total,
     // interval)
     // https://www.nesdev.org/wiki/PPU_registers#OAM_address_($2003)_%3E_write
     io_accessor->get_register(PPU::OAMADDR) = 0;
-
-    return 1;
 }
 
 } // namespace nh

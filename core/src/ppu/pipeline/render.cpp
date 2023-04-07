@@ -43,145 +43,137 @@ pv_muxer(PipelineAccessor *io_accessor, const OutputColor &i_bg_clr,
          const OutputColor &i_sp_clr);
 
 Render::Render(PipelineAccessor *io_accessor)
-    : Tickable(NH_SCANLINE_CYCLES)
-    , m_accessor(io_accessor)
+    : m_accessor(io_accessor)
 {
     m_ctx.to_draw_sps_f.reserve(NH_MAX_VISIBLE_SP_NUM);
     m_ctx.to_draw_sps_b.reserve(NH_MAX_VISIBLE_SP_NUM);
     m_ctx.active_sps.reserve(NH_MAX_VISIBLE_SP_NUM);
 }
 
-Cycle
-Render::on_tick(Cycle i_curr, Cycle i_total)
+void
+Render::tick(Cycle i_col)
 {
-    (void)(i_total);
+    // i_col: [2, 257]
 
-    if (2 <= i_curr && i_curr <= 257)
+    /* reset some states */
+    if (2 == i_col)
     {
-        /* reset some states */
-        if (2 == i_curr)
+        // reset pixel coordinate
+        if (0 == m_accessor->get_context().scanline_no)
         {
-            // reset pixel coordinate
-            if (0 == m_accessor->get_context().scanline_no)
-            {
-                m_accessor->get_context().pixel_row = 0;
-            }
-            m_accessor->get_context().pixel_col = 0;
-
-            m_ctx.to_draw_sps_f.clear();
-            if (m_accessor->get_context().sp_count)
-            {
-                m_ctx.to_draw_sps_f.resize(m_accessor->get_context().sp_count);
-                std::iota(m_ctx.to_draw_sps_f.begin(),
-                          m_ctx.to_draw_sps_f.end(), 0);
-            }
-            m_ctx.to_draw_sps_b.clear();
+            m_accessor->get_context().pixel_row = 0;
         }
+        m_accessor->get_context().pixel_col = 0;
 
-        /* Get active sprites */
-        m_ctx.active_sps.clear();
-        if (!m_ctx.to_draw_sps_f.empty())
+        m_ctx.to_draw_sps_f.clear();
+        if (m_accessor->get_context().sp_count)
         {
-            // cur_x is in range [0, 256)
-            Byte cur_x = Byte(i_curr - 2);
-            for (const auto &sp_idx : m_ctx.to_draw_sps_f)
-            {
-                Byte sp_x = m_accessor->get_context().sp_pos_x[sp_idx];
-                if (sp_x <= cur_x && (sp_x >= 256 - 8 || cur_x < sp_x + 8))
-                {
-                    Byte fine_x = cur_x - sp_x;
-                    // sprite with lower index gets pushed first, which ensures
-                    // correct priority among sprites.
-                    m_ctx.active_sps.push_back({sp_idx, fine_x});
-
-                    m_ctx.to_draw_sps_b.push_back(sp_idx);
-                }
-                else if (sp_x < 256 - 8 && cur_x >= sp_x + 8)
-                {
-                    // drop this sprite
-                }
-                else
-                {
-                    m_ctx.to_draw_sps_b.push_back(sp_idx);
-                }
-            }
-            // cleanup useless slots
-            m_ctx.to_draw_sps_b.swap(m_ctx.to_draw_sps_f);
-            m_ctx.to_draw_sps_b.clear();
+            m_ctx.to_draw_sps_f.resize(m_accessor->get_context().sp_count);
+            std::iota(m_ctx.to_draw_sps_f.begin(), m_ctx.to_draw_sps_f.end(),
+                      0);
         }
+        m_ctx.to_draw_sps_b.clear();
+    }
 
-        /* rendering */
+    /* Get active sprites */
+    m_ctx.active_sps.clear();
+    if (!m_ctx.to_draw_sps_f.empty())
+    {
+        // cur_x is in range [0, 256)
+        Byte cur_x = Byte(i_col - 2);
+        for (const auto &sp_idx : m_ctx.to_draw_sps_f)
         {
-            // @TODO: Background palette hack
-            // https://www.nesdev.org/wiki/PPU_palettes#The_background_palette_hack
-
-            auto get_backdrop_clr = [](PipelineAccessor *io_accessor) -> Color {
-                Byte backdrop_byte =
-                    io_accessor->get_color_byte(NH_PALETTE_BACKDROP_IDX);
-                Color backdrop =
-                    io_accessor->get_palette().to_rgb(backdrop_byte);
-                return backdrop;
-            };
-
-            OutputColor bg_clr = pv_bg_render(m_accessor);
-            if (!m_accessor->bg_enabled() ||
-                (!(m_accessor->get_context().pixel_col & ~0x07) &&
-                 !(m_accessor->get_register(PPU::PPUMASK) & 0x02)))
+            Byte sp_x = m_accessor->get_context().sp_pos_x[sp_idx];
+            if (sp_x <= cur_x && (sp_x >= 256 - 8 || cur_x < sp_x + 8))
             {
-                bg_clr.color = get_backdrop_clr(m_accessor);
-                bg_clr.pattern = 0;
+                Byte fine_x = cur_x - sp_x;
+                // sprite with lower index gets pushed first, which ensures
+                // correct priority among sprites.
+                m_ctx.active_sps.push_back({sp_idx, fine_x});
+
+                m_ctx.to_draw_sps_b.push_back(sp_idx);
             }
-
-            OutputColor sp_clr = pv_sp_render(m_accessor, &m_ctx);
-            // Don't draw sprites on the first visible scanline,
-            // since sprite evaluation doesn't occur on pre-render scanline
-            // and thus no valid data is available for rendering.
-            bool render_sp = m_accessor->sp_enabled() &&
-                             0 != m_accessor->get_context().scanline_no;
-            if (!render_sp ||
-                (!(m_accessor->get_context().pixel_col & ~0x07) &&
-                 !(m_accessor->get_register(PPU::PPUMASK) & 0x04)))
+            else if (sp_x < 256 - 8 && cur_x >= sp_x + 8)
             {
-                sp_clr.color = get_backdrop_clr(m_accessor);
-                sp_clr.pattern = 0;
-            }
-
-            pv_muxer(m_accessor, bg_clr, sp_clr);
-
-            // Mark dirty after rendering to the last dot
-            if (i_curr == 257 && 239 == m_accessor->get_context().scanline_no)
-            {
-                m_accessor->finish_frame();
-            }
-        }
-
-        /* pixel coordinate advance */
-        if (m_accessor->get_context().pixel_col + 1 >= NH_NES_WIDTH)
-        {
-            m_accessor->get_context().pixel_col = 0;
-            if (m_accessor->get_context().pixel_row + 1 >= NH_NES_HEIGHT)
-            {
-                if (m_accessor->get_context().pixel_row + 1 > NH_NES_HEIGHT)
-                {
-                    NH_ASSERT_FATAL(m_accessor->get_logger(),
-                                    "Pixel rendering row out of bound {}",
-                                    m_accessor->get_context().pixel_row);
-                }
-
-                m_accessor->get_context().pixel_row = 0;
+                // drop this sprite
             }
             else
             {
-                ++m_accessor->get_context().pixel_row;
+                m_ctx.to_draw_sps_b.push_back(sp_idx);
             }
         }
-        else
+        // cleanup useless slots
+        m_ctx.to_draw_sps_b.swap(m_ctx.to_draw_sps_f);
+        m_ctx.to_draw_sps_b.clear();
+    }
+
+    /* rendering */
+    {
+        // @TODO: Background palette hack
+        // https://www.nesdev.org/wiki/PPU_palettes#The_background_palette_hack
+
+        auto get_backdrop_clr = [](PipelineAccessor *io_accessor) -> Color {
+            Byte backdrop_byte =
+                io_accessor->get_color_byte(NH_PALETTE_BACKDROP_IDX);
+            Color backdrop = io_accessor->get_palette().to_rgb(backdrop_byte);
+            return backdrop;
+        };
+
+        OutputColor bg_clr = pv_bg_render(m_accessor);
+        if (!m_accessor->bg_enabled() ||
+            (!(m_accessor->get_context().pixel_col & ~0x07) &&
+             !(m_accessor->get_register(PPU::PPUMASK) & 0x02)))
         {
-            ++m_accessor->get_context().pixel_col;
+            bg_clr.color = get_backdrop_clr(m_accessor);
+            bg_clr.pattern = 0;
+        }
+
+        OutputColor sp_clr = pv_sp_render(m_accessor, &m_ctx);
+        // Don't draw sprites on the first visible scanline,
+        // since sprite evaluation doesn't occur on pre-render scanline
+        // and thus no valid data is available for rendering.
+        bool render_sp = m_accessor->sp_enabled() &&
+                         0 != m_accessor->get_context().scanline_no;
+        if (!render_sp || (!(m_accessor->get_context().pixel_col & ~0x07) &&
+                           !(m_accessor->get_register(PPU::PPUMASK) & 0x04)))
+        {
+            sp_clr.color = get_backdrop_clr(m_accessor);
+            sp_clr.pattern = 0;
+        }
+
+        pv_muxer(m_accessor, bg_clr, sp_clr);
+
+        // Mark dirty after rendering to the last dot
+        if (i_col == 257 && 239 == m_accessor->get_context().scanline_no)
+        {
+            m_accessor->finish_frame();
         }
     }
 
-    return 1;
+    /* pixel coordinate advance */
+    if (m_accessor->get_context().pixel_col + 1 >= NH_NES_WIDTH)
+    {
+        m_accessor->get_context().pixel_col = 0;
+        if (m_accessor->get_context().pixel_row + 1 >= NH_NES_HEIGHT)
+        {
+            if (m_accessor->get_context().pixel_row + 1 > NH_NES_HEIGHT)
+            {
+                NH_ASSERT_FATAL(m_accessor->get_logger(),
+                                "Pixel rendering row out of bound {}",
+                                m_accessor->get_context().pixel_row);
+            }
+
+            m_accessor->get_context().pixel_row = 0;
+        }
+        else
+        {
+            ++m_accessor->get_context().pixel_row;
+        }
+    }
+    else
+    {
+        ++m_accessor->get_context().pixel_col;
+    }
 }
 
 OutputColor

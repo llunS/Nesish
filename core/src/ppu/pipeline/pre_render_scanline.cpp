@@ -6,28 +6,16 @@
 namespace nh {
 
 PreRenderScanline::PreRenderScanline(PipelineAccessor *io_accessor)
-    : Tickable(NH_SCANLINE_CYCLES)
-    , m_accessor(io_accessor)
+    : m_accessor(io_accessor)
     , m_bg(io_accessor)
-    , m_sp(io_accessor, true)
+    , m_sp(io_accessor)
 {
 }
 
 void
-PreRenderScanline::reset()
+PreRenderScanline::tick(Cycle i_col)
 {
-    Tickable::reset();
-
-    m_bg.reset();
-    m_sp.reset();
-}
-
-Cycle
-PreRenderScanline::on_tick(Cycle i_curr, Cycle i_total)
-{
-    (void)(i_total);
-
-    switch (i_curr)
+    switch (i_col)
     {
         case 1:
         {
@@ -107,10 +95,14 @@ PreRenderScanline::on_tick(Cycle i_curr, Cycle i_total)
             break;
     }
 
-    m_bg.tick();
-    m_sp.tick();
-
-    return 1;
+    if ((1 <= i_col && i_col <= 257) || (321 <= i_col && i_col <= 340))
+    {
+        m_bg.tick(i_col);
+    }
+    if (257 <= i_col && i_col <= 320)
+    {
+        m_sp.tick(i_col);
+    }
 }
 
 } // namespace nh
