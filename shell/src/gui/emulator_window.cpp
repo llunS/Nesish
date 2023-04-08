@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "controller.hpp"
+#include "input/controller.hpp"
 #include "glad/glad.h"
 
 namespace sh {

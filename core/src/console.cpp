@@ -202,7 +202,7 @@ Console::write_ctrl_reg(CtrlReg i_reg, Byte i_val)
         case CtrlReg::REG_4016:
         {
             bool strobeOn = i_val & 0x01;
-            for (std::underlying_type<NHCtrlSlot>::type i = 0; i < CTRL_SIZE;
+            for (std::underlying_type<NHCtrlPort>::type i = 0; i < CTRL_SIZE;
                  ++i)
             {
                 auto ctrl = m_ctrls[i];
@@ -222,13 +222,13 @@ Console::write_ctrl_reg(CtrlReg i_reg, Byte i_val)
 }
 
 void
-Console::plug_controller(NHCtrlSlot i_slot, NHController *i_controller)
+Console::plug_controller(NHCtrlPort i_slot, NHController *i_controller)
 {
     m_ctrls[i_slot] = i_controller;
 }
 
 void
-Console::unplug_controller(NHCtrlSlot i_slot)
+Console::unplug_controller(NHCtrlPort i_slot)
 {
     m_ctrls[i_slot] = nullptr;
 }
@@ -341,7 +341,7 @@ Console::reset_trivial()
     {
         m_ctrl_regs[i] = 0;
     }
-    for (std::underlying_type<NHCtrlSlot>::type i = 0; i < CTRL_SIZE; ++i)
+    for (std::underlying_type<NHCtrlPort>::type i = 0; i < CTRL_SIZE; ++i)
     {
         if (m_ctrls[i])
         {
@@ -415,26 +415,20 @@ Console::tick(bool *o_cpu_instr)
     return true;
 }
 
-double
-Console::elapsed(Cycle i_ticks)
-{
-    return double(i_ticks) / NH_CPU_HZ; // s
-}
-
 const FrameBuffer &
 Console::get_frame() const
 {
     return m_ppu.get_frame();
 }
 
-float
+int
 Console::get_sample_rate() const
 {
     // APU generates a sample every CPU cycle.
     return NH_CPU_HZ;
 }
 
-float
+double
 Console::get_sample() const
 {
     return m_apu.amplitude();

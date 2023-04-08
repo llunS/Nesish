@@ -26,7 +26,15 @@ struct PCMWriter {
     write_s16le(short i_val);
 
   private:
+    bool
+    write_byte(unsigned char i_val);
+
+  private:
     std::FILE *m_file;
+
+    constexpr static int BUF_SIZE = 256;
+    unsigned char m_buf[BUF_SIZE];
+    int m_buf_pos;
 };
 
 } // namespace sh

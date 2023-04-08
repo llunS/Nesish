@@ -132,7 +132,7 @@ APU::tick()
     m_triangle.tick_timer();
 }
 
-float
+double
 APU::amplitude() const
 {
     Byte pulse1 = m_pulse1.amplitude();
@@ -155,29 +155,22 @@ APU::put_dmc_sample(Address i_sample_addr, Byte i_sample)
     m_dmc.put_sample(i_sample_addr, i_sample);
 }
 
-float
+double
 APU::mix(Byte i_pulse1, Byte i_pulse2, Byte i_triangle, Byte i_noise,
          Byte i_dmc)
 {
-    // @TODO: Efficient lookup table
+    // Efficient lookup table
     // https://www.nesdev.org/wiki/APU_Mixer
 
-    float pulse_out = 0.0;
-    if (i_pulse1 || i_pulse2)
-    {
-        pulse_out = float(95.88 / (8128. / (i_pulse1 + i_pulse2) + 100.));
-    }
+    // maximum 30 fits in
+    Byte pulse_idx = i_pulse1 + i_pulse2;
+    double pulse_out = mixer_lookup.pulse[pulse_idx];
 
-    float tnd_out = 0.0;
-    if (i_triangle || i_noise || i_dmc)
-    {
-        tnd_out = float(159.79 / (1. / (i_triangle / 8227. + i_noise / 12241. +
-                                        i_dmc / 22638.) +
-                                  100.));
-    }
+    // maximum 202 fits in
+    Byte tnd_idx = 3 * i_triangle + 2 * i_noise + i_dmc;
+    double tnd_out = mixer_lookup.tnd[tnd_idx];
 
-    float output = pulse_out + tnd_out;
-    return output;
+    return pulse_out + tnd_out;
 }
 
 NHErr
@@ -396,6 +389,20 @@ APU::addr_to_regsiter(Address i_addr) -> Register
     else
     {
         return Register::SIZE;
+    }
+}
+
+APU::MixerLookup APU::mixer_lookup;
+
+APU::MixerLookup::MixerLookup()
+{
+    for (int i = 0; i < 31; ++i)
+    {
+        pulse[i] = 95.52 / (8128.0 / i + 100.0);
+    }
+    for (int i = 0; i < 203; ++i)
+    {
+        tnd[i] = 163.67 / (24329.0 / i + 100.0);
     }
 }
 

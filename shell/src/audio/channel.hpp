@@ -6,23 +6,21 @@
 
 namespace sh {
 
-template <unsigned int N> struct Channel {
+template <typename T, unsigned int N> struct Channel {
   public:
     Channel();
     ~Channel() = default;
     NB_KLZ_DELETE_COPY_MOVE(Channel);
 
   public:
-    typedef float value_t;
+    typedef T value_t;
 
   public:
-    unsigned int
-    p_size() const;
-    void
-    p_send(const value_t &i_val);
+    bool
+    try_send(const value_t &i_val);
 
     bool
-    c_try_receive(value_t &o_val);
+    try_receive(value_t &o_val);
 
   private:
     constexpr static unsigned int

@@ -32,9 +32,9 @@ struct Console {
     NB_KLZ_DELETE_COPY_MOVE(Console);
 
     void
-    plug_controller(NHCtrlSlot i_slot, NHController *i_controller);
+    plug_controller(NHCtrlPort i_slot, NHController *i_controller);
     void
-    unplug_controller(NHCtrlSlot i_slot);
+    unplug_controller(NHCtrlPort i_slot);
 
     NHErr
     insert_cartridge(const std::string &i_rom_path);
@@ -50,17 +50,14 @@ struct Console {
     /// @return If a new audio sample is available
     bool
     tick(bool *o_cpu_instr = nullptr);
-    /// @return How many seconds have passed for input ticks
-    double
-    elapsed(Cycle i_ticks);
 
     const FrameBuffer &
     get_frame() const;
 
-    float
+    int
     get_sample_rate() const;
     /// @return Amplitude in range [0, 1]
-    float
+    double
     get_sample() const;
 
   public:

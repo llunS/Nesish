@@ -65,7 +65,7 @@ nh_release_console(NHConsole console);
 typedef enum {
     NH_CTRL_P1 = 0,
     NH_CTRL_P2 = 1,
-} NHCtrlSlot;
+} NHCtrlPort;
 
 typedef enum {
     NH_KEY_A = 0,
@@ -90,9 +90,9 @@ typedef struct NHController {
 } NHController;
 
 NH_API void
-nh_plug_ctrl(NHConsole console, NHCtrlSlot slot, NHController *ctrl);
+nh_plug_ctrl(NHConsole console, NHCtrlPort slot, NHController *ctrl);
 NH_API void
-nh_unplug_ctrl(NHConsole console, NHCtrlSlot slot);
+nh_unplug_ctrl(NHConsole console, NHCtrlPort slot);
 
 NH_API NHErr
 nh_insert_cart(NHConsole console, const char *rom_path);
@@ -106,8 +106,6 @@ NH_API NHCycle
 nh_advance(NHConsole console, double delta);
 NH_API int
 nh_tick(NHConsole console, int *cpu_instr);
-NH_API double
-nh_elapsed(NHConsole console, NHCycle ticks);
 
 typedef struct NHFrameTy *NHFrame;
 
@@ -121,9 +119,9 @@ nh_frm_data(NHFrame frame);
 NH_API NHFrame
 nh_get_frm(NHConsole console);
 
-NH_API float
+NH_API int
 nh_get_sample_rate(NHConsole console);
-NH_API float
+NH_API double
 nh_get_sample(NHConsole console);
 
 typedef enum {

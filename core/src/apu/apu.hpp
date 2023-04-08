@@ -31,7 +31,7 @@ struct APU {
     void
     tick();
     /// @return Amplitude in range [0, 1]
-    float
+    double
     amplitude() const;
     bool
     interrupt() const;
@@ -89,7 +89,7 @@ struct APU {
     addr_to_regsiter(Address i_addr);
 
   private:
-    static float
+    static double
     mix(Byte i_pulse1, Byte i_pulse2, Byte i_triangle, Byte i_noise,
         Byte i_dmc);
 
@@ -104,6 +104,14 @@ struct APU {
     DMC m_dmc;
 
     const APUClock &m_clock;
+
+  private:
+    struct MixerLookup {
+        MixerLookup();
+        double pulse[31];
+        double tnd[203];
+    };
+    static MixerLookup mixer_lookup;
 };
 
 } // namespace nh

@@ -40,24 +40,25 @@ target_include_directories(${tgt_name} PRIVATE src 3rd)
 
 set(sources "")
 
-list(APPEND sources src/app.cpp)
-list(APPEND sources src/controller.cpp)
+list(APPEND sources src/gui/platform_window.cpp)
+list(APPEND sources src/gui/emulator_window.cpp)
+list(APPEND sources src/gui/debugger_window.cpp)
+list(APPEND sources src/gui/rect_cut.cpp)
 
 list(APPEND sources src/rendering/error.cpp)
 list(APPEND sources src/rendering/shader.cpp)
 list(APPEND sources src/rendering/renderer.cpp)
 list(APPEND sources src/rendering/texture.cpp)
 
-list(APPEND sources src/gui/platform_window.cpp)
-list(APPEND sources src/gui/emulator_window.cpp)
-list(APPEND sources src/gui/debugger_window.cpp)
-list(APPEND sources src/gui/rect_cut.cpp)
-
-list(APPEND sources src/logger.cpp)
-
 list(APPEND sources src/audio/resampler.cpp)
 list(APPEND sources src/audio/pcm_writer.cpp)
+list(APPEND sources src/audio/device.cpp)
 
+list(APPEND sources src/input/controller.cpp)
+
+list(APPEND sources src/misc/logger.cpp)
+
+list(APPEND sources src/app.cpp)
 list(APPEND sources src/main.cpp)
 
 target_sources(${tgt_name} PRIVATE ${sources})

@@ -32,14 +32,14 @@ nh_release_console(NHConsole console)
 }
 
 void
-nh_plug_ctrl(NHConsole console, NHCtrlSlot slot, NHController *ctrl)
+nh_plug_ctrl(NHConsole console, NHCtrlPort slot, NHController *ctrl)
 {
     NH_DECL_CONSOLE(console);
     nh_console->plug_controller(slot, ctrl);
 }
 
 void
-nh_unplug_ctrl(NHConsole console, NHCtrlSlot slot)
+nh_unplug_ctrl(NHConsole console, NHCtrlPort slot)
 {
     NH_DECL_CONSOLE(console);
     nh_console->unplug_controller(slot);
@@ -87,13 +87,6 @@ nh_tick(NHConsole console, int *cpu_instr)
     return b0;
 }
 
-double
-nh_elapsed(NHConsole console, NHCycle ticks)
-{
-    NH_DECL_CONSOLE(console);
-    return nh_console->elapsed(ticks);
-}
-
 int
 nh_frm_width(NHFrame frame)
 {
@@ -120,13 +113,13 @@ nh_get_frm(NHConsole console)
     return (NHFrame)&nh_console->get_frame();
 }
 
-float
+int
 nh_get_sample_rate(NHConsole console)
 {
     NH_DECL_CONSOLE(console);
     return nh_console->get_sample_rate();
 }
-float
+double
 nh_get_sample(NHConsole console)
 {
     NH_DECL_CONSOLE(console);

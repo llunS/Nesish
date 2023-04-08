@@ -11,9 +11,8 @@ namespace sh {
 
 enum AppOpt {
     OPT_NONE = 0,
-    OPT_DEBUG_WIN = 1 << 0, // With debug window
-    OPT_PCM = 1 << 1,       // Generate audio pcm file
-    OPT_AUDIO = 1 << 2,     // WIP audio
+    OPT_DEBUG = 1 << 0, // With debug window
+    OPT_PCM = 1 << 1,   // Generate audio pcm file
 };
 
 inline AppOpt &
@@ -25,6 +24,6 @@ operator|=(AppOpt &a, AppOpt b)
 }
 
 int
-run_app(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger);
+run(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger);
 
 } // namespace sh

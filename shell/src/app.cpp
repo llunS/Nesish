@@ -6,30 +6,38 @@
 
 // @FIXME: spdlog will include windows header files, we need to include them
 // before "glfw3.h" so that glfw won't redefine symbols.
-#include "logger.hpp"
+#include "misc/logger.hpp"
 #include "glfw/glfw3.h"
 #include "gui/emulator_window.hpp"
 #include "gui/debugger_window.hpp"
 
 #include "nesish/nesish.h"
+#include "nhbase/path.hpp"
 
 #include "audio/resampler.hpp"
-#include "nhbase/path.hpp"
 #include "audio/pcm_writer.hpp"
 #include "audio/channel.hpp"
-#include "rtaudio/RtAudio.h"
+#include "audio/device.hpp"
 
-#define SH_FRM_TIME (1.0 / 60.0)
-#define SH_AUDIO_SAMPLE_RATE 48000
-#define SH_AUDIO_BUF_SIZE                                                      \
-    512 // previous power of 2 of (SH_FRM_TIME * SH_AUDIO_SAMPLE_RATE)
-#define SH_AUDIO_RESAMPLE_BUF_SIZE (SH_AUDIO_SAMPLE_RATE / 10)
-#define SH_AUDIO_DYN_D 0.005
-#define SH_AUDIO_DYN 0
+#define DEBUG_AUDIO 0
+
+#define FRAME_TIME (1.0 / 60.0)
+#define AUDIO_SAMPLE_RATE 48000 // Most common rate for audio hardware
+#define AUDIO_BUF_SIZE 512      // Close to 1 frame worth of buffer
+// 800 = 1 / 60 * 48000, x2 for peak storage
+#define AUDIO_CH_SIZE (800 * 2)
 
 namespace sh {
 
-typedef Channel<SH_AUDIO_BUF_SIZE> AudioChannel;
+#define SAMPLE_FORMAT RTAUDIO_SINT16
+typedef short sample_t;
+typedef Channel<sample_t, AUDIO_CH_SIZE> AudioBuffer;
+
+struct AudioData {
+    sample_t prev;
+    AudioBuffer *buf;
+    Logger *logger;
+};
 
 static void
 error_callback(int error, const char *description);
@@ -37,30 +45,13 @@ error_callback(int error, const char *description);
 static void
 pv_log(NHLogLevel level, const char *msg, void *user);
 
-static bool
-audio_init(RtAudio &io_dac);
-static bool
-audio_open(RtAudio &io_dac, unsigned int i_sample_rate, unsigned i_buffer_size,
-           RtAudioCallback i_callback, void *i_user_data);
-static bool
-audio_start(RtAudio &io_dac);
-static bool
-audio_stop(RtAudio &io_dac);
-static void
-audio_close(RtAudio &io_dac);
 static int
 audio_playback(void *outputBuffer, void *inputBuffer,
                unsigned int nBufferFrames, double streamTime,
                RtAudioStreamStatus status, void *userData);
 
-struct ChannelData {
-    AudioChannel *ch;
-    bool done;
-    Logger *logger;
-};
-
 int
-run_app(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
+run(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
 {
     NHLogger logger{pv_log, i_logger, i_logger->level};
     NHConsole console = nh_new_console(&logger);
@@ -89,38 +80,43 @@ run_app(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
 
     std::unique_ptr<EmulatorWindow> emu_win{new EmulatorWindow()};
     std::unique_ptr<DebuggerWindow> dbg_win;
-    if (i_opts & sh::OPT_DEBUG_WIN)
+    if (i_opts & sh::OPT_DEBUG)
     {
         dbg_win.reset(new DebuggerWindow());
     }
-    Resampler resampler{SH_AUDIO_RESAMPLE_BUF_SIZE};
-    AudioChannel audio_ch;
-    ChannelData ch_data{&audio_ch, false, i_logger};
-    RtAudio dac;
+
+    AudioBuffer audio_buf;
+    AudioData audio_data{0, &audio_buf, i_logger};
+    Resampler resampler{AUDIO_BUF_SIZE * 2}; // More than enough
     PCMWriter pcm_writer;
-    bool enable_audio = i_opts & sh::OPT_AUDIO;
 
     /* init audio */
-    if (enable_audio)
+    // device
+    if (!audio_init())
     {
-        if (!audio_init(dac))
+        err = 1;
+        goto l_end;
+    }
+    if (!audio_open(AUDIO_SAMPLE_RATE, AUDIO_BUF_SIZE, SAMPLE_FORMAT,
+                    audio_playback, &audio_data))
+    {
+        err = 1;
+        goto l_end;
+    }
+    // resampler
+    if (!resampler.set_rates(double(nh_get_sample_rate(console)),
+                             AUDIO_SAMPLE_RATE))
+    {
+        err = 1;
+        goto l_end;
+    }
+    // pcm recorder
+    if (i_opts & sh::OPT_PCM)
+    {
+        if (pcm_writer.open(nb::path_join_exe("audio.pcm")))
         {
             err = 1;
             goto l_end;
-        }
-        if (!audio_open(dac, SH_AUDIO_SAMPLE_RATE, SH_AUDIO_BUF_SIZE,
-                        audio_playback, &ch_data))
-        {
-            err = 1;
-            goto l_end;
-        }
-        if (i_opts & sh::OPT_PCM)
-        {
-            if (pcm_writer.open(nb::path_join_exe("audio.pcm")))
-            {
-                err = 1;
-                goto l_end;
-            }
         }
     }
 
@@ -147,123 +143,79 @@ run_app(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
         dbg_win->pre_render(console);
     }
 
-    if (enable_audio)
+    /* start audio playback right before the loop */
+    if (!audio_start())
     {
-        /* start audio playback */
-        if (!audio_start(dac))
-        {
-            err = 1;
-            goto l_end;
-        }
+        err = 1;
+        goto l_end;
     }
     /* Main loop */
     {
         auto currTime = std::chrono::steady_clock::now();
-        auto nextEmulateTime = currTime + std::chrono::duration<double>(0.0);
-        auto nextRenderTime =
-            currTime + std::chrono::duration<double>(SH_FRM_TIME);
-
+        auto nextLoopTime = currTime + std::chrono::duration<double>(0.0);
         while (emu_win)
         {
-            // Dispatch events
-            glfwPollEvents();
-
-            /* Close window if necessary */
-            if (emu_win->shouldClose() || (dbg_win && dbg_win->shouldQuit()))
-            {
-                emu_win->release();
-                emu_win.reset();
-                break;
-            }
-            if (dbg_win && dbg_win->shouldClose())
-            {
-                dbg_win->post_render(console);
-                dbg_win->release();
-                dbg_win.reset();
-            }
-
-            /* Emulate */
             currTime = std::chrono::steady_clock::now();
-            if (!(dbg_win && dbg_win->isPaused()) &&
-                currTime >= nextEmulateTime)
+            if (currTime >= nextLoopTime)
             {
-                if (enable_audio)
+                /* Handle inputs, process events */
+                glfwPollEvents();
+
+                /* Close window if necessary */
+                if (emu_win->shouldClose() ||
+                    (dbg_win && dbg_win->shouldQuit()))
                 {
-#if SH_AUDIO_DYN
-                    /* Calculate target resample ratio */
-                    double resample_ratio =
-                        1. + (SH_AUDIO_BUF_SIZE - 2. * audio_ch.p_size()) /
-                                 SH_AUDIO_BUF_SIZE * SH_AUDIO_DYN_D;
-                    // target_bufsize > 0 holds
-                    int target_bufsize =
-                        int(resample_ratio * SH_AUDIO_BUF_SIZE);
-                    int target_sample_rate =
-                        int(SH_AUDIO_SAMPLE_RATE * double(target_bufsize) /
-                            SH_AUDIO_BUF_SIZE);
-#else
-#define target_bufsize SH_AUDIO_BUF_SIZE
-#define target_sample_rate SH_AUDIO_SAMPLE_RATE
-#endif
-                    if (!resampler.set_rates(nh_get_sample_rate(console),
-                                             target_sample_rate))
-                    {
-                        err = 1;
-                        goto l_end;
-                    }
-
-                    /* Emulate until audio buffer of target size is met */
-                    NHCycle cpu_ticks = 0;
-                    for (int buf_idx = 0; buf_idx < target_bufsize; ++buf_idx)
-                    {
-                        // Feed input samples until target count is met
-                        short buf = 0;
-                        while (!resampler.samples_avail(&buf, 1))
-                        {
-                            if (nh_tick(console, nullptr))
-                            {
-                                float sample = nh_get_sample(console);
-                                // @NOTE: Once clocked, samples must be
-                                // drained to avoid buffer overflow.
-                                // @FIXME: Which is correct, [0, 1] or [-1,
-                                // 1]?
-                                resampler.clock(
-                                    short((sample * 2. - 1.) * 32767));
-                                // resampler.clock(sample * 32767);
-                            }
-                            ++cpu_ticks;
-                        }
-                        // Drain the sample buffer
-                        {
-                            audio_ch.p_send(
-                                AudioChannel::value_t(buf / 32767.));
-
-                            if (pcm_writer.is_open())
-                            {
-                                pcm_writer.write_s16le(buf);
-                            }
-                        }
-                    }
-
-                    double emualteTime = nh_elapsed(console, cpu_ticks);
-                    nextEmulateTime =
-                        currTime + std::chrono::duration<double>(emualteTime);
+                    emu_win->release();
+                    emu_win.reset();
+                    break;
                 }
-                else
+                if (dbg_win && dbg_win->shouldClose())
                 {
-                    NHCycle ticks = nh_advance(console, SH_FRM_TIME);
+                    dbg_win->post_render(console);
+                    dbg_win->release();
+                    dbg_win.reset();
+                }
+
+                /* Emulate */
+                if (!(dbg_win && dbg_win->isPaused()))
+                {
+                    NHCycle ticks = nh_advance(console, FRAME_TIME);
                     for (decltype(ticks) i = 0; i < ticks; ++i)
                     {
-                        nh_tick(console, nullptr);
+                        if (nh_tick(console, nullptr))
+                        {
+                            double sample = nh_get_sample(console);
+                            resampler.clock(short(sample * 32767));
+                            // Once clocked, samples must be drained to avoid
+                            // buffer overflow.
+                            short buf[AUDIO_BUF_SIZE];
+                            while (resampler.samples_avail(buf, AUDIO_BUF_SIZE))
+                            {
+                                for (decltype(AUDIO_BUF_SIZE) j = 0;
+                                     j < AUDIO_BUF_SIZE; ++j)
+                                {
+                                    // If failed, sample gets dropped, but we
+                                    // are free of inconsistent emulation due to
+                                    // blocking delay
+                                    if (!audio_buf.try_send(buf[j]))
+                                    {
+#if DEBUG_AUDIO
+                                        SH_LOG_WARN(i_logger,
+                                                    "Sample gets dropped");
+#endif
+                                    }
+
+                                    if (pcm_writer.is_open())
+                                    {
+                                        pcm_writer.write_s16le(buf[j]);
+                                    }
+                                }
+                            }
+                        }
                     }
-
-                    nextEmulateTime =
-                        currTime + std::chrono::duration<double>(SH_FRM_TIME);
                 }
-            }
 
-            /* Render, AT MOST at fixed rate */
-            if (currTime >= nextRenderTime)
-            {
+                /* Render */
                 // Don't bother to render emulator if paused.
                 if (!(dbg_win && dbg_win->isPaused()))
                 {
@@ -277,18 +229,18 @@ run_app(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
                     dbg_win->render(console);
                 }
 
-                nextRenderTime =
-                    currTime + std::chrono::duration<double>(SH_FRM_TIME);
+                nextLoopTime =
+                    currTime + std::chrono::duration<double>(FRAME_TIME);
             }
         }
     }
 
 l_end:
     (void)pcm_writer.close();
-    ch_data.done = true;
-    (void)audio_stop(dac);
-    audio_close(dac);
     resampler.close();
+    (void)audio_stop();
+    audio_close();
+    audio_uninit();
 
     // before glfw termination
     if (emu_win)
@@ -314,116 +266,6 @@ void
 error_callback(int error, const char *description)
 {
     fprintf(stderr, "Error: %d, %s\n", error, description);
-}
-
-bool
-audio_init(RtAudio &io_dac)
-{
-    if (io_dac.getDeviceCount() < 1)
-    {
-        return false;
-    }
-    return true;
-}
-
-bool
-audio_open(RtAudio &io_dac, unsigned int i_sample_rate, unsigned i_buffer_size,
-           RtAudioCallback i_callback, void *i_user_data)
-{
-    if (!i_callback)
-    {
-        return false;
-    }
-
-    RtAudio::StreamParameters parameters;
-    parameters.deviceId = io_dac.getDefaultOutputDevice();
-    parameters.nChannels = 2;
-    parameters.firstChannel = 0;
-    try
-    {
-        io_dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, i_sample_rate,
-                          &i_buffer_size, i_callback, i_user_data);
-    }
-    catch (RtAudioError &)
-    {
-        return false;
-    }
-    return true;
-}
-
-bool
-audio_start(RtAudio &io_dac)
-{
-    try
-    {
-        io_dac.startStream();
-    }
-    catch (RtAudioError &)
-    {
-        return false;
-    }
-    return true;
-}
-
-bool
-audio_stop(RtAudio &io_dac)
-{
-    try
-    {
-        if (io_dac.isStreamRunning())
-        {
-            io_dac.stopStream();
-        }
-    }
-    catch (RtAudioError &)
-    {
-        return false;
-    }
-    return true;
-}
-
-void
-audio_close(RtAudio &io_dac)
-{
-    if (io_dac.isStreamOpen())
-    {
-        io_dac.closeStream();
-    }
-}
-
-int
-audio_playback(void *outputBuffer, void *inputBuffer,
-               unsigned int nBufferFrames, double streamTime,
-               RtAudioStreamStatus status, void *userData)
-{
-    (void)(inputBuffer);
-    (void)(streamTime);
-
-    ChannelData *ch_data = (ChannelData *)userData;
-
-    if (status)
-    {
-        SH_LOG_INFO(ch_data->logger,
-                    "Stream underflow for buffer of {} detected!",
-                    nBufferFrames);
-    }
-
-    float *buffer = (float *)outputBuffer;
-    // Write interleaved audio data.
-    for (unsigned int i = 0; i < nBufferFrames; ++i)
-    {
-        float sample = 0.;
-        while (!ch_data->done && !ch_data->ch->c_try_receive(sample))
-        {
-        }
-
-        for (unsigned int j = 0; j < 2; ++j)
-        {
-            *buffer++ = sample;
-        }
-    }
-
-    return 0;
 }
 
 void
@@ -454,6 +296,50 @@ pv_log(NHLogLevel level, const char *msg, void *user)
         default:
             break;
     }
+}
+
+int
+audio_playback(void *outputBuffer, void *inputBuffer,
+               unsigned int nBufferFrames, double streamTime,
+               RtAudioStreamStatus status, void *userData)
+{
+    (void)(inputBuffer);
+    (void)(streamTime);
+    (void)(status);
+
+    AudioData *audio_data = (AudioData *)userData;
+
+#if DEBUG_AUDIO
+    if (status)
+    {
+        SH_LOG_WARN(audio_data->logger,
+                    "Stream underflow for buffer of {} detected!",
+                    nBufferFrames);
+    }
+#endif
+
+    // Write audio data
+    sample_t *buffer = (sample_t *)outputBuffer;
+    for (unsigned int i = 0; i < nBufferFrames; ++i)
+    {
+        sample_t sample;
+        if (audio_data->buf->try_receive(sample))
+        {
+            audio_data->prev = sample;
+        }
+        else
+        {
+            sample = audio_data->prev;
+        }
+
+        // interleaved, 2 channels, mono ouput
+        for (unsigned int j = 0; j < 2; ++j)
+        {
+            *buffer++ = sample;
+        }
+    }
+
+    return 0;
 }
 
 } // namespace sh
