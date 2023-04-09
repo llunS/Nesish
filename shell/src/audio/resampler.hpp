@@ -2,7 +2,7 @@
 
 #include "nhbase/klass.hpp"
 
-#include "blip_buf/blip_buf.h"
+#include "blip_buf.h"
 
 namespace sh {
 

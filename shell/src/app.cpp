@@ -19,6 +19,9 @@
 #include "audio/channel.hpp"
 #include "audio/device.hpp"
 
+#include "misc/config.hpp"
+#include "input/controller.hpp"
+
 #define DEBUG_AUDIO 0
 
 #define FRAME_TIME (1.0 / 60.0)
@@ -53,6 +56,13 @@ audio_playback(void *outputBuffer, void *inputBuffer,
 int
 run(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
 {
+    KeyMapping p1_config;
+    KeyMapping p2_config;
+    if (!load_key_config(p1_config, p2_config, i_logger))
+    {
+        return 1;
+    }
+
     NHLogger logger{pv_log, i_logger, i_logger->level};
     NHConsole console = nh_new_console(&logger);
     if (!NH_VALID(console))
@@ -137,6 +147,7 @@ run(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
         goto l_end;
     }
     emu_win->set_pos(50, 170);
+    emu_win->init_console(p1_config, p2_config);
 
     if (dbg_win)
     {

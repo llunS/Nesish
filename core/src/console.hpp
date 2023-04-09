@@ -89,10 +89,11 @@ struct Console {
 
   private:
     // @NOTE: Values must be valid array index, see "m_ctrl_regs".
-    enum CtrlReg {
-        REG_4016 = 0,
-        REG_4017,
-        SIZE,
+    typedef int CtrlReg;
+    enum {
+        CTRL_REG_4016 = 0,
+        CTRL_REG_4017,
+        CTRL_REG_SIZE,
     };
 
     Byte
@@ -116,9 +117,9 @@ struct Console {
 
     Cartridge *m_cart;
 
-    Byte m_ctrl_regs[CtrlReg::SIZE];
+    Byte m_ctrl_regs[CTRL_REG_SIZE];
     static constexpr int CTRL_SIZE = 2;
-    static_assert(CTRL_SIZE == CtrlReg::SIZE, "?");
+    static_assert(CTRL_SIZE == CTRL_REG_SIZE, "?");
     NHController *m_ctrls[CTRL_SIZE]; // References
 
   private:

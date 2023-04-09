@@ -1,0 +1,10 @@
+# Lua build artifacts
+*.o
+*.a
+lua
+luac
+
+# Lua install directory
+/bin/
+/lib/
+/man/

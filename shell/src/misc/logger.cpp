@@ -69,7 +69,7 @@ Logger::create(NHLogLevel i_level)
                 std::make_shared<spdlog::sinks::basic_file_sink_st>(
                     log_filepath, true);
             logger->sinks().push_back(std::move(file_sink));
-            SH_LOG_INFO(sh_logger, "Log file at: {}", log_filepath);
+            SH_LOG_INFO(sh_logger, "Log file: {}", log_filepath);
         }
         catch (const spdlog::spdlog_ex &e)
         {

@@ -1,20 +1,20 @@
-
 #pragma once
 
 #include "nesish/nesish.h"
 
 #include "glfw/glfw3.h"
 
+#include <array>
+
 namespace sh {
 
-typedef int GLFWKey;
+typedef int VirtualKey;
+typedef std::array<VirtualKey, NH_KEYS> KeyMapping;
 
 struct Controller {
   public:
-    Controller(GLFWwindow *window);
-    virtual ~Controller()
-    {
-    }
+    Controller(GLFWwindow *i_window, const KeyMapping &i_mapping);
+    ~Controller() = default;
 
     void
     strobe(bool i_on);
@@ -28,9 +28,8 @@ struct Controller {
     void
     reload_states();
 
-  protected:
-    virtual GLFWKey
-    map_key(NHKeyIndex i_key) = 0;
+    VirtualKey
+    map_key(NHKey i_key);
 
   private:
     GLFWwindow *m_window;
@@ -40,30 +39,8 @@ struct Controller {
     bool m_key_state[NH_KEYS];
 
     bool m_8_bits_read;
-};
 
-struct ControllerP1 : public Controller {
-  public:
-    ControllerP1(GLFWwindow *window)
-        : Controller(window)
-    {
-    }
-
-  protected:
-    GLFWKey
-    map_key(NHKeyIndex i_key) override;
-};
-
-struct ControllerP2 : public Controller {
-  public:
-    ControllerP2(GLFWwindow *window)
-        : Controller(window)
-    {
-    }
-
-  protected:
-    GLFWKey
-    map_key(NHKeyIndex i_key) override;
+    KeyMapping m_mapping;
 };
 
 } // namespace sh

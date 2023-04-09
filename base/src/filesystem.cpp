@@ -5,19 +5,18 @@
 namespace nb {
 
 bool
-file_rename(const std::string &path_old, const std::string &path_new,
-            bool force)
+file_rename(const std::string &from, const std::string &to, bool force)
 {
-    if (force && file_exists(path_new))
+    if (force && file_exists(to))
     {
-        auto err = std::remove(path_new.c_str());
+        auto err = std::remove(to.c_str());
         if (err)
         {
             return false;
         }
     }
 
-    auto err = std::rename(path_old.c_str(), path_new.c_str());
+    auto err = std::rename(from.c_str(), to.c_str());
     return !err;
 }
 

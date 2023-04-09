@@ -22,7 +22,7 @@ typedef size_t NHCycle;
 #define NH_NES_WIDTH 256
 #define NH_NES_HEIGHT 240
 
-typedef enum {
+typedef enum NHErr {
     NH_ERR_OK = 0,
     NH_ERR_UNINITIALIZED,    // Uninitialized.
     NH_ERR_INVALID_ARGUMENT, // Invalid argument.
@@ -38,7 +38,7 @@ typedef enum {
 #define NH_FAILED(err) ((err) != NH_ERR_OK)
 
 /// @note Order matters for implementation
-typedef enum {
+typedef enum NHLogLevel {
     NH_LOG_OFF,
     NH_LOG_FATAL,
     NH_LOG_ERROR,
@@ -61,13 +61,16 @@ nh_new_console(NHLogger *logger);
 NH_API void
 nh_release_console(NHConsole console);
 
-/// @note Values used as indices in implementation
-typedef enum {
+/// @note Valid as array index
+typedef int NHCtrlPort;
+enum {
     NH_CTRL_P1 = 0,
     NH_CTRL_P2 = 1,
-} NHCtrlPort;
+};
 
-typedef enum {
+/// @note Valid as array index
+typedef int NHKey;
+enum {
     NH_KEY_A = 0,
     NH_KEY_B = 1,
     NH_KEY_SELECT = 2,
@@ -76,11 +79,11 @@ typedef enum {
     NH_KEY_DOWN = 5,
     NH_KEY_LEFT = 6,
     NH_KEY_RIGHT = 7,
-} NHKeyIndex;
+    NH_KEYS = 8,
 
-#define NH_KEYS 8
-#define NH_KEY_BEGIN NH_KEY_A
-#define NH_KEY_END (NH_KEY_RIGHT + 1)
+    NH_KEY_BEGIN = NH_KEY_A,
+    NH_KEY_END = NH_KEYS,
+};
 
 typedef struct NHController {
     void (*strobe)(int enabled, void *user);
@@ -124,7 +127,7 @@ nh_get_sample_rate(NHConsole console);
 NH_API double
 nh_get_sample(NHConsole console);
 
-typedef enum {
+typedef enum NHDFlags {
     NHD_DBG_OFF = 0,
     NHD_DBG_PALETTE = 1 << 0,
     NHD_DBG_OAM = 1 << 1,
@@ -157,7 +160,9 @@ nhd_ptn_table_tile_height(NHDPatternTable ptn_table);
 NH_API NHDPatternTable
 nhd_get_ptn_table(NHConsole console, int right);
 
-typedef enum {
+/// @note Valid as array index
+typedef int NHDPaletteSet;
+enum {
     NHD_PALETTE_BG0 = 0,
     NHD_PALETTE_BG1 = 1,
     NHD_PALETTE_BG2 = 2,
@@ -166,7 +171,7 @@ typedef enum {
     NHD_PALETTE_SP1 = 5,
     NHD_PALETTE_SP2 = 6,
     NHD_PALETTE_SP3 = 7,
-} NHDPaletteSet;
+};
 
 NH_API void
 nhd_set_ptn_table_palette(NHConsole console, NHDPaletteSet palette);

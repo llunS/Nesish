@@ -12,4 +12,10 @@ file_exists(const std::string &path)
            !(attr & FILE_ATTRIBUTE_DIRECTORY);
 }
 
+bool
+file_copy(const std::string &from, const std::string &to)
+{
+    return CopyFileA(from.c_str(), to.c_str(), TRUE);
+}
+
 } // namespace nb

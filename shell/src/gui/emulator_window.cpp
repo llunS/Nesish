@@ -3,7 +3,7 @@
 #include <cassert>
 
 #include "input/controller.hpp"
-#include "glad/glad.h"
+#include "glad.h"
 
 namespace sh {
 
@@ -86,18 +86,6 @@ bool
 EmulatorWindow::post_init()
 {
     assert(m_win);
-    assert(NH_VALID(m_console));
-
-    /* Setup emulator */
-    m_p1.user = new sh::ControllerP1(m_win);
-    ASM_CTRL(m_p1);
-    m_p2.user = new sh::ControllerP2(m_win);
-    ASM_CTRL(m_p2);
-
-    nh_plug_ctrl(m_console, NH_CTRL_P1, &m_p1);
-    nh_plug_ctrl(m_console, NH_CTRL_P2, &m_p2);
-
-    nh_power_up(m_console);
 
     /* Setup renderer */
     glfwMakeContextCurrent(m_win); // need to call gl functions.
@@ -109,6 +97,25 @@ EmulatorWindow::post_init()
     }
 
     return true;
+}
+
+void
+EmulatorWindow::init_console(const KeyMapping &p1_config,
+                             const KeyMapping &p2_config)
+{
+    assert(m_win);
+    assert(NH_VALID(m_console));
+
+    /* Setup emulator */
+    m_p1.user = new sh::Controller(m_win, p1_config);
+    ASM_CTRL(m_p1);
+    m_p2.user = new sh::Controller(m_win, p2_config);
+    ASM_CTRL(m_p2);
+
+    nh_plug_ctrl(m_console, NH_CTRL_P1, &m_p1);
+    nh_plug_ctrl(m_console, NH_CTRL_P2, &m_p2);
+
+    nh_power_up(m_console);
 }
 
 void

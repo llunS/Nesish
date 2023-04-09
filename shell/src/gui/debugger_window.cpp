@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstdio>
 
-#include "glad/glad.h"
+#include "glad.h"
 
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -261,11 +261,11 @@ DebuggerWindow::draw_fd_pattern(NHConsole i_emu)
     }
     if (ImGui::BeginPopup("ptn_tbl_palette_popup"))
     {
-        for (int i = 0; i < PALETTE_COUNT; i++)
+        for (NHDPaletteSet i = 0; i < PALETTE_COUNT; i++)
         {
             if (ImGui::Selectable(names[i]))
             {
-                m_ptn_tbl_palette = NHDPaletteSet(i);
+                m_ptn_tbl_palette = i;
             }
         }
         ImGui::EndPopup();

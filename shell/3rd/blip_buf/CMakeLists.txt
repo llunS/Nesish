@@ -1,6 +1,12 @@
-set(module_name blip_buf)
-add_library(${module_name} STATIC)
+set(tgt_name blip_buf)
+add_library(${tgt_name} STATIC)
+include(target_utils)
+add_opts(${tgt_name})
 
 # -- Source files
 
-target_sources(${module_name} PRIVATE blip_buf.c)
+target_sources(${tgt_name} PRIVATE blip_buf.c)
+
+# -- Include directories
+
+target_include_directories(${tgt_name} PUBLIC ./)

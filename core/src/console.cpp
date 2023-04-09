@@ -1,7 +1,5 @@
 #include "console.hpp"
 
-#include <type_traits>
-
 #include "nhbase/filesystem.hpp"
 #include "cartridge/cartridge_loader.hpp"
 #include "spec.hpp"
@@ -86,8 +84,8 @@ Console::hard_wire()
             else if (NH_CTRL1_REG_ADDR == i_addr || NH_CTRL2_REG_ADDR == i_addr)
             {
                 Byte val = thiz->read_ctrl_reg(NH_CTRL1_REG_ADDR == i_addr
-                                                   ? CtrlReg::REG_4016
-                                                   : CtrlReg::REG_4017);
+                                                   ? CTRL_REG_4016
+                                                   : CTRL_REG_4017);
                 // Partial open bus
                 // https://www.nesdev.org/wiki/Open_bus_behavior#CPU_open_bus
                 o_val = (val & 0x1F) | (thiz->m_memory.get_latch() & ~0x1F);
@@ -127,7 +125,7 @@ Console::hard_wire()
             }
             else if (NH_CTRL1_REG_ADDR == i_addr)
             {
-                thiz->write_ctrl_reg(CtrlReg::REG_4016, i_val);
+                thiz->write_ctrl_reg(CTRL_REG_4016, i_val);
                 return NH_ERR_OK;
             }
             else
@@ -154,10 +152,10 @@ Console::read_ctrl_reg(CtrlReg i_reg)
 
     switch (i_reg)
     {
-        case CtrlReg::REG_4016:
-        case CtrlReg::REG_4017:
+        case CTRL_REG_4016:
+        case CTRL_REG_4017:
         {
-            int index = i_reg - CtrlReg::REG_4016;
+            int index = i_reg - CTRL_REG_4016;
             if (index < 0 || index >= CTRL_SIZE)
             {
                 NH_ASSERT_FATAL(
@@ -199,11 +197,10 @@ Console::write_ctrl_reg(CtrlReg i_reg, Byte i_val)
 
     switch (i_reg)
     {
-        case CtrlReg::REG_4016:
+        case CTRL_REG_4016:
         {
             bool strobeOn = i_val & 0x01;
-            for (std::underlying_type<NHCtrlPort>::type i = 0; i < CTRL_SIZE;
-                 ++i)
+            for (NHCtrlPort i = 0; i < CTRL_SIZE; ++i)
             {
                 auto ctrl = m_ctrls[i];
                 if (!ctrl)
@@ -337,11 +334,11 @@ Console::reset()
 void
 Console::reset_trivial()
 {
-    for (std::underlying_type<CtrlReg>::type i = 0; i < CtrlReg::SIZE; ++i)
+    for (CtrlReg i = 0; i < CTRL_REG_SIZE; ++i)
     {
         m_ctrl_regs[i] = 0;
     }
-    for (std::underlying_type<NHCtrlPort>::type i = 0; i < CTRL_SIZE; ++i)
+    for (NHCtrlPort i = 0; i < CTRL_SIZE; ++i)
     {
         if (m_ctrls[i])
         {

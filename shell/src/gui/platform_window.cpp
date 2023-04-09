@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "glad/glad.h"
+#include "glad.h"
 
 namespace sh {
 

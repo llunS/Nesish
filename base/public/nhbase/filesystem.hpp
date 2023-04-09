@@ -12,7 +12,10 @@ file_exists(const std::string &path);
 
 NB_API
 bool
-file_rename(const std::string &path_old, const std::string &path_new,
-            bool force);
+file_copy(const std::string &from, const std::string &to);
+
+NB_API
+bool
+file_rename(const std::string &from, const std::string &to, bool force);
 
 } // namespace nb

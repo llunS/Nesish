@@ -34,7 +34,7 @@ add_opts(${tgt_name})
 
 # --- Include directories
 
-target_include_directories(${tgt_name} PRIVATE src 3rd)
+target_include_directories(${tgt_name} PRIVATE src)
 
 # --- Source files
 
@@ -57,6 +57,7 @@ list(APPEND sources src/audio/device.cpp)
 list(APPEND sources src/input/controller.cpp)
 
 list(APPEND sources src/misc/logger.cpp)
+list(APPEND sources src/misc/config.cpp)
 
 list(APPEND sources src/app.cpp)
 list(APPEND sources src/main.cpp)
@@ -75,14 +76,16 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 add_subdirectory(3rd/glad)
 add_subdirectory(3rd/blip_buf)
+add_subdirectory(3rd/lua-5.1.5)
 
 target_link_libraries(${tgt_name} PRIVATE
     glfw
     imgui::imgui
-    glad
-    blip_buf
     RtAudio::rtaudio
     spdlog::spdlog_header_only
+    glad
+    blip_buf
+    lua515
     Nesish
     NesishBase
 )
@@ -94,3 +97,12 @@ target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)
 include(xform_shader)
 xform_shader(resources/shader/screen_rect.vert src/shaders sh)
 xform_shader(resources/shader/screen_rect.frag src/shaders sh)
+
+# --- Copy configs
+
+add_custom_command(
+    TARGET ${tgt_name} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/config/input_default.lua
+    $<TARGET_FILE_DIR:${tgt_name}>/config/input_default.lua
+)

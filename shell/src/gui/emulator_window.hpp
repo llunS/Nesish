@@ -6,8 +6,8 @@
 #include "nhbase/klass.hpp"
 
 #include "gui/platform_window.hpp"
-
 #include "rendering/renderer.hpp"
+#include "input/controller.hpp"
 
 namespace sh {
 
@@ -36,8 +36,8 @@ struct EmulatorWindow : public PlatformWindow {
     post_init() override;
 
   public:
-    bool
-    insert_cart(const std::string i_rom_path);
+    void
+    init_console(const KeyMapping &p1_config, const KeyMapping &p2_config);
 
   private:
     NHConsole m_console;

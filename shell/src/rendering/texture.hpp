@@ -3,7 +3,7 @@
 
 #include "nhbase/klass.hpp"
 #include "nesish/nesish.h"
-#include "glad/glad.h"
+#include "glad.h"
 
 namespace sh {
 

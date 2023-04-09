@@ -3,7 +3,7 @@
 
 #include "nhbase/klass.hpp"
 
-#include "glad/glad.h"
+#include "glad.h"
 
 namespace sh {
 
