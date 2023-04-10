@@ -17,8 +17,8 @@ FrameCounter::FrameCounter(Pulse &o_pulse1, Pulse &o_pulse2,
 {
 }
 
-/// @brief  Reset some states only required in implementation rather than in
-/// hardware
+/// @brief Reset some states required in our implementation rather than in
+/// actual hardware
 void
 FrameCounter::power_up()
 {

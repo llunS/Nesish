@@ -2,7 +2,6 @@
 
 namespace nh {
 
-/// @brief Main category for address mode
 enum AddrMode {
     // http://www.oxyron.de/html/opcodes02.html
     IMP, // Implicit

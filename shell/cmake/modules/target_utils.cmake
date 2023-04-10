@@ -22,7 +22,7 @@ function(add_warnings i_tgt)
             -Wall -Wextra -pedantic -Werror
         )
     else()
-        # @TODO
+        message(FATAL_ERROR "Platform not supported yet!")
     endif()
 endfunction()
 
@@ -53,6 +53,6 @@ function(add_opts i_tgt)
             $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
         )
     else()
-        # @TODO
+        message(FATAL_ERROR "Platform not supported yet!")
     endif()
 endfunction()

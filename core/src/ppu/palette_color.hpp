@@ -5,18 +5,14 @@
 
 namespace nh {
 
-/**
- * @brief Palette index color. 8-bit in memory, 6-bit in use.
- */
+/// @brief Index color. 8-bit in memory, 6-bit in use.
 struct PaletteColor {
   public:
     PaletteColor(Byte i_index)
         : value(i_index){};
     NB_KLZ_DEFAULT_COPY(PaletteColor);
 
-    /**
-     * @brief The number of representable colors.
-     */
+    /// @brief The number of representable colors
     static constexpr int
     size()
     {

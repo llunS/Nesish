@@ -3,6 +3,9 @@
 #include <cstdio>
 #include <memory>
 #include <chrono>
+#ifdef SH_TGT_MACOS
+#include <thread>
+#endif
 
 // @FIXME: spdlog will include windows header files, we need to include them
 // before "glfw3.h" so that glfw won't redefine symbols.
@@ -242,6 +245,15 @@ run(const std::string &i_rom_path, AppOpt i_opts, Logger *i_logger)
 
                 nextLoopTime =
                     currTime + std::chrono::duration<double>(FRAME_TIME);
+
+                // After testing, sleep implementation on MacOS (combined with
+                // libc++) has higher resolution and reliability.
+#ifdef SH_TGT_MACOS
+                if (!(i_opts & sh::OPT_NOSLEEP))
+                {
+                    std::this_thread::sleep_until(nextLoopTime);
+                }
+#endif
             }
         }
     }

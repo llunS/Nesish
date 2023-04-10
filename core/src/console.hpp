@@ -45,7 +45,7 @@ struct Console {
 
     Cycle
     advance(double i_delta);
-    /// @brief Advance 1 CPU tick
+    /// @brief Advance 1 tick
     /// @param o_cpu_instr If a CPU instruction has completed
     /// @return If a new audio sample is available
     bool
@@ -88,7 +88,7 @@ struct Console {
     hard_wire();
 
   private:
-    // @NOTE: Values must be valid array index, see "m_ctrl_regs".
+    // Values must be valid array index, see "m_ctrl_regs".
     typedef int CtrlReg;
     enum {
         CTRL_REG_4016 = 0,

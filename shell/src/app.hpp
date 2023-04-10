@@ -11,8 +11,9 @@ namespace sh {
 
 enum AppOpt {
     OPT_NONE = 0,
-    OPT_DEBUG = 1 << 0, // With debug window
-    OPT_PCM = 1 << 1,   // Generate audio pcm file
+    OPT_DEBUG = 1 << 0,   // With debug window
+    OPT_PCM = 1 << 1,     // Record audio pcm file
+    OPT_NOSLEEP = 1 << 2, // No battery saver
 };
 
 inline AppOpt &

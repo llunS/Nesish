@@ -50,8 +50,8 @@ SpEvalFetch::tick(Cycle i_col)
         {
             // Sprite evaluation is done already at tick 257
 
-            // @NOTE: Pass out the flag at fetch stage (not eval stage), in case
-            // the flag is used by current scanline instead of the next one.
+            // Pass out the flag at fetch stage (not eval stage), in case the
+            // flag is used by current scanline instead of the next one.
             // In other words, "with_sp0" should not be overwritten in rendering
             // stage (while it's in use).
             // This relys on the fact that Render is ticked before SpEvalFetch.

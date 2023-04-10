@@ -106,7 +106,7 @@ PPU::reset_trivial()
 void
 PPU::tick(bool i_no_nmi)
 {
-    // @TODO: Warm up period?
+    // @TODO: Warm up stage?
 
     m_no_nmi = i_no_nmi;
 
@@ -280,7 +280,8 @@ PPU::write_register(Register i_reg, Byte i_val)
 
         case PPUMASK:
         {
-            // @TODO: emphasis
+            // @TODO: Color emphasis
+            // https://www.nesdev.org/wiki/Colour_emphasis
         }
         break;
 

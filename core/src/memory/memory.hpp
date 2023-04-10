@@ -7,7 +7,7 @@
 
 namespace nh {
 
-/* @NOTE: Enumerators must be unique and are valid array index */
+// Enumerators must be unique and are valid array index
 enum class MemoryMappingPoint : unsigned char {
     INVALID = 0,
 

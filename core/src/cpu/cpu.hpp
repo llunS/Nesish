@@ -95,8 +95,8 @@ struct CPU {
     post_pop_byte();
 
   private:
-    // @NOTE: Same underlying type as "this->P", so the enumerators can be
-    // directly used in bitwise operations.
+    // Same underlying type as "this->P", so the enumerators can be directly
+    // used in bitwise operations.
     enum StatusFlag : Byte {
         // http://www.oxyron.de/html/opcodes02.html
         C = 1 << 0, // carry flag (1 on unsigned overflow)

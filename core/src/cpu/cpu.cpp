@@ -174,7 +174,7 @@ CPU::pre_tick(bool i_rdy, bool &o_2002_read)
                 if (in_nmi())
                 {
                     // Indicating NMI is handled.
-                    // @TEST: Done at last cycle?
+                    // @TEST: Right to do this at last cycle?
                     m_nmi_sig = false;
                 }
             }

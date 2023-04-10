@@ -244,7 +244,7 @@ pv_sp_render(PipelineAccessor *io_accessor, Render::Context *io_ctx)
         Byte palette_idx = ctx.sp_attr[i] & 0x03;
 
         /* 3. Get pattern data (i.e. index into palette) */
-        // @NOTE: Flipping of both X and Y was done in the fetch stage already.
+        // Flipping of both X and Y was done in the fetch stage already.
         bool pattern_data_lower_bit =
             ctx.sf_sp_pattern_lower[i] & bit_shift_and_mask;
         bool pattern_data_upper_bit =

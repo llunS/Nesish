@@ -7,7 +7,6 @@
 
 namespace nhd {
 
-/// @brief Information needed to display a sprite
 struct Sprite {
   public:
     Sprite();

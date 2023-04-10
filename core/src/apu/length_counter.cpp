@@ -36,8 +36,8 @@ LengthCounter::tick()
     }
 }
 
-/// @brief Reset some states only required in implementation rather than in
-/// hardware
+/// @brief Reset some states required in our implementation rather than in
+/// actual hardware
 void
 LengthCounter::power_up()
 {

@@ -41,8 +41,8 @@ struct APU {
 
   public:
     // https://www.nesdev.org/wiki/APU_registers
-    // @NOTE: Values must be valid array index, see "m_regs".
-    // @NOTE: Values must correspond to address, see addr_to_regsiter().
+    // Values must be valid array index, see "m_regs".
+    // Values must correspond to address, see addr_to_regsiter().
     enum Register {
         /* clang-format off */
         PULSE1_DUTY = 0, // DDLC NNNN / Duty, loop envelope/disable length counter, constant volume, envelope period/volume

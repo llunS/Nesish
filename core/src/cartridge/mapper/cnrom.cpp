@@ -20,7 +20,7 @@ CNROM::validate() const
     {
         return NH_ERR_CORRUPTED;
     }
-    // @TEST: Right to not support CHR RAM?
+    // @TEST: Right not to support CHR RAM?
     if (m_rom_accessor->use_chr_ram())
     {
         return NH_ERR_CORRUPTED;

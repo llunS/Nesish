@@ -165,7 +165,7 @@ Console::read_ctrl_reg(CtrlReg i_reg)
             else
             {
                 auto ctrl = m_ctrls[index];
-                // @TODO: Other bits
+                // @TODO: Other control bits
                 bool primaryBit{0};
                 if (!ctrl)
                 {
@@ -177,7 +177,7 @@ Console::read_ctrl_reg(CtrlReg i_reg)
                 {
                     primaryBit = (bool)ctrl->report(ctrl->user);
                 }
-                // @NOTE: Other bits are 0 as initialized.
+                // Other bits are 0 as initialized.
                 val = (val & 0xFE) | Byte(primaryBit);
             }
         }
@@ -288,7 +288,7 @@ Console::power_up()
         return;
     }
 
-    // @NOTE: Setup memory first, since other components depends on their
+    // @NOTE: Setup memory first, since other components depend on their
     // states.
     // Setup internal RAM first in case mapper changes its content
     // afterwards (if there is any). Set to a consistent RAM startup state.

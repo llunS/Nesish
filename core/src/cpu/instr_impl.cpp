@@ -985,9 +985,8 @@ CPU::InstrImpl::frm_rel(int i_idx, CPU *io_cpu, InstrCore i_core, bool &io_done)
             (void)(opcode);
 
             // Set PCL and calculate PCH offset, using larger type.
-            // @NOTE: The conversion to SignedByte is needed, so that higher
-            // bits be padded with sign bit when converted to larger unsigned
-            // type.
+            // The conversion to SignedByte is needed, so that higher bits be
+            // padded with sign bit when converted to larger unsigned type.
             SignedByte offset = (SignedByte)(io_cpu->m_data_bus);
             Address new_pc = io_cpu->PC + offset;
             // Before PC is mutated

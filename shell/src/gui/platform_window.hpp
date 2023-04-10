@@ -4,7 +4,7 @@
 
 namespace sh {
 
-/// @brief Helper glfw window class
+/// @brief GLFW window wrapper
 struct PlatformWindow {
   public:
     PlatformWindow();

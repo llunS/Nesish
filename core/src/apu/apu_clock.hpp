@@ -6,7 +6,7 @@
 
 namespace nh {
 
-/// @brief A struct to sync get/put cycle among APU and DMA(OAM/DMC)
+/// @brief A struct to sync get/put cycle for APU and DMA(OAM/DMC)
 struct APUClock {
   public:
     APUClock();

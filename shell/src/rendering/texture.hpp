@@ -7,7 +7,7 @@
 
 namespace sh {
 
-/// @brief Wrap an OpenGL texture resource
+/// @brief OpenGL texture wrapper
 struct Texture {
   public:
     Texture();

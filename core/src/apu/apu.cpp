@@ -182,7 +182,8 @@ APU::read_register(Register i_reg, Byte &o_val)
         {
             // @TODO: If an interrupt flag was set at the same moment of the
             // read, it will read back as 1 but it will not be cleared.
-            // However, it seems to contradict with "sync_apu" in test source
+            // However, it seems to contradict with "sync_apu" in test source,
+            // not sure how we should do this.
 
             bool p1 = m_pulse1.length_counter().value() > 0;
             bool p2 = m_pulse2.length_counter().value() > 0;

@@ -72,7 +72,7 @@ find_package(RtAudio CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
-# @TODO: Further separation of projects
+# @TODO: Formal separation of CMake projects using its export and import functionality
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 add_subdirectory(3rd/glad)
 add_subdirectory(3rd/blip_buf)
@@ -90,6 +90,9 @@ target_link_libraries(${tgt_name} PRIVATE
     NesishBase
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_compile_definitions(${tgt_name} PRIVATE -DSH_TGT_MACOS)
+endif()
 target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)
 
 # --- Transform shaders
