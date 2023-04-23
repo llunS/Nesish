@@ -20,6 +20,7 @@ Any feedback is welcome.
 - Extensively tested CPU and PPU
 - Working APU (more work to be done for sound quality)
 - Debugger showing real-time status of PPU
+- C API for emulator core
 
 ## How To Play
 
