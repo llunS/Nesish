@@ -17,8 +17,7 @@ Any feedback is welcome.
 - Support on Windows/MacOS
 - Mapper 0 games (Donkey Kong, Super Mario Bros. and Galaga are tested)
 - Custom key mapping
-- Extensively tested CPU and PPU
-- Working APU (more work to be done for sound quality)
+- Sufficiently tested CPU, PPU and APU
 - Debugger showing real-time status of PPU
 - C API for emulator core
 
@@ -44,6 +43,8 @@ cmake -S shell -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_TOOLCHAIN_FILE -GNinja -DC
 # build
 cmake --build build
 ```
+
+> `master` branch is under active development and thus unstable (e.g. it may fail to compile on some platforms). Use tagged revision for stability.
 
 ## External Dependencies
 

@@ -36,7 +36,7 @@ Noise::tick_timer()
         bool other_bit = m_mode ? (m_shift & 0x0040) : (m_shift & 0x0002);
         bool feedback = (m_shift ^ decltype(m_shift)(other_bit)) & 0x0001;
         m_shift >>= 1;
-        m_shift = (m_shift & ~0x4000) | (feedback << 14);
+        m_shift = (m_shift & ~0x4000) | (decltype(m_shift)(feedback) << 14);
     }
 }
 
@@ -78,7 +78,9 @@ Noise::set_timer_reload(Byte i_index)
 void
 Noise::reset_lfsr()
 {
-    m_shift = 0;
+    // On power-up, the LFSR is loaded with the value 1.
+    // So it will shift in a 1 the first time
+    m_shift = 1;
 }
 
 Envelope &

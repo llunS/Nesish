@@ -72,10 +72,6 @@ APU::power_up()
         m_fc.tick();
     }
 
-    // All 15 bits of noise channel LFSR = $0000.
-    // The first time the LFSR is clocked from the all-0s state, it will shift
-    // in a 1
-    // (how is bit 1 shifted in? all zeros should shift in a 0).
     m_noise.reset_lfsr();
 
     // https://www.nesdev.org/wiki/APU_DMC#Overview
