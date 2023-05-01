@@ -58,6 +58,12 @@ Memory::get_latch() const
     return m_read_latch;
 }
 
+void
+Memory::override_latch(Byte i_val)
+{
+    m_read_latch = i_val;
+}
+
 NHErr
 Memory::set_bulk(Address i_begin, Address i_end, Byte i_byte)
 {

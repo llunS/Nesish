@@ -18,11 +18,10 @@ namespace nh {
 
 struct PipelineAccessor;
 struct Pipeline;
-struct CPU;
 
 struct PPU {
   public:
-    PPU(VideoMemory *i_memory, CPU *i_cpu, const NHDFlags &i_debug_flags,
+    PPU(VideoMemory *i_memory, const NHDFlags &i_debug_flags,
         NHLogger *i_logger);
     ~PPU();
     NB_KLZ_DELETE_COPY_MOVE(PPU);
@@ -115,7 +114,6 @@ struct PPU {
 
     // ---- External components references
     VideoMemory *m_memory;
-    CPU *m_cpu;
 
     friend struct PipelineAccessor;
     PipelineAccessor *m_pipeline_accessor;

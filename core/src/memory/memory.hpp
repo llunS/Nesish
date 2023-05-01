@@ -41,6 +41,8 @@ struct Memory : public MappableMemory<MemoryMappingPoint, NH_ADDRESSABLE_SIZE> {
 
     Byte
     get_latch() const;
+    void
+    override_latch(Byte i_val);
 
   public:
     NHErr

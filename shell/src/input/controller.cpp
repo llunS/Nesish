@@ -48,8 +48,9 @@ Controller::report()
             // controllers but may return 0 on third party controllers such as
             // the U-Force."
 
-            // @TEST: Is this necessary? Or the test itself
-            // (cpu_exec_space/test_cpu_exec_space_apu.nes) is defected?
+            // After 8 bits are polled, bit 1 is returned. Verified by:
+            // 1) cpu_exec_space/test_cpu_exec_space_apu.nes
+            // 2) dmc_dma_during_read4/dma_4016_read.nes
             return m_8_bits_read ? true : false;
         }
     }

@@ -13,7 +13,7 @@ constexpr int Console::CTRL_SIZE;
 Console::Console(NHLogger *i_logger)
     : m_cpu(&m_memory, &m_ppu, &m_apu, i_logger)
     , m_memory(i_logger)
-    , m_ppu(&m_video_memory, &m_cpu, m_debug_flags, i_logger)
+    , m_ppu(&m_video_memory, m_debug_flags, i_logger)
     , m_oam_dma(m_apu_clock, m_memory, m_ppu)
     , m_video_memory(i_logger)
     , m_apu(m_apu_clock, m_dmc_dma, i_logger)
@@ -363,7 +363,7 @@ Console::tick(bool *o_cpu_instr)
     // @NOTE: the RDY disable implementation depends on this order.
     bool dma_halt = m_cpu.dma_halt();
     bool dmc_dma_get = m_dmc_dma.tick(dma_halt);
-    m_oam_dma.tick(dma_halt, dmc_dma_get);
+    bool oam_dma_op = m_oam_dma.tick(dma_halt, dmc_dma_get);
 
     // NTSC version ticks PPU 3 times per CPU tick
 
@@ -384,8 +384,8 @@ Console::tick(bool *o_cpu_instr)
     m_ppu.tick();
 
     bool read_2002 = false;
-    bool instr_done =
-        m_cpu.pre_tick(m_dmc_dma.rdy() || m_oam_dma.rdy(), read_2002);
+    bool instr_done = m_cpu.pre_tick(m_dmc_dma.rdy() || m_oam_dma.rdy(),
+                                     dmc_dma_get || oam_dma_op, read_2002);
     if (o_cpu_instr)
     {
         *o_cpu_instr = instr_done;

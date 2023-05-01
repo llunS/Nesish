@@ -4,16 +4,14 @@
 #include "ppu/pipeline_accessor.hpp"
 #include "spec.hpp"
 #include "assert.hpp"
-#include "cpu/cpu.hpp"
 
 namespace nh {
 
-PPU::PPU(VideoMemory *i_memory, CPU *i_cpu, const NHDFlags &i_debug_flags,
+PPU::PPU(VideoMemory *i_memory, const NHDFlags &i_debug_flags,
          NHLogger *i_logger)
     : m_regs{}
     , m_oam{}
     , m_memory(i_memory)
-    , m_cpu(i_cpu)
     , m_io_db(0)
     , m_debug_flags(i_debug_flags)
     , m_ptn_tbl_palette_idx(0)

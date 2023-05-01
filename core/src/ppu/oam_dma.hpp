@@ -22,8 +22,11 @@ struct OAMDMA {
     void
     reset();
 
-    void
-    tick(bool i_cpu_dma_halt, bool dmc_dma_get);
+    /// @param i_cpu_dma_halt Whether CPU is halted
+    /// @param i_dmc_dma_get Whether DMC DMA get was performed
+    /// @return Whether the DMA performed work (i.e. get or put)
+    bool
+    tick(bool i_cpu_dma_halt, bool i_dmc_dma_get);
 
     void
     initiate(Byte i_addr_high);

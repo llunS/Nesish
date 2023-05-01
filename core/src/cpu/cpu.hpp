@@ -27,10 +27,11 @@ struct CPU {
     reset();
 
     /// @param i_rdy RDY line input enabled
+    /// @param i_dma_op_cycle If this cycle is a DMA operation cycle
     /// @param o_2002_read Whether $2002 was read at this tick
     /// @return Whether an instruction has completed.
     bool
-    pre_tick(bool i_rdy, bool &o_2002_read);
+    pre_tick(bool i_rdy, bool i_dma_op_cycle, bool &o_2002_read);
     void
     post_tick();
 
@@ -70,7 +71,6 @@ struct CPU {
 
   private:
     // ----- memory operations
-
     Byte
     get_byte(Address i_addr) const;
     void
@@ -79,16 +79,8 @@ struct CPU {
     get_byte2(Address i_addr) const;
 
     // ----- stack operations
-
     void
     push_byte(Byte i_byte);
-    Byte
-    pop_byte();
-    void
-    push_byte2(Byte2 i_byte2);
-    Byte2
-    pop_byte2();
-
     void
     pre_pop_byte();
     Byte
@@ -158,9 +150,13 @@ struct CPU {
     bool m_dma_halt;
 
     // ---- temporaries for one tick
-    mutable bool m_2002_read;
-    // ---- States for/after one tick
-    bool m_write_tick;
+    mutable bool m_ppustatus_read_tmp;
+    bool m_write_tick_tmp; // used in chk_to_flag_halt()
+    bool m_mask_read_tmp;  // used in get_byte()
+    // ---- preserve across ticks
+    mutable Cycle m_prev_ppudata_read;
+    mutable Cycle m_prev_joy1_read;
+    mutable Cycle m_prev_joy2_read;
 
     // ---- interrupt lines poll cache
     bool m_nmi_asserted;

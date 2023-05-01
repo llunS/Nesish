@@ -26,6 +26,7 @@
 #define NH_PPU_REG_ADDR_TAIL 0x3FFF // including mirror
 #define NH_PPU_REG_ADDR_MASK 0x0007 // rightmost 3 bits 1
 #define NH_PPUSTATUS_ADDR 0x2002
+#define NH_PPUDATA_ADDR 0x2007
 #define NH_OAMDMA_ADDR 0x4014
 
 #define NH_PATTERN_TILE_HEIGHT 8

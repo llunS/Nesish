@@ -31,6 +31,11 @@ CPU::power_up()
         m_instr_halt = false;
         m_dma_halt = false;
 
+        m_mask_read_tmp = false;
+        m_prev_ppudata_read = 0;
+        m_prev_joy1_read = 0;
+        m_prev_joy2_read = 0;
+
         m_nmi_asserted = false;
         m_nmi_sig = false;
         m_irq_sig = false;
@@ -70,34 +75,62 @@ CPU::test_set_p(Byte i_val)
 }
 
 bool
-CPU::pre_tick(bool i_rdy, bool &o_2002_read)
+CPU::pre_tick(bool i_rdy, bool i_dma_op_cycle, bool &o_2002_read)
 {
-    // default to read tick so we only need to mark write operations.
-    // i.e. each cycle is read cycle unless marked otherwise.
-    m_write_tick = false;
-    m_2002_read = false;
+    m_ppustatus_read_tmp = false;
     auto defer_ret = [&o_2002_read, this]() {
-        o_2002_read = this->m_2002_read;
+        // clear some flags
+        m_mask_read_tmp = false;
+        // pass out outputs
+        o_2002_read = m_ppustatus_read_tmp;
     };
 
     if (m_instr_halt)
     {
+        // Don't inc "m_cycle"?
         defer_ret();
         return false;
     }
 
-    // Can only halt on read cycle
-    m_dma_halt = false;
+    // check to unset halt flag
+    if (m_dma_halt)
+    {
+        if (!i_rdy)
+        {
+            m_dma_halt = false;
+        }
+    }
+    // do nothing when the CPU is halted and the DMA is doing its work
+    // -- inc "m_cycle"?
+    // -- still poll interrupts? not sure, take it as yes for now
+    // then implement it as masking out read operatoin, so we can still poll
+    // interrupts
+    // -- CPU must be halted in read cycle since that's when it can be halted by
+    // DMA
+    m_mask_read_tmp = m_dma_halt && i_dma_op_cycle;
+    // common function to check to set halt flag
+    // won't conflict with the above unset logic due to "i_rdy"
+    auto chk_to_flag_halt = [i_rdy, this]() {
+        if (!m_dma_halt)
+        {
+            // Can only halt on read cycle
+            if (i_rdy && !m_write_tick_tmp)
+            {
+                m_dma_halt = true;
+            }
+        }
+    };
 
     bool instr_done = false;
     // Fetch opcode
     if (!m_instr_ctx.instr)
     {
+        // default to read tick so we only need to mark write operations.
+        // i.e. each cycle is read cycle unless marked otherwise.
+        m_write_tick_tmp = false;
         Byte opcode = get_byte(PC);
-        if (i_rdy && !m_write_tick)
-        {
-            m_dma_halt = true;
-        }
+        chk_to_flag_halt();
+
         if (!m_dma_halt)
         {
             // IRQ/RESET/NMI/BRK all use the same behavior.
@@ -133,13 +166,11 @@ CPU::pre_tick(bool i_rdy, bool &o_2002_read)
         auto prev_addr_bus = m_addr_bus;
         auto prev_data_bus = m_data_bus;
 
+        m_write_tick_tmp = false;
         m_instr_ctx.instr->frm(m_instr_ctx.cycle_plus1, this,
                                m_instr_ctx.instr->core, instr_done);
+        chk_to_flag_halt();
 
-        if (i_rdy && !m_write_tick)
-        {
-            m_dma_halt = true;
-        }
         if (!m_dma_halt)
         {
             ++m_instr_ctx.cycle_plus1;
@@ -227,8 +258,9 @@ CPU::pre_tick(bool i_rdy, bool &o_2002_read)
     ++m_cycle;
 
     defer_ret();
-    // When it's halted by DMCs at the last cycle, flagging it as not done would
-    // be a reasonable choice.
+    // When it's halted by DMCs at read cycle, flagging it as not done seems
+    // reasonable. Even if the read cycle may be the last cycle of an
+    // instruction.
     return m_dma_halt ? false : instr_done;
 }
 
@@ -365,19 +397,94 @@ CPU::test_get_operand_bytes(Byte i_opcode)
 Byte
 CPU::get_byte(Address i_addr) const
 {
-    if (NH_PPUSTATUS_ADDR == i_addr)
+    // Mask out read
+    if (m_mask_read_tmp)
     {
-        m_2002_read = true;
+        // Whatever can be returned, since after CPU resumes it will still do it
+        // again (of course without "m_mask_read_tmp" set)
+        return 0x00;
+    }
+
+    Address real_addr = i_addr;
+    if (NH_PPU_REG_ADDR_HEAD <= i_addr && i_addr <= NH_PPU_REG_ADDR_TAIL)
+    {
+        real_addr = (i_addr & NH_PPU_REG_ADDR_MASK) | NH_PPU_REG_ADDR_HEAD;
     }
 
     Byte byte;
-    auto err = m_memory->get_byte(i_addr, byte);
-    if (NH_FAILED(err))
+    // Ignore subsequent joypad reads in contiguous set of CPU cycles.
+    // Verified by dmc_dma_during_read4/dma_4016_read.nes
+    // https://www.nesdev.org/wiki/DMA#Register_conflicts
+    /* Joypads are clocked via direct lines from the CPU, called joypad 1 /OE
+     * and joypad 2 /OE, rather than going over the address bus. These output
+     * enables remain asserted the entire CPU cycle and even across adjacent
+     * cycles if they're both reading the same joypad register. Therefore,
+     * controllers only see a single read for each contiguous set of reads of a
+     * joypad register. */
+    if (NH_CTRL1_REG_ADDR == real_addr && m_prev_joy1_read + 1 == m_cycle)
     {
-        NH_ASSERT_ERROR_COND(false, m_logger,
-                             "Invalid memory read: ${:04X}, {}", i_addr, err);
-        byte = 0xFF; // Apparent value
+        byte = m_memory->get_latch();
     }
+    else if (NH_CTRL2_REG_ADDR == real_addr && m_prev_joy2_read + 1 == m_cycle)
+    {
+        byte = m_memory->get_latch();
+    }
+    else
+    {
+        bool retain_latch = false;
+        Byte prev_latch;
+        bool return_latch = false;
+        /* Ignore subsequent PPUDATA reads in contiguous set of CPU cycles */
+        // Use previous open bus value to pass both
+        // 1) dmc_dma_during_read4/dma_2007_read.nes
+        // 2) dmc_dma_during_read4/double_2007_read.nes
+        if (NH_PPUDATA_ADDR == real_addr && m_prev_ppudata_read + 1 == m_cycle)
+        {
+            prev_latch = m_memory->get_latch();
+            retain_latch = true;
+            return_latch = true;
+        }
+
+        auto err = m_memory->get_byte(i_addr, byte);
+        if (NH_FAILED(err))
+        {
+            NH_ASSERT_ERROR_COND(false, m_logger,
+                                 "Invalid memory read: ${:04X}, {}", i_addr,
+                                 err);
+            byte = 0xFF; // Apparent value
+        }
+
+        if (retain_latch)
+        {
+            m_memory->override_latch(prev_latch);
+        }
+        if (return_latch)
+        {
+            byte = m_memory->get_latch();
+        }
+    }
+
+    switch (real_addr)
+    {
+        case NH_PPUSTATUS_ADDR:
+            m_ppustatus_read_tmp = true;
+            break;
+        case NH_PPUDATA_ADDR:
+            // Assuming get_byte() is called at most once per CPU cycle
+            m_prev_ppudata_read = m_cycle;
+            break;
+        case NH_CTRL1_REG_ADDR:
+            // Assuming get_byte() is called at most once per CPU cycle
+            m_prev_joy1_read = m_cycle;
+            break;
+        case NH_CTRL2_REG_ADDR:
+            // Assuming get_byte() is called at most once per CPU cycle
+            m_prev_joy2_read = m_cycle;
+            break;
+        default:
+            break;
+    }
+
     return byte;
 }
 
@@ -386,7 +493,7 @@ CPU::set_byte(Address i_addr, Byte i_byte)
 {
     // The mark of this flag relys on the instruction implementation
     // calling read or wrtie interface each cycle.
-    m_write_tick = true;
+    m_write_tick_tmp = true;
 
     // At hardware, this is done by setting to line to read instead of write
     if (!m_irq_no_mem_write)
@@ -418,13 +525,6 @@ CPU::push_byte(Byte i_byte)
     --S;
 }
 
-Byte
-CPU::pop_byte()
-{
-    pre_pop_byte();
-    return post_pop_byte();
-}
-
 void
 CPU::pre_pop_byte()
 {
@@ -437,23 +537,6 @@ CPU::post_pop_byte()
     Byte byte = get_byte(Memory::STACK_PAGE_MASK | S);
     NH_LOG_TRACE(m_logger, "Pop byte: {:02X}", byte);
     return byte;
-}
-
-void
-CPU::push_byte2(Byte2 i_byte2)
-{
-    // little-endian, so we stuff in higher byte first.
-    push_byte(Byte(i_byte2 >> 8));
-    push_byte(Byte(i_byte2));
-}
-
-Byte2
-CPU::pop_byte2()
-{
-    // see push_byte2() for details.
-    auto lower = pop_byte();
-    auto higher = pop_byte();
-    return to_byte2(higher, lower);
 }
 
 bool

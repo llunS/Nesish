@@ -34,9 +34,11 @@ OAMDMA::reset()
     // do nothing, which implies a DMA may delay the reset sequence
 }
 
-void
-OAMDMA::tick(bool i_cpu_dma_halt, bool dmc_dma_get)
+bool
+OAMDMA::tick(bool i_cpu_dma_halt, bool i_dmc_dma_get)
 {
+    bool op_cycle = false;
+
     if (m_swap)
     {
         m_rdy = false;
@@ -59,9 +61,9 @@ OAMDMA::tick(bool i_cpu_dma_halt, bool dmc_dma_get)
             // Get cycle
             if (m_clock.get())
             {
-                // Back away for DMC DMA, which results in one extra alignment
+                // Back away for DMC DMA. This results in one extra alignment
                 // cycle.
-                if (dmc_dma_get)
+                if (i_dmc_dma_get)
                 {
                     // "m_got" remaining false means extra alignment cycles.
                 }
@@ -71,6 +73,8 @@ OAMDMA::tick(bool i_cpu_dma_halt, bool dmc_dma_get)
                     (void)m_memory.get_byte(m_addr_cur, m_bus);
                     m_got = true;
                     ++m_addr_cur;
+
+                    op_cycle = true;
                 }
             }
             // Put cycle
@@ -85,6 +89,8 @@ OAMDMA::tick(bool i_cpu_dma_halt, bool dmc_dma_get)
                 {
                     m_ppu.write_register(PPU::OAMDATA, m_bus);
                     m_got = false;
+
+                    op_cycle = true;
                     // Check if it's done after a write.
                     if (!(m_addr_cur & 0x00FF))
                     {
@@ -97,10 +103,12 @@ OAMDMA::tick(bool i_cpu_dma_halt, bool dmc_dma_get)
     else
     {
         // Delay the RDY disable by 1 cycle since DMA is ticked before
-        // CPU and we want the CPU to keep halting on our last cycle.
+        // CPU and we want the CPU to keep halting on the DMA's last cycle.
         // No risk of another DMA initiation inbetween the two adjacent cycles.
         m_rdy = false;
     }
+
+    return op_cycle;
 }
 
 void
