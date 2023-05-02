@@ -24,6 +24,8 @@ struct Triangle {
     amplitude() const;
 
     void
+    power_up();
+    void
     reset();
 
     void
@@ -46,6 +48,7 @@ struct Triangle {
     LinearCounter m_linear;
     LengthCounter m_length;
 
+    Byte m_amp;
     // Don't bother to make a sequencer class
     unsigned int m_seq_idx;
 };

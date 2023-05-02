@@ -25,7 +25,10 @@ APU::power_up()
     {
         m_pulse1.length_counter().power_up();
         m_pulse2.length_counter().power_up();
-        m_triangle.length_counter().power_up();
+
+        m_triangle.power_up();
+
+        m_noise.reset_lfsr();
         m_noise.length_counter().power_up();
 
         m_fc.power_up();
@@ -52,6 +55,7 @@ APU::power_up()
     write_register(NOISE_LENGTH, 0x00);
 
     write_register(DMC_FREQUENCY, 0x00);
+    // DMC is loaded with 0 on power-up
     write_register(DMC_LOAD, 0x00);
     write_register(DMC_SAMPLE_ADDR, 0x00);
     write_register(DMC_SAMPLE_LENGTH, 0x00);
@@ -71,11 +75,6 @@ APU::power_up()
     {
         m_fc.tick();
     }
-
-    m_noise.reset_lfsr();
-
-    // https://www.nesdev.org/wiki/APU_DMC#Overview
-    m_dmc.load(0);
 }
 
 void
@@ -393,11 +392,13 @@ APU::MixerLookup APU::mixer_lookup;
 
 APU::MixerLookup::MixerLookup()
 {
-    for (int i = 0; i < 31; ++i)
+    pulse[0] = 0.0;
+    for (int i = 1; i < 31; ++i)
     {
         pulse[i] = 95.52 / (8128.0 / i + 100.0);
     }
-    for (int i = 0; i < 203; ++i)
+    tnd[0] = 0.0;
+    for (int i = 1; i < 203; ++i)
     {
         tnd[i] = 163.67 / (24329.0 / i + 100.0);
     }
