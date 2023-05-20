@@ -432,7 +432,7 @@ CPU::get_byte(Address i_addr) const
     else
     {
         bool retain_latch = false;
-        Byte prev_latch;
+        Byte prev_latch = 0;
         bool return_latch = false;
         /* Ignore subsequent PPUDATA reads in contiguous set of CPU cycles */
         // Use previous open bus value to pass both
