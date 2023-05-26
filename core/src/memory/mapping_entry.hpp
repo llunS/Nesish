@@ -21,9 +21,7 @@ typedef std::function<NHErr(const MappingEntry *i_entry, Address i_addr,
 
 struct MappingEntry {
   public:
-    MappingEntry(Uninitialized_t)
-    {
-    }
+    MappingEntry(Uninitialized_t) {}
     MappingEntry(Address i_begin, Address i_end, bool i_readonly,
                  MappingDecodeFunc i_decode, void *i_opaque);
     MappingEntry(Address i_begin, Address i_end, bool i_readonly,

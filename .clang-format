@@ -7,8 +7,8 @@ SortIncludes: false
 AlwaysBreakAfterDefinitionReturnType: All
 AlwaysBreakAfterReturnType: All
 BreakConstructorInitializers: BeforeComma
-AllowShortBlocksOnASingleLine: Never
-AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
 AlignTrailingComments: true
 ReflowComments: true
 IndentPPDirectives: None
@@ -19,8 +19,17 @@ IndentCaseBlocks: false
 # The brace breaking style to use.
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterFunction: true
-  AfterControlStatement: Always
   BeforeElse: true
   BeforeCatch: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  AfterControlStatement: Always
   AfterCaseLabel: true
+  AfterUnion: false
+  AfterExternBlock: false
+  AfterStruct: false
+  AfterClass: false
+  AfterEnum: false
+  AfterFunction: true
+  SplitEmptyFunction: true
+  AfterNamespace: false

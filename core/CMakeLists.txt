@@ -18,7 +18,7 @@ if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
 endif()
 
 # Add cmake scripts
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 
 # -- CMake options
@@ -42,8 +42,8 @@ add_warnings(${tgt_name})
 add_vc_compile_opts(${tgt_name} /wd6285)
 add_opts(${tgt_name})
 
-include(gen_dllexport_header)
-gen_dllexport_header(${tgt_name} ${CMAKE_CURRENT_SOURCE_DIR}/public/nesish NH)
+include(gen_api_macro)
+gen_api_macro(${tgt_name} NH ${CMAKE_CURRENT_SOURCE_DIR}/public/nesish)
 
 # --- Include directories
 

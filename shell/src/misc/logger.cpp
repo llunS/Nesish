@@ -20,9 +20,7 @@ static std::string
 pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
                         Logger *i_logger);
 
-Logger::Logger()
-{
-}
+Logger::Logger() {}
 
 Logger *
 Logger::create(NHLogLevel i_level)

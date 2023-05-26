@@ -30,7 +30,7 @@ if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
 endif()
 
 # Add cmake scripts
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 
 # -- CMake options
@@ -52,8 +52,8 @@ add_cxx(${tgt_name} 11)
 add_warnings(${tgt_name})
 add_opts(${tgt_name})
 
-include(gen_dllexport_header)
-gen_dllexport_header(${tgt_name} ${CMAKE_CURRENT_SOURCE_DIR}/public/nhbase NB)
+include(gen_api_macro)
+gen_api_macro(${tgt_name} NB ${CMAKE_CURRENT_SOURCE_DIR}/public/nhbase)
 
 # --- Include directories
 

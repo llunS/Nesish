@@ -1,5 +1,9 @@
 /[Bb]uild*/
+
 /.vscode/
+
 .DS_Store
 
 imgui.ini
+
+/shell/src/shaders/

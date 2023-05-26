@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "nhbase/dllexport.h"
+#include "nhbase/api.h"
 
 namespace nb {
 

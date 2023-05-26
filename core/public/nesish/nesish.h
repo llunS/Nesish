@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dllexport.h"
+#include "nesish/api.h"
 
 #include <stddef.h>
 
