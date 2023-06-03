@@ -98,7 +98,9 @@ NH_API void
 nh_unplug_ctrl(NHConsole console, NHCtrlPort slot);
 
 NH_API NHErr
-nh_insert_cart(NHConsole console, const char *rom_path);
+nh_insert_cartridge(NHConsole console, const char *rom_path);
+NH_API void
+nh_remove_cartridge(NHConsole console);
 
 NH_API void
 nh_power_up(NHConsole console);

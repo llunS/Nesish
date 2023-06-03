@@ -40,10 +40,9 @@ target_include_directories(${tgt_name} PRIVATE src)
 
 set(sources "")
 
-list(APPEND sources src/gui/platform_window.cpp)
-list(APPEND sources src/gui/emulator_window.cpp)
-list(APPEND sources src/gui/debugger_window.cpp)
-list(APPEND sources src/gui/rect_cut.cpp)
+list(APPEND sources src/gui/application.cpp)
+list(APPEND sources src/gui/messager.cpp)
+list(APPEND sources src/gui/ppu_debugger.cpp)
 
 list(APPEND sources src/rendering/error.cpp)
 list(APPEND sources src/rendering/shader.cpp)
@@ -77,6 +76,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 add_subdirectory(3rd/glad)
 add_subdirectory(3rd/blip_buf)
 add_subdirectory(3rd/lua-5.1.5)
+add_subdirectory(3rd/ImGuiFileBrowser)
 
 target_link_libraries(${tgt_name} PRIVATE
     glfw
@@ -86,6 +86,7 @@ target_link_libraries(${tgt_name} PRIVATE
     glad
     blip_buf
     lua515
+    ImGuiFileBrowser
     Nesish
     NesishBase
 )

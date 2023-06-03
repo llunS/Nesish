@@ -10,7 +10,8 @@
             "name": "imgui",
             "features": [
                 "glfw-binding",
-                "opengl3-binding"
+                "opengl3-binding",
+                "docking-experimental"
             ]
         },
         "rtaudio",
@@ -33,7 +34,8 @@
         },
         {
             "name": "imgui",
-            "version": "1.86"
+            "version": "1.89.4",
+            "port-version": 1
         },
         {
             "name": "rtaudio",

@@ -1,245 +1,64 @@
-#include "debugger_window.hpp"
+#include "ppu_debugger.hpp"
 
-#include <cassert>
-#include <cstdio>
-
-#include "glad.h"
-
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-
-#include "gui/rect_cut.hpp"
-
-#include <string>
+#include "gui/imgui_utils.hpp"
+#include "gui/messager.hpp"
 
 namespace sh {
 
-static void
-HelpMarker(const char *desc)
-{
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::BeginTooltip();
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextUnformatted(desc);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
-}
-
-} // namespace sh
-
-namespace sh {
-
-DebuggerWindow::DebuggerWindow()
-    : m_imgui_ctx(nullptr)
-    , m_paused(false)
-    , m_should_quit(false)
+PPUDebugger::PPUDebugger(const std::string &i_name, NHConsole io_emu,
+                         Messager *i_messager)
+    : Window(i_name, io_emu, i_messager)
     , m_sp_tex{}
     , m_ptn_tbl_texs{}
     , m_ptn_tbl_palette(NHD_PALETTE_BG0)
 {
+    nhd_set_ptn_table_palette(m_emu, m_ptn_tbl_palette);
 }
 
+PPUDebugger::~PPUDebugger() {}
+
 void
-DebuggerWindow::release()
+PPUDebugger::render()
 {
-    if (m_imgui_ctx)
+    nhd_turn_debug_off(m_emu, NHD_DBG_PALETTE);
+    nhd_turn_debug_off(m_emu, NHD_DBG_OAM);
+    nhd_turn_debug_off(m_emu, NHD_DBG_PATTERN);
+
+    if (m_open)
     {
-        ImGui::SetCurrentContext(m_imgui_ctx);
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-
-        ImGui::DestroyContext(m_imgui_ctx);
-    }
-
-    PlatformWindow::release();
-}
-
-bool
-DebuggerWindow::post_init()
-{
-    assert(m_win);
-
-    /* imgui setup */
-    glfwMakeContextCurrent(m_win); // need to call gl functions (maybe).
-
-    IMGUI_CHECKVERSION();
-    m_imgui_ctx = ImGui::CreateContext();
-    if (!m_imgui_ctx)
-    {
-        return false;
-    }
-
-    ImGui::SetCurrentContext(m_imgui_ctx);
-    ImGui_ImplGlfw_InitForOpenGL(m_win, true);
-    const char *glsl_version = "#version 330";
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-    return true;
-}
-
-void
-DebuggerWindow::makeCurrent()
-{
-    PlatformWindow::makeCurrent();
-
-    if (m_imgui_ctx)
-    {
-        ImGui::SetCurrentContext(m_imgui_ctx);
-    }
-}
-
-void
-DebuggerWindow::pre_render(NHConsole io_emu)
-{
-    nhd_set_ptn_table_palette(io_emu, m_ptn_tbl_palette);
-}
-
-void
-DebuggerWindow::post_render(NHConsole io_emu)
-{
-    nhd_turn_debug_off(io_emu, NHD_DBG_PALETTE);
-    nhd_turn_debug_off(io_emu, NHD_DBG_OAM);
-    nhd_turn_debug_off(io_emu, NHD_DBG_PATTERN);
-}
-
-void
-DebuggerWindow::render(NHConsole io_emu)
-{
-    assert(m_win);
-
-    makeCurrent();
-
-    if (m_resizable)
-    {
-        updateViewportSize();
-    }
-
-    /* Reset states at the start */
-    nhd_turn_debug_off(io_emu, NHD_DBG_PALETTE);
-    nhd_turn_debug_off(io_emu, NHD_DBG_OAM);
-    nhd_turn_debug_off(io_emu, NHD_DBG_PATTERN);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    const ImGuiViewport *viewport = ImGui::GetMainViewport();
-    Rect layout_win = {viewport->WorkPos, viewport->WorkSize};
-
-    /* Control */
-    Rect layout_ctrl = cut_top(layout_win, 55);
-    draw_control(layout_ctrl, io_emu);
-    /* Frame Debugger */
-    Rect layout_fd = layout_win;
-    draw_frame_debugger(layout_fd, io_emu);
-
-    // End the Dear ImGui frame
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    /* Change emulater states based on user input */
-    nhd_set_ptn_table_palette(io_emu, m_ptn_tbl_palette);
-
-    glfwSwapBuffers(m_win);
-}
-
-void
-DebuggerWindow::draw_control(const Rect &i_layout, NHConsole io_emu)
-{
-    ImGui::SetNextWindowPos(i_layout.pos(), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(i_layout.size(), ImGuiCond_Once);
-    if (ImGui::Begin("Control", nullptr,
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
-    {
-        if (ImGui::Button("Power"))
+        if (ImGui::Begin(m_name.c_str(), &m_open,
+                         ImGuiWindowFlags_AlwaysAutoResize))
         {
-            nh_power_up(io_emu);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Reset"))
-        {
-            nh_reset(io_emu);
-        }
-
-        ImGui::SameLine(0.0f, 15.f);
-        if (m_paused)
-        {
-            if (ImGui::Button("Play"))
+            if (m_messager->running_game())
             {
-                m_paused = !m_paused;
+                ImGui::Spacing();
+
+                // @TODO: Nametable viewer
+
+                draw_pattern();
+                nhd_turn_debug_on(m_emu, NHD_DBG_PATTERN);
+
+                ImGui::Spacing();
+                draw_oam();
+                nhd_turn_debug_on(m_emu, NHD_DBG_OAM);
+
+                ImGui::Spacing();
+                draw_palette();
+                nhd_turn_debug_on(m_emu, NHD_DBG_PALETTE);
+
+                ImGui::Spacing();
+            }
+            else
+            {
+                ImGui::Text("No game is running");
             }
         }
-        else
-        {
-            if (ImGui::Button("Pause"))
-            {
-                m_paused = !m_paused;
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Quit"))
-        {
-            m_should_quit = true;
-        }
+        ImGui::End();
     }
-    ImGui::End();
 }
 
 void
-DebuggerWindow::draw_frame_debugger(const Rect &i_layout, NHConsole io_emu)
-{
-    ImGui::SetNextWindowPos(i_layout.pos(), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(i_layout.size(), ImGuiCond_Once);
-    if (ImGui::Begin("Frame Debugger", nullptr,
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
-    {
-        // @TODO: Change it to nametable viewer
-        // draw_fd_frame(io_emu);
-        // ImGui::Spacing();
-        nhd_turn_debug_on(io_emu, NHD_DBG_PATTERN);
-        draw_fd_pattern(io_emu);
-        ImGui::Spacing();
-        nhd_turn_debug_on(io_emu, NHD_DBG_OAM);
-        draw_fd_oam(io_emu);
-        ImGui::Spacing();
-        nhd_turn_debug_on(io_emu, NHD_DBG_PALETTE);
-        draw_fd_palette(io_emu);
-        ImGui::Spacing();
-    }
-    ImGui::End();
-}
-
-void
-DebuggerWindow::draw_fd_frame(NHConsole i_emu)
-{
-    ImGui::PushID("<Frame>");
-
-    ImGui::Text("<Frame>");
-    NHFrame framebuf = nh_get_frm(i_emu);
-    if (m_frame_tex.from_frame(framebuf))
-    {
-        ImGui::Image(
-            (ImTextureID)(std::intptr_t)m_frame_tex.texture(),
-            {float(m_frame_tex.get_width()), float(m_frame_tex.get_height())},
-            {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
-    }
-    else
-    {
-        ImGui::Text("[X]");
-    }
-
-    ImGui::PopID();
-}
-
-void
-DebuggerWindow::draw_fd_pattern(NHConsole i_emu)
+PPUDebugger::draw_pattern()
 {
     ImGui::PushID("<Pattern>");
 
@@ -266,6 +85,7 @@ DebuggerWindow::draw_fd_pattern(NHConsole i_emu)
             if (ImGui::Selectable(names[i]))
             {
                 m_ptn_tbl_palette = i;
+                nhd_set_ptn_table_palette(m_emu, m_ptn_tbl_palette);
             }
         }
         ImGui::EndPopup();
@@ -325,15 +145,15 @@ DebuggerWindow::draw_fd_pattern(NHConsole i_emu)
 
     static_assert(sizeof(m_ptn_tbl_texs) / sizeof(Texture) == 2,
                   "Invalid array index");
-    draw_ptn_tbl(nhd_get_ptn_table(i_emu, false), m_ptn_tbl_texs[0], "[Left]");
+    draw_ptn_tbl(nhd_get_ptn_table(m_emu, false), m_ptn_tbl_texs[0], "[Left]");
     ImGui::SameLine(0.0f, 20.f);
-    draw_ptn_tbl(nhd_get_ptn_table(i_emu, true), m_ptn_tbl_texs[1], "[Right]");
+    draw_ptn_tbl(nhd_get_ptn_table(m_emu, true), m_ptn_tbl_texs[1], "[Right]");
 
     ImGui::PopID();
 }
 
 void
-DebuggerWindow::draw_fd_palette(NHConsole i_emu)
+PPUDebugger::draw_palette()
 {
     ImGui::PushID("<Palette>");
 
@@ -342,7 +162,7 @@ DebuggerWindow::draw_fd_palette(NHConsole i_emu)
     ImGui::SameLine();
     HelpMarker("The snapshot was took at the end of the rendering.");
 
-    NHDPalette palette = nhd_get_palette(i_emu);
+    NHDPalette palette = nhd_get_palette(m_emu);
     static_assert(NHD_PALETTE_COLORS == 32, "Check fixed loop below");
     char const *const pa_rows[2] = {"Background", "Sprite"};
     float lock_x = 0.0;
@@ -422,7 +242,7 @@ DebuggerWindow::draw_fd_palette(NHConsole i_emu)
 }
 
 void
-DebuggerWindow::draw_fd_oam(NHConsole i_emu)
+PPUDebugger::draw_oam()
 {
     ImGui::PushID("<OAM>");
 
@@ -432,7 +252,7 @@ DebuggerWindow::draw_fd_oam(NHConsole i_emu)
     HelpMarker("The snapshot was took at the end of the rendering, and "
                "assumes OAMADDR starts with 0.");
 
-    NHDOAM oam = nhd_get_oam(i_emu);
+    NHDOAM oam = nhd_get_oam(m_emu);
     static_assert(NHD_OAM_SPRITES == 64, "Check fixed loop below");
     static_assert(sizeof(m_sp_tex) / sizeof(Texture) == 64,
                   "Check fixed loop below");
@@ -501,18 +321,6 @@ DebuggerWindow::draw_fd_oam(NHConsole i_emu)
     }
 
     ImGui::PopID();
-}
-
-bool
-DebuggerWindow::isPaused() const
-{
-    return m_paused;
-}
-
-bool
-DebuggerWindow::shouldQuit() const
-{
-    return m_should_quit;
 }
 
 } // namespace sh

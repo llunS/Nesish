@@ -61,7 +61,7 @@ TEST_F(cpu_test, nestest)
     console = nh_new_console(&logger);
     ASSERT_TRUE(NH_VALID(console));
     auto rom_path = nb::path_join_exe("nestest.nes");
-    ASSERT_FALSE(NH_FAILED(nh_insert_cart(console, rom_path.c_str())));
+    ASSERT_FALSE(NH_FAILED(nh_insert_cartridge(console, rom_path.c_str())));
     nh_power_up(console);
 
     bool open = false;

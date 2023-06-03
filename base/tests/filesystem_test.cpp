@@ -4,8 +4,8 @@
 
 TEST(filesystem_test, file_exists)
 {
-    /* Too simple to be useful */
+    // empty path
     EXPECT_FALSE(nb::file_exists(""));
-    // directory input should return false.
+    // directory input
     EXPECT_FALSE(nb::file_exists("./"));
 }

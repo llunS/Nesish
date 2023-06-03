@@ -68,16 +68,20 @@ audio_start()
 bool
 audio_stop()
 {
-    try
+    if (g_rta)
     {
-        if (g_rta->isStreamRunning())
+        try
         {
-            g_rta->stopStream();
+            if (g_rta->isStreamRunning())
+            {
+                g_rta->stopStream();
+            }
         }
-    }
-    catch (RtAudioError &)
-    {
-        return false;
+        catch (RtAudioError &)
+        {
+            return false;
+        }
+        return true;
     }
     return true;
 }
@@ -85,17 +89,23 @@ audio_stop()
 void
 audio_close()
 {
-    if (g_rta->isStreamOpen())
+    if (g_rta)
     {
-        g_rta->closeStream();
+        if (g_rta->isStreamOpen())
+        {
+            g_rta->closeStream();
+        }
     }
 }
 
 void
 audio_uninit()
 {
-    delete g_rta;
-    g_rta = nullptr;
+    if (g_rta)
+    {
+        delete g_rta;
+        g_rta = nullptr;
+    }
 }
 
 } // namespace sh

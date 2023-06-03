@@ -39,6 +39,9 @@ struct Console {
     NHErr
     insert_cartridge(const std::string &i_rom_path);
     void
+    remove_cartridge();
+
+    void
     power_up();
     void
     reset();
@@ -104,6 +107,9 @@ struct Console {
   private:
     void
     reset_trivial();
+
+    void
+    release_cartridge();
 
   private:
     CPU m_cpu;

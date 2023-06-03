@@ -30,12 +30,7 @@ Console::Console(NHLogger *i_logger)
 
 Console::~Console()
 {
-    if (m_cart)
-    {
-        m_cart->unmap_memory(&m_memory, &m_video_memory);
-        delete m_cart;
-    }
-    m_cart = nullptr;
+    release_cartridge();
 }
 
 void
@@ -248,19 +243,19 @@ Console::insert_cartridge(const std::string &i_rom_path)
                                           &cart, m_logger);
     if (NH_FAILED(err))
     {
-        goto l_cleanup;
+        goto l_end;
     }
     err = cart->validate();
     if (NH_FAILED(err))
     {
-        goto l_cleanup;
+        goto l_end;
     }
 
     // 2. map to address space
     NH_LOG_INFO(m_logger, "Mapping cartridge...");
     cart->map_memory(&m_memory, &m_video_memory);
 
-l_cleanup:
+l_end:
     if (NH_FAILED(err))
     {
         delete cart;
@@ -268,15 +263,28 @@ l_cleanup:
     }
     else
     {
-        if (m_cart)
-        {
-            m_cart->unmap_memory(&m_memory, &m_video_memory);
-            delete m_cart;
-        }
+        release_cartridge();
         m_cart = cart;
     }
 
     return err;
+}
+
+void
+Console::remove_cartridge()
+{
+    release_cartridge();
+}
+
+void
+Console::release_cartridge()
+{
+    if (m_cart)
+    {
+        m_cart->unmap_memory(&m_memory, &m_video_memory);
+        delete m_cart;
+        m_cart = nullptr;
+    }
 }
 
 void

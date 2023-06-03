@@ -46,11 +46,18 @@ nh_unplug_ctrl(NHConsole console, NHCtrlPort slot)
 }
 
 NHErr
-nh_insert_cart(NHConsole console, const char *rom_path)
+nh_insert_cartridge(NHConsole console, const char *rom_path)
 {
     NH_DECL_CONSOLE(console);
     std::string s{rom_path};
     return nh_console->insert_cartridge(s);
+}
+
+void
+nh_remove_cartridge(NHConsole console)
+{
+    NH_DECL_CONSOLE(console);
+    nh_console->remove_cartridge();
 }
 
 void

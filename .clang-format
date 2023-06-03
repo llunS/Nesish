@@ -8,7 +8,7 @@ AlwaysBreakAfterDefinitionReturnType: All
 AlwaysBreakAfterReturnType: All
 BreakConstructorInitializers: BeforeComma
 AllowShortBlocksOnASingleLine: Empty
-AllowShortFunctionsOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: Empty
 AlignTrailingComments: true
 ReflowComments: true
 IndentPPDirectives: None
