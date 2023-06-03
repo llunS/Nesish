@@ -119,7 +119,7 @@ namespace imgui_addons
         max_size.y = io.DisplaySize.y;
         ImGui::SetNextWindowSizeConstraints(min_size, max_size);
         // ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f,0.5f));
-        ImGui::SetNextWindowSize(ImVec2(std::max<float>(sz_xy.x, min_size.x), std::max<float>(sz_xy.y, min_size.y)), ImGuiCond_Appearing);
+        // ImGui::SetNextWindowSize(ImVec2(std::max<float>(sz_xy.x, min_size.x), std::max<float>(sz_xy.y, min_size.y)), ImGuiCond_Appearing);
 
         //Set Proper Filter Mode.
         if(mode == DialogMode::SELECT)

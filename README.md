@@ -7,23 +7,24 @@ Any feedback is welcome.
 ## Table of Contents
 
 - [Status](#status)
-- [How To Play](#how-to-play)
+- [Usage](#usage)
+  - [Key Config](#key-config)
 - [How To Build](#how-to-build)
 - [External Dependencies](#external-dependencies)
 - [Acknowledgments](#acknowledgments)
 
 ## Status
 
-- Support on Windows/MacOS
-- Mapper 0 games (Donkey Kong, Super Mario Bros. and Galaga are tested)
-- Custom key mapping
+- Windows/MacOS
+- Mapper 0 games (Donkey Kong, Super Mario Bros. and Galaga were tested)
+- Key Config
 - Sufficiently tested CPU, PPU and APU
-- Debugger showing real-time status of PPU
+- PPU Debugger
 - C API for emulator core
 
-## How To Play
+## Usage
 
-Currently there is only command line entrance, open a terminal and type `[path to Nesish] --help` for details.
+### Key Config
 
 Upon first launch, keymap config file is generated at `config/input.lua`, check it for controls and you are free to modify it afterwards.
 
@@ -39,12 +40,12 @@ Example:
 
 ```bash
 # configure and generate
-cmake -S shell -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_TOOLCHAIN_FILE -GNinja -DCMAKE_BUILD_TYPE=Release
+cmake -S shell -B build -DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsystems/vcpkg.cmake -GNinja -DCMAKE_BUILD_TYPE=Release
 # build
 cmake --build build
 ```
 
-> `master` branch is under active development and thus unstable (e.g. it may fail to compile on some platforms). Use tagged revision for stability.
+> For stability, use tagged revision.
 
 ## External Dependencies
 
@@ -64,6 +65,7 @@ D: Development only
   - blip_buf
   - glad
   - lua 5.1.5
+  - [ImGuiFileBrowser](https://github.com/gallickgunner/ImGui-Addons)
 
 ## Acknowledgments
 
