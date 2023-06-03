@@ -132,7 +132,7 @@ MappableMemory<EMappingPoint, AddressableSize>::set_mapping(
     if (i_entry.decode == nullptr &&
         (i_entry.get_byte == nullptr || i_entry.set_byte == nullptr))
     {
-        NH_LOG_ERROR(m_logger, "Empty mapping callbacks.");
+        NH_LOG_ERROR(m_logger, "Empty mapping callbacks");
         return;
     }
 

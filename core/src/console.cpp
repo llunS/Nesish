@@ -440,13 +440,13 @@ Console::get_sample() const
 }
 
 void
-Console::set_debug_on(NHDFlags i_flag)
+Console::set_debug_on(NHDFlag i_flag)
 {
     nhd::debug_on(m_debug_flags, i_flag);
 }
 
 void
-Console::set_debug_off(NHDFlags i_flag)
+Console::set_debug_off(NHDFlag i_flag)
 {
     nhd::debug_off(m_debug_flags, i_flag);
 }

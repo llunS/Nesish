@@ -67,9 +67,9 @@ struct Console {
     /* debug */
 
     void
-    set_debug_on(NHDFlags i_flag);
+    set_debug_on(NHDFlag i_flag);
     void
-    set_debug_off(NHDFlags i_flag);
+    set_debug_off(NHDFlag i_flag);
 
     const nhd::Palette &
     dbg_get_palette() const;
@@ -132,7 +132,7 @@ struct Console {
     NHLogger *m_logger;
 
   private:
-    NHDFlags m_debug_flags;
+    NHDFlag m_debug_flags;
 
   private:
     double m_time;

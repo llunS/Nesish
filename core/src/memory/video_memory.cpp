@@ -73,7 +73,7 @@ VideoMemory::set_mirror_dyn(ModeCallback i_mode_cb)
         VideoMemory *thiz = (VideoMemory *)i_entry->opaque;
 
         static_assert(sizeof(thiz->m_ram) == sizeof(Byte) * 2 * NH_NT_ONE_SIZE,
-                      "Wrong internal ram size.");
+                      "Wrong internal ram size");
 
         MirrorMode mode = i_mode_cb();
         switch (mode)

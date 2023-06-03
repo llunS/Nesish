@@ -60,17 +60,17 @@ INES::validate() const
     if (!(m_header.nes_magic[0] == 0x4e && m_header.nes_magic[1] == 0x45 &&
           m_header.nes_magic[2] == 0x53 && m_header.nes_magic[3] == 0x1a))
     {
-        NH_LOG_ERROR(m_logger, "iNES invalid magic number.");
+        NH_LOG_ERROR(m_logger, "iNES invalid magic number");
         return NH_ERR_CORRUPTED;
     }
     if (!m_prg_rom)
     {
-        NH_LOG_ERROR(m_logger, "iNES empty PRG ROM.");
+        NH_LOG_ERROR(m_logger, "iNES empty PRG ROM");
         return NH_ERR_CORRUPTED;
     }
     if (m_header.ines2 != 0)
     {
-        NH_LOG_ERROR(m_logger, "Support only iNES format for now, {}.",
+        NH_LOG_ERROR(m_logger, "Support only iNES format for now, {}",
                      m_header.ines2);
         return NH_ERR_CORRUPTED;
     }
@@ -78,11 +78,11 @@ INES::validate() const
     // 2. runtime state check
     if (!m_mapper)
     {
-        NH_LOG_ERROR(m_logger, "iNES mapper uninitialized.");
+        NH_LOG_ERROR(m_logger, "iNES mapper uninitialized");
         return NH_ERR_UNINITIALIZED;
     }
 
-    NH_LOG_INFO(m_logger, "iNES mapper {}.", m_mapper_number);
+    NH_LOG_INFO(m_logger, "iNES mapper {}", m_mapper_number);
 
     auto error = m_mapper->validate();
     if (NH_FAILED(error))

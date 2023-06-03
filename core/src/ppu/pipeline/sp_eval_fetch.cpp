@@ -217,7 +217,7 @@ SpEvalFetch::pv_sp_eval(Cycle i_step, PipelineAccessor *io_accessor,
                 else
                 {
                     static_assert(NH_PATTERN_TILE_HEIGHT == 8,
-                                  "Invalid NH_PATTERN_TILE_HEIGHT.");
+                                  "Invalid NH_PATTERN_TILE_HEIGHT");
                     decltype(y) sp_h = io_accessor->is_8x16_sp()
                                            ? NH_PATTERN_TILE_HEIGHT * 2
                                            : NH_PATTERN_TILE_HEIGHT;
@@ -318,7 +318,7 @@ SpEvalFetch::pv_sp_fetch_reload(Cycle i_step, PipelineAccessor *io_accessor,
                                      tile_idx);
 
         static_assert(NH_PATTERN_TILE_HEIGHT == 8,
-                      "Invalid NH_PATTERN_TILE_HEIGHT.");
+                      "Invalid NH_PATTERN_TILE_HEIGHT");
         Byte fine_y = y_in_sp % NH_PATTERN_TILE_HEIGHT;
         if (flip_y)
         {

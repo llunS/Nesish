@@ -6,7 +6,7 @@ Channel<T, N>::Channel()
     , m_begin(m_buffer)
     , m_end(m_buffer)
 {
-    static_assert(N > 0, "Invalid size.");
+    static_assert(N > 0, "Invalid size");
 
     // synchronize any stores performed in the constructor.
     std::atomic_thread_fence(std::memory_order_seq_cst);

@@ -134,13 +134,13 @@ nh_get_sample(NHConsole console)
 }
 
 void
-nhd_turn_debug_on(NHConsole console, NHDFlags flag)
+nhd_turn_debug_on(NHConsole console, NHDFlag flag)
 {
     NH_DECL_CONSOLE(console);
     nh_console->set_debug_on(flag);
 }
 void
-nhd_turn_debug_off(NHConsole console, NHDFlags flag)
+nhd_turn_debug_off(NHConsole console, NHDFlag flag)
 {
     NH_DECL_CONSOLE(console);
     nh_console->set_debug_off(flag);

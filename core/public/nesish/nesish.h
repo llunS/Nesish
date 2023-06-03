@@ -129,17 +129,17 @@ nh_get_sample_rate(NHConsole console);
 NH_API double
 nh_get_sample(NHConsole console);
 
-typedef enum NHDFlags {
+typedef enum NHDFlag {
     NHD_DBG_OFF = 0,
     NHD_DBG_PALETTE = 1 << 0,
     NHD_DBG_OAM = 1 << 1,
     NHD_DBG_PATTERN = 1 << 2,
-} NHDFlags;
+} NHDFlag;
 
 NH_API void
-nhd_turn_debug_on(NHConsole console, NHDFlags flag);
+nhd_turn_debug_on(NHConsole console, NHDFlag flag);
 NH_API void
-nhd_turn_debug_off(NHConsole console, NHDFlags flag);
+nhd_turn_debug_off(NHConsole console, NHDFlag flag);
 
 typedef struct NHDPatternTableTy *NHDPatternTable;
 

@@ -21,7 +21,7 @@ struct Pipeline;
 
 struct PPU {
   public:
-    PPU(VideoMemory *i_memory, const NHDFlags &i_debug_flags,
+    PPU(VideoMemory *i_memory, const NHDFlag &i_debug_flags,
         NHLogger *i_logger);
     ~PPU();
     NB_KLZ_DELETE_COPY_MOVE(PPU);
@@ -181,7 +181,7 @@ struct PPU {
   private:
     /* debug */
 
-    const NHDFlags &m_debug_flags;
+    const NHDFlag &m_debug_flags;
     nhd::Palette m_palette_snap;
     nhd::OAM m_oam_snap;
     nhd::PatternTable m_ptn_tbl_l_snap;

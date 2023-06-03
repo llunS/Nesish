@@ -141,7 +141,7 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
     std::getline(*io_file, line);
     if (line.empty())
     {
-        MY_LOG_ERROR(i_logger, "Empty log line.");
+        MY_LOG_ERROR(i_logger, "Empty log line");
         return false;
     }
 

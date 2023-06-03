@@ -100,7 +100,7 @@ LengthCounter::check_load(Byte i_index)
     static constexpr Byte length_table[32] = {
         10, 254, 20, 2,  40, 4,  80, 6,  160, 8,  60, 10, 14, 12, 26, 14,
         12, 16,  24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30};
-    static_assert(length_table[31], "Elements missing.");
+    static_assert(length_table[31], "Elements missing");
 
     if (i_index >= 32)
     {

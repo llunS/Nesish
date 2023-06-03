@@ -141,7 +141,7 @@ CartridgeLoader::pv_load_ines_header(std::FILE *i_file, INES *io_ines,
     auto got = std::fread(buf, 1, sizeof buf, i_file);
     if (got < sizeof buf)
     {
-        NH_LOG_ERROR(i_logger, "iNES header incomplete, got {} bytes.", got);
+        NH_LOG_ERROR(i_logger, "iNES header incomplete, got {} bytes", got);
         return NH_ERR_CORRUPTED;
     }
 
@@ -174,7 +174,7 @@ CartridgeLoader::pv_load_ines_trainer(std::FILE *i_file, INES *io_ines,
     {
         if (std::fseek(i_file, 512, SEEK_CUR))
         {
-            NH_LOG_ERROR(i_logger, "Failed to skip over iNES trainer.");
+            NH_LOG_ERROR(i_logger, "Failed to skip over iNES trainer");
             return NH_ERR_CORRUPTED;
         }
     }
@@ -187,7 +187,7 @@ CartridgeLoader::pv_load_ines_prg_rom(std::FILE *i_file, INES *io_ines,
 {
     if (!io_ines->m_header.prg_rom_size)
     {
-        NH_LOG_ERROR(i_logger, "iNES PRG ROM header field is zero.");
+        NH_LOG_ERROR(i_logger, "iNES PRG ROM header field is zero");
         return NH_ERR_CORRUPTED;
     }
 
@@ -208,7 +208,7 @@ CartridgeLoader::pv_load_ines_prg_rom(std::FILE *i_file, INES *io_ines,
         NB_VC_WARNING_POP
         if (got < EACH_READ)
         {
-            NH_LOG_ERROR(i_logger, "iNES PRG ROM incomplete, got {} bytes.",
+            NH_LOG_ERROR(i_logger, "iNES PRG ROM incomplete, got {} bytes",
                          byte_idx + got);
             err = NH_ERR_CORRUPTED;
             goto l_cleanup;
@@ -253,7 +253,7 @@ CartridgeLoader::pv_load_ines_chr_rom(std::FILE *i_file, INES *io_ines,
         NB_VC_WARNING_POP
         if (got < EACH_READ)
         {
-            NH_LOG_ERROR(i_logger, "iNES CHR ROM incomplete, got {} bytes.",
+            NH_LOG_ERROR(i_logger, "iNES CHR ROM incomplete, got {} bytes",
                          byte_idx + got);
             err = NH_ERR_CORRUPTED;
             goto l_cleanup;

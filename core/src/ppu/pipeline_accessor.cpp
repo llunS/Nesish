@@ -64,7 +64,7 @@ PipelineAccessor::get_oam_byte(Byte i_addr)
 Byte *
 PipelineAccessor::get_oam_ptr(Byte i_addr)
 {
-    static_assert(sizeof(m_ppu->m_oam) == 256, "Wrong primary OAM size.");
+    static_assert(sizeof(m_ppu->m_oam) == 256, "Wrong primary OAM size");
     return &m_ppu->m_oam[i_addr];
 }
 
@@ -205,7 +205,7 @@ PipelineAccessor::capture_palette()
          i < m_ppu->m_palette_snap.color_count(); ++i)
     {
         static_assert(nhd::Palette::color_count() == 32,
-                      "Might overflow below.");
+                      "Might overflow below");
         Byte color_byte = get_color_byte(i);
         Color clr = get_palette().to_rgb(color_byte);
         m_ppu->m_palette_snap.set_color(i, color_byte, clr.r, clr.g, clr.b);
@@ -260,7 +260,7 @@ PipelineAccessor::update_oam_sprite(nhd::Sprite &o_sprite, int i_idx)
         this->resolve_sp_tile(i_tile, mode_8x16, flip_y, y_in_sp, tile_idx);
 
         static_assert(NH_PATTERN_TILE_HEIGHT == 8,
-                      "Invalid NH_PATTERN_TILE_HEIGHT.");
+                      "Invalid NH_PATTERN_TILE_HEIGHT");
         Byte fine_y = y_in_sp % NH_PATTERN_TILE_HEIGHT;
         if (flip_y)
         {

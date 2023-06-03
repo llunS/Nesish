@@ -7,7 +7,7 @@
 
 namespace nh {
 
-PPU::PPU(VideoMemory *i_memory, const NHDFlags &i_debug_flags,
+PPU::PPU(VideoMemory *i_memory, const NHDFlag &i_debug_flags,
          NHLogger *i_logger)
     : m_regs{}
     , m_oam{}
@@ -53,7 +53,7 @@ PPU::power_up()
             0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08
         /* clang-format on */
     };
-    static_assert(color_indices[NH_PALETTE_SIZE - 1], "Elements missing.");
+    static_assert(color_indices[NH_PALETTE_SIZE - 1], "Elements missing");
     for (decltype(NH_PALETTE_SIZE) i = 0; i < NH_PALETTE_SIZE; ++i)
     {
         (void)m_memory->set_byte(Address(NH_PALETTE_ADDR_HEAD + i),

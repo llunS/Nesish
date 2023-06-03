@@ -14,7 +14,7 @@ template <unsigned int bit>
 bool
 check_bit(Byte i_byte)
 {
-    static_assert(bit < 8, "bit must be in range [0, 7].");
+    static_assert(bit < 8, "bit must be in range [0, 7]");
     return i_byte & (1 << bit);
 }
 
