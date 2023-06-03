@@ -9,9 +9,9 @@ struct Logger;
 namespace sh {
 
 enum AppOpt {
-    OPT_NONE = 1 << 0,
-    OPT_PCM = 1 << 1,     // Record audio pcm file
-    OPT_NOSLEEP = 1 << 2, // No battery saver
+    OPT_NONE = 0,
+    OPT_PCM = 1 << 0,     // Record audio pcm file
+    OPT_NOSLEEP = 1 << 1, // No battery saver
 };
 
 inline AppOpt &
