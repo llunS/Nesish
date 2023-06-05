@@ -607,7 +607,7 @@ Application::draw_menubar(float *o_height)
             open_game_popup = true;
         }
         if (ImGui::MenuItem(m_paused ? "Resume###PauseControl"
-                                     : "Pause###PauseControl"))
+                                     : "Pause ###PauseControl"))
         {
             m_paused = !m_paused;
         }
