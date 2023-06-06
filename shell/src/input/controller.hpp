@@ -40,7 +40,7 @@ struct Controller {
 
     bool m_8_bits_read;
 
-    KeyMapping m_mapping;
+    const KeyMapping &m_mapping;
 };
 
 } // namespace sh

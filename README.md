@@ -7,8 +7,6 @@ Any feedback is welcome.
 ## Table of Contents
 
 - [Status](#status)
-- [Usage](#usage)
-  - [Key Config](#key-config)
 - [How To Build](#how-to-build)
 - [External Dependencies](#external-dependencies)
 - [Acknowledgments](#acknowledgments)
@@ -17,16 +15,10 @@ Any feedback is welcome.
 
 - Windows/MacOS
 - Mapper 0 games (Donkey Kong, Super Mario Bros. and Galaga were tested)
-- Key Config
+- Custom key mapping
 - Sufficiently tested CPU, PPU and APU
 - PPU Debugger
 - C API for emulator core
-
-## Usage
-
-### Key Config
-
-Upon first launch, keymap config file is generated at `config/input.lua`, check it for controls and you are free to modify it afterwards.
 
 ## How To Build
 
@@ -64,7 +56,6 @@ D: Development only
   - rtaudio
   - blip_buf
   - glad
-  - lua 5.1.5
   - [ImGuiFileBrowser](https://github.com/gallickgunner/ImGui-Addons)
 
 ## Acknowledgments

@@ -26,13 +26,12 @@ PPUDebugger::render()
 
     if (m_open)
     {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 12.0f));
         if (ImGui::Begin(m_name.c_str(), &m_open,
                          ImGuiWindowFlags_AlwaysAutoResize))
         {
             if (m_messager->running_game())
             {
-                ImGui::Spacing();
-
                 // @TODO: Nametable viewer
 
                 draw_pattern();
@@ -45,8 +44,6 @@ PPUDebugger::render()
                 ImGui::Spacing();
                 draw_palette();
                 nhd_turn_debug_on(m_emu, NHD_DBG_PALETTE);
-
-                ImGui::Spacing();
             }
             else
             {
@@ -54,6 +51,7 @@ PPUDebugger::render()
             }
         }
         ImGui::End();
+        ImGui::PopStyleVar();
     }
 }
 
@@ -212,7 +210,10 @@ PPUDebugger::draw_palette()
             }
             else
             {
-                ImGui::SameLine(0.0f, 25.f);
+                if (c + 1 < 16)
+                {
+                    ImGui::SameLine(0.0f, 25.f);
+                }
             }
 
             // details tooltip
@@ -234,7 +235,6 @@ PPUDebugger::draw_palette()
 
             ImGui::PopID();
         }
-        ImGui::NewLine();
         ImGui::PopID();
     }
 
@@ -315,9 +315,11 @@ PPUDebugger::draw_oam()
             {
                 ImGui::Text("[X]");
             }
-            ImGui::SameLine();
+            if (j + 1 < 16)
+            {
+                ImGui::SameLine();
+            }
         }
-        ImGui::NewLine();
     }
 
     ImGui::PopID();

@@ -152,7 +152,7 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
         nh_test_cpu_instr_bytes(i_cpu, nh_test_cpu_pc(i_cpu), bytes,
                                 &byte_count);
         std::string actual = fmt::format(
-            "{:04X}  {:02X} {} {}", nh_test_cpu_pc(i_cpu), bytes[0],
+            "${:04X}  {:02X} {} {}", nh_test_cpu_pc(i_cpu), bytes[0],
             byte_count >= 2 ? fmt::format("{:02X}", bytes[1]) : "  ",
             byte_count >= 3 ? fmt::format("{:02X}", bytes[2]) : "  ");
         // [0, 14)

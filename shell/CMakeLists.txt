@@ -43,6 +43,7 @@ set(sources "")
 list(APPEND sources src/gui/application.cpp)
 list(APPEND sources src/gui/messager.cpp)
 list(APPEND sources src/gui/ppu_debugger.cpp)
+list(APPEND sources src/gui/custom_key.cpp)
 
 list(APPEND sources src/rendering/error.cpp)
 list(APPEND sources src/rendering/shader.cpp)
@@ -75,7 +76,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 add_subdirectory(3rd/glad)
 add_subdirectory(3rd/blip_buf)
-add_subdirectory(3rd/lua-5.1.5)
 add_subdirectory(3rd/ImGuiFileBrowser)
 
 target_link_libraries(${tgt_name} PRIVATE
@@ -85,7 +85,6 @@ target_link_libraries(${tgt_name} PRIVATE
     spdlog::spdlog_header_only
     glad
     blip_buf
-    lua515
     ImGuiFileBrowser
     Nesish
     NesishBase
@@ -96,17 +95,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)
 
-# --- Transform shaders
+# --- Transform shaders to compile-time data
 
 include(xform_shader)
 xform_shader(resources/shader/screen_rect.vert src/shaders sh)
 xform_shader(resources/shader/screen_rect.frag src/shaders sh)
-
-# --- Copy configs
-
-add_custom_command(
-    TARGET ${tgt_name} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_SOURCE_DIR}/resources/config/input_default.lua
-    $<TARGET_FILE_DIR:${tgt_name}>/config/input_default.lua
-)

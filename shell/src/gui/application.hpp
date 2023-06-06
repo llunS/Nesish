@@ -17,6 +17,7 @@
 #include <unordered_map>
 
 #include "gui/messager.hpp"
+#include "input/controller.hpp"
 
 namespace sh {
 
@@ -64,6 +65,13 @@ struct Application {
     void
     draw_menubar(float *o_height = nullptr);
 
+    static void
+    key_callback(GLFWwindow *window, int vkey, int scancode, int action,
+                 int mods);
+
+  private:
+    static Application *s_instance;
+
   private:
     AppOpt m_options;
 
@@ -95,6 +103,9 @@ struct Application {
 
     Messager m_messager;
     std::unordered_map<std::string, Window *> m_sub_wins;
+
+    KeyMapping m_p1_keys;
+    KeyMapping m_p2_keys;
 };
 
 } // namespace sh

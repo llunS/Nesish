@@ -21,13 +21,14 @@
 #include "imgui_impl_opengl3.h"
 
 #include "misc/config.hpp"
-#include "input/controller.hpp"
 
 #include "gui/ppu_debugger.hpp"
+#include "gui/custom_key.hpp"
 
 namespace sh {
 
-#define PPU_DEBUGGER_NAME "PPU Debugger"
+#define PPU_DEBUGGER_NAME "PPU"
+#define CUSTOM_KEY_NAME "Key Mapping"
 
 #define TARGET_WIN_WIDTH (NH_NES_WIDTH * 2)
 #define TARGET_WIN_HEIGHT (NH_NES_HEIGHT * 2)
@@ -77,6 +78,8 @@ pv_reset(void *user);
         ctrl.reset = pv_reset;                                                 \
     }
 
+Application *Application::s_instance = nullptr;
+
 Application::Application()
     : m_options(AppOpt::OPT_NONE)
     , m_win(nullptr)
@@ -103,9 +106,6 @@ Application::~Application() {}
 bool
 Application::init(AppOpt i_opts, Logger *i_logger)
 {
-    KeyMapping p1_config;
-    KeyMapping p2_config;
-
     if (!i_logger)
     {
         goto l_err;
@@ -114,7 +114,7 @@ Application::init(AppOpt i_opts, Logger *i_logger)
     m_logger = i_logger;
 
     /* load key config */
-    if (!load_key_config(p1_config, p2_config, m_logger))
+    if (!load_key_config(m_p1_keys, m_p2_keys, m_logger))
     {
         goto l_err;
     }
@@ -163,6 +163,8 @@ Application::init(AppOpt i_opts, Logger *i_logger)
     }
     // We do the timing ourselves.
     glfwSwapInterval(0);
+    // Register callbacks
+    glfwSetKeyCallback(m_win, Application::key_callback);
 
     /* Init IMGUI */
     {
@@ -184,15 +186,17 @@ Application::init(AppOpt i_opts, Logger *i_logger)
             goto l_err;
         }
         m_imgui_opengl_inited = true;
+
+        ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
     }
 
     /* Setup emulator controller */
     try
     {
-        m_p1.user = new sh::Controller(m_win, p1_config);
+        m_p1.user = new sh::Controller(m_win, m_p1_keys);
         ASM_CTRL(m_p1);
         nh_plug_ctrl(m_emu, NH_CTRL_P1, &m_p1);
-        m_p2.user = new sh::Controller(m_win, p2_config);
+        m_p2.user = new sh::Controller(m_win, m_p2_keys);
         ASM_CTRL(m_p2);
         nh_plug_ctrl(m_emu, NH_CTRL_P2, &m_p2);
     }
@@ -207,6 +211,8 @@ Application::init(AppOpt i_opts, Logger *i_logger)
         m_sub_wins.insert(
             {PPU_DEBUGGER_NAME,
              new PPUDebugger(PPU_DEBUGGER_NAME, m_emu, &m_messager)});
+        m_sub_wins.insert({CUSTOM_KEY_NAME,
+                           new CustomKey(CUSTOM_KEY_NAME, m_emu, &m_messager)});
     }
     catch (const std::exception &)
     {
@@ -305,6 +311,8 @@ Application::release()
 int
 Application::run()
 {
+    Application::s_instance = this;
+
     /* Main loop */
     auto currTime = std::chrono::steady_clock::now();
     auto nextLoopTime = currTime + std::chrono::duration<double>(0.0);
@@ -338,6 +346,7 @@ Application::run()
     }
 l_loop_end:;
 
+    Application::s_instance = nullptr;
     return 0;
 }
 
@@ -629,9 +638,17 @@ Application::draw_menubar(float *o_height)
             }
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Settings"))
+        {
+            if (ImGui::MenuItem(CUSTOM_KEY_NAME))
+            {
+                m_sub_wins.at(CUSTOM_KEY_NAME)->show();
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Debugger"))
         {
-            if (ImGui::MenuItem("PPU"))
+            if (ImGui::MenuItem(PPU_DEBUGGER_NAME))
             {
                 m_sub_wins.at(PPU_DEBUGGER_NAME)->show();
             }
@@ -669,6 +686,34 @@ void
 error_callback(int error, const char *description)
 {
     fprintf(stderr, "Error: %d, %s\n", error, description);
+}
+
+void
+Application::key_callback(GLFWwindow *, int vkey, int, int action, int)
+{
+    // @FIXME: Effectively global, bad
+    Application *app = Application::s_instance;
+    if (app && GLFW_RELEASE == action)
+    {
+        auto it = app->m_sub_wins.find(CUSTOM_KEY_NAME);
+        if (it != app->m_sub_wins.end())
+        {
+            CustomKey *custom_key = static_cast<CustomKey *>(it->second);
+            NHCtrlPort port;
+            NHKey key;
+            if (custom_key->on_key_released(vkey, port, key))
+            {
+                if (NH_CTRL_P1 == port)
+                {
+                    app->m_p1_keys[key] = vkey;
+                }
+                else if (NH_CTRL_P2 == port)
+                {
+                    app->m_p2_keys[key] = vkey;
+                }
+            }
+        }
+    }
 }
 
 void

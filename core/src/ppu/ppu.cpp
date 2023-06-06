@@ -290,7 +290,7 @@ PPU::write_register(Register i_reg, Byte i_val)
             if (NH_FAILED(err))
             {
                 NH_ASSERT_FATAL(m_logger,
-                                "Failed to write PPUDATA: ${:04X}, 0x{:02X}",
+                                "Failed to write PPUDATA: ${:04X}, {:02X}",
                                 vram_addr, i_val);
             }
 
