@@ -2,6 +2,7 @@
 
 #include "nhbase/path.hpp"
 #include "nhbase/filesystem.hpp"
+#include "nhbase/vc_intrinsics.hpp"
 
 #include <string>
 #include <cstdio>
@@ -67,7 +68,10 @@ save_key_config(NHCtrlPort i_port, NHKey i_key, VirtualKey i_vkey,
     }
 
     int err = 0;
+    NB_VC_WARNING_PUSH
+    NB_VC_WARNING_DISABLE(4996) // false positive
     std::FILE *fp = std::fopen(input_cfg.c_str(), "rb+");
+    NB_VC_WARNING_POP
     // Seek to the line and modify the data
     {
         if (!fp)
@@ -108,12 +112,15 @@ l_end:
 bool
 reset_default_key_config(KeyMapping *o_p1, KeyMapping *o_p2, Logger *i_logger)
 {
-    KeyMapping p1, p2;
+    KeyMapping p1{}, p2{};
     std::string input_cfg = nb::path_join_exe("config/input.ini");
     std::FILE *fp = nullptr;
     int err = 0;
     {
+        NB_VC_WARNING_PUSH
+        NB_VC_WARNING_DISABLE(4996) // false positive
         fp = std::fopen(input_cfg.c_str(), "wb");
+        NB_VC_WARNING_POP
         if (!fp)
         {
             SH_LOG_ERROR(i_logger, "Failed to open input config: {}",
@@ -201,7 +208,10 @@ pv_load_key_cfg(const std::string &i_config_file, KeyMapping &o_p1,
     }
 
     int err = 0;
+    NB_VC_WARNING_PUSH
+    NB_VC_WARNING_DISABLE(4996) // false positive
     std::FILE *fp = std::fopen(i_config_file.c_str(), "rb");
+    NB_VC_WARNING_POP
     if (!fp)
     {
         SH_LOG_ERROR(i_logger, "Failed to read input config {}", i_config_file);
