@@ -37,8 +37,9 @@ typedef enum NHErr {
 
 #define NH_FAILED(err) ((err) != NH_ERR_OK)
 
-/// @note Order matters for implementation
-typedef enum NHLogLevel {
+/// @note Order/Value matters for implementation
+typedef int NHLogLevel;
+enum {
     NH_LOG_OFF,
     NH_LOG_FATAL,
     NH_LOG_ERROR,
@@ -46,7 +47,7 @@ typedef enum NHLogLevel {
     NH_LOG_INFO,
     NH_LOG_DEBUG,
     NH_LOG_TRACE,
-} NHLogLevel;
+};
 
 typedef struct NHLogger {
     void (*log)(NHLogLevel level, const char *msg, void *user);

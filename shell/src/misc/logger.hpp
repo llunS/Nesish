@@ -26,16 +26,22 @@
 
 namespace sh {
 
+const char *
+log_level_to_name(NHLogLevel i_level);
+
 struct Logger {
   public:
+    Logger(NHLogLevel i_level);
     ~Logger();
     NB_KLZ_DELETE_COPY_MOVE(Logger);
 
-    static Logger *
-    create(NHLogLevel level);
+  public:
+    void
+    set_level(NHLogLevel i_level);
 
   private:
-    Logger();
+    static void
+    set_level(Logger *o_logger, NHLogLevel i_level);
 
   public:
     spdlog::logger *logger;

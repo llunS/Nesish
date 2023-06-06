@@ -34,6 +34,7 @@ namespace sh {
 #define TARGET_WIN_HEIGHT (NH_NES_HEIGHT * 2)
 
 #define DEBUG_AUDIO 0
+#define DEBUG_AUDIO_PCM 0 // Record audio pcm file
 
 #define FRAME_TIME (1.0 / 60.0)
 #define AUDIO_SAMPLE_RATE 48000 // Most common rate for audio hardware
@@ -81,8 +82,7 @@ pv_reset(void *user);
 Application *Application::s_instance = nullptr;
 
 Application::Application()
-    : m_options(AppOpt::OPT_NONE)
-    , m_win(nullptr)
+    : m_win(nullptr)
     , m_glfw_inited(false)
     , m_imgui_ctx(nullptr)
     , m_imgui_glfw_inited(false)
@@ -95,6 +95,7 @@ Application::Application()
     , m_resampler(nullptr)
     , m_pcm_writer(nullptr)
     , m_paused(false)
+    , m_sleepless(false)
     , m_messager(this)
 {
     m_p1.user = nullptr;
@@ -104,13 +105,12 @@ Application::Application()
 Application::~Application() {}
 
 bool
-Application::init(AppOpt i_opts, Logger *i_logger)
+Application::init(Logger *i_logger)
 {
     if (!i_logger)
     {
         goto l_err;
     }
-    m_options = i_opts;
     m_logger = i_logger;
 
     /* load key config */
@@ -237,6 +237,12 @@ Application::init(AppOpt i_opts, Logger *i_logger)
         glfwShowWindow(m_win);
     }
 
+    /* Load config */
+    {
+        m_sleepless = false;
+        (void)load_sleepless(m_sleepless);
+    }
+
     return true;
 l_err:
     release();
@@ -305,7 +311,6 @@ Application::release()
     }
 
     m_logger = nullptr;
-    m_options = AppOpt::OPT_NONE;
 }
 
 int
@@ -337,7 +342,7 @@ Application::run()
             // After testing, sleep implementation on MacOS (combined with
             // libc++) has higher resolution and reliability.
 #ifdef SH_TGT_MACOS
-            if (!(m_options & sh::OPT_NOSLEEP))
+            if (!m_sleepless)
             {
                 std::this_thread::sleep_until(nextLoopTime);
             }
@@ -490,14 +495,13 @@ Application::load_game(const std::string &i_rom_path)
     {
         goto l_err;
     }
+#if DEBUG_AUDIO_PCM
     // pcm recorder
-    if (m_options & sh::OPT_PCM)
+    if (m_pcm_writer->open(nb::path_join_exe("audio.pcm")))
     {
-        if (m_pcm_writer->open(nb::path_join_exe("audio.pcm")))
-        {
-            goto l_err;
-        }
+        goto l_err;
     }
+#endif
 
     /* Powerup */
     nh_power_up(m_emu);
@@ -608,20 +612,26 @@ void
 Application::draw_menubar(float *o_height)
 {
     bool open_game_popup = false;
+    static bool s_open_about = false;
 
     if (ImGui::BeginMainMenuBar())
     {
-        if (ImGui::MenuItem("Open"))
+        if (ImGui::BeginMenu("File"))
         {
-            open_game_popup = true;
+            if (ImGui::MenuItem("Open"))
+            {
+                open_game_popup = true;
+            }
+
+            ImGui::EndMenu();
         }
-        if (ImGui::MenuItem(m_paused ? "Resume###PauseControl"
-                                     : "Pause ###PauseControl"))
+        if (ImGui::BeginMenu("Control"))
         {
-            m_paused = !m_paused;
-        }
-        if (ImGui::BeginMenu("Switch"))
-        {
+            if (ImGui::MenuItem(m_paused ? "Resume###PauseControl"
+                                         : "Pause###PauseControl"))
+            {
+                m_paused = !m_paused;
+            }
             if (ImGui::MenuItem("Power"))
             {
                 if (running_game())
@@ -636,23 +646,65 @@ Application::draw_menubar(float *o_height)
                     nh_reset(m_emu);
                 }
             }
+
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Settings"))
+        if (ImGui::BeginMenu("Option"))
         {
             if (ImGui::MenuItem(CUSTOM_KEY_NAME))
             {
                 m_sub_wins.at(CUSTOM_KEY_NAME)->show();
             }
+
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Debugger"))
+        if (ImGui::BeginMenu("Debug"))
         {
             if (ImGui::MenuItem(PPU_DEBUGGER_NAME))
             {
                 m_sub_wins.at(PPU_DEBUGGER_NAME)->show();
             }
+            if (ImGui::BeginMenu("Switch"))
+            {
+                if (ImGui::MenuItem("Sleepless", nullptr, m_sleepless))
+                {
+                    if (save_sleepless(!m_sleepless))
+                    {
+                        m_sleepless = !m_sleepless;
+                    }
+                }
+
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Log Level"))
+            {
+                constexpr NHLogLevel LOG_ITEMS[] = {
+                    NH_LOG_OFF,  NH_LOG_FATAL, NH_LOG_ERROR, NH_LOG_WARN,
+                    NH_LOG_INFO, NH_LOG_DEBUG, NH_LOG_TRACE,
+                };
+                for (decltype(sizeof(LOG_ITEMS)) i = 0;
+                     i < sizeof(LOG_ITEMS) / sizeof(NHLogLevel); ++i)
+                {
+                    if (ImGui::MenuItem(log_level_to_name(LOG_ITEMS[i]),
+                                        nullptr,
+                                        LOG_ITEMS[i] == m_logger->level))
+                    {
+                        if (save_log_level(LOG_ITEMS[i]))
+                        {
+                            m_logger->set_level(LOG_ITEMS[i]);
+                            m_nh_logger.active = m_logger->level;
+                        }
+                    }
+                }
+
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenu();
+        }
+        if (ImGui::MenuItem("About"))
+        {
+            s_open_about = true;
         }
 
         if (o_height)
@@ -679,6 +731,55 @@ Application::draw_menubar(float *o_height)
             release_game();
             load_game(m_file_dialog.selected_path);
         }
+    }
+
+    if (s_open_about)
+    {
+        ImGui::SetNextWindowSize(ImVec2(ImGui::GetFontSize() * 35, 0),
+                                 ImGuiCond_Once);
+        if (ImGui::Begin("About", &s_open_about,
+                         ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_NoCollapse))
+        {
+            ImGui::Text("Nesish v0.1.0");
+            ImGui::Indent();
+            ImGui::Text("Presented by Snull, licensed under the MIT License");
+            ImGui::Text("https://github.com/llunS/Nesish");
+            ImGui::Unindent();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text("Development dependencies");
+            ImGui::Indent();
+            ImGui::Text("googletest");
+            ImGui::Unindent();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text("Production dependencies");
+            ImGui::Indent();
+            ImGui::Text("fmt");
+            ImGui::Text("spdlog");
+            ImGui::Text("glfw");
+            ImGui::Text("Dear ImGui");
+            ImGui::Text("rtaudio");
+            ImGui::Text("blip_buf, by Shay Green (blargg)");
+            ImGui::Text("glad");
+            ImGui::Text("ImGuiFileBrowser, by gallickgunner");
+            ImGui::Text("mINI, by pulzed");
+            ImGui::Unindent();
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text("Acknowledgments");
+            ImGui::Indent();
+            ImGui::TextWrapped(
+                "Sincere thanks to the NesDev community (including and not "
+                "limited to the great Wiki and the Discord server), "
+                "wouldn't have made it without your generous help.");
+            ImGui::Unindent();
+        }
+        ImGui::End();
     }
 }
 

@@ -59,7 +59,6 @@ list(APPEND sources src/input/controller.cpp)
 list(APPEND sources src/misc/logger.cpp)
 list(APPEND sources src/misc/config.cpp)
 
-list(APPEND sources src/app.cpp)
 list(APPEND sources src/main.cpp)
 
 target_sources(${tgt_name} PRIVATE ${sources})
@@ -77,6 +76,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 add_subdirectory(3rd/glad)
 add_subdirectory(3rd/blip_buf)
 add_subdirectory(3rd/ImGuiFileBrowser)
+add_subdirectory(3rd/mINI)
 
 target_link_libraries(${tgt_name} PRIVATE
     glfw
@@ -86,6 +86,7 @@ target_link_libraries(${tgt_name} PRIVATE
     glad
     blip_buf
     ImGuiFileBrowser
+    mINI_header_only
     Nesish
     NesishBase
 )

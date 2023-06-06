@@ -11,8 +11,6 @@
 #include "imgui.h"
 #include "ImGuiFileBrowser.h"
 
-#include "app.hpp"
-
 #include <string>
 #include <unordered_map>
 
@@ -37,7 +35,7 @@ struct Application {
 
   public:
     bool
-    init(AppOpt i_opts, Logger *i_logger);
+    init(Logger *i_logger);
     void
     release();
 
@@ -73,8 +71,6 @@ struct Application {
     static Application *s_instance;
 
   private:
-    AppOpt m_options;
-
     GLFWwindow *m_win;
     bool m_glfw_inited;
 
@@ -100,6 +96,7 @@ struct Application {
     PCMWriter *m_pcm_writer;
 
     bool m_paused;
+    bool m_sleepless;
 
     Messager m_messager;
     std::unordered_map<std::string, Window *> m_sub_wins;

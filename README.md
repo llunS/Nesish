@@ -7,8 +7,7 @@ Any feedback is welcome.
 ## Table of Contents
 
 - [Status](#status)
-- [How To Build](#how-to-build)
-- [External Dependencies](#external-dependencies)
+- [Build From Source](#build-from-source)
 - [Acknowledgments](#acknowledgments)
 
 ## Status
@@ -20,7 +19,7 @@ Any feedback is welcome.
 - PPU Debugger
 - C API for emulator core
 
-## How To Build
+## Build From Source
 
 Prerequisites:
 
@@ -39,25 +38,6 @@ cmake --build build
 
 > For stability, use tagged revision.
 
-## External Dependencies
-
-D: Development only
-
-- base
-  - gtest (D)
-- core
-  - gtest (D)
-  - fmt
-- shell
-  - spdlog
-  - cli11
-  - glfw3
-  - imgui
-  - rtaudio
-  - blip_buf
-  - glad
-  - [ImGuiFileBrowser](https://github.com/gallickgunner/ImGui-Addons)
-
 ## Acknowledgments
 
-Sincere thanks to the NesDev community (including and not limited to the great Wiki and the Discord server), wouldn't have come this far without your generous help.
+Sincere thanks to the NesDev community (including and not limited to the great Wiki and the Discord server), wouldn't have made it without your generous help.

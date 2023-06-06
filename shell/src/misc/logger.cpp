@@ -10,6 +10,8 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
+#include <unordered_map>
+
 #define MAX_LOGS 5
 
 namespace sh {
@@ -20,45 +22,41 @@ static std::string
 pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
                         Logger *i_logger);
 
-Logger::Logger() {}
+static const std::unordered_map<NHLogLevel, const char *> g_level_to_name{
+    /* clang-format off */
+    {NH_LOG_OFF, "Off"},
+    {NH_LOG_FATAL, "Fatal"},
+    {NH_LOG_ERROR, "Error"},
+    {NH_LOG_WARN, "Warn"},
+    {NH_LOG_INFO, "Info"},
+    {NH_LOG_DEBUG, "Debug"},
+    {NH_LOG_TRACE, "Trace"},
+    /* clang-format on */
+};
 
-Logger *
-Logger::create(NHLogLevel i_level)
+const char *
+log_level_to_name(NHLogLevel i_level)
+{
+    auto it = g_level_to_name.find(i_level);
+    return it != g_level_to_name.cend() ? it->second : "";
+}
+
+Logger::Logger(NHLogLevel i_level)
+    : logger(nullptr)
+    , level(NH_LOG_OFF)
 {
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
     auto logger = new spdlog::logger("Nesish", console_sink);
-    auto sh_logger = new Logger();
-    sh_logger->logger = logger;
-    sh_logger->level = i_level;
+    this->logger = logger;
 
-    switch (i_level)
-    {
-        case NH_LOG_FATAL:
-            logger->set_level(spdlog::level::critical);
-            break;
-        case NH_LOG_ERROR:
-            logger->set_level(spdlog::level::err);
-            break;
-        case NH_LOG_WARN:
-            logger->set_level(spdlog::level::warn);
-            break;
-        case NH_LOG_INFO:
-            logger->set_level(spdlog::level::info);
-            break;
-        case NH_LOG_DEBUG:
-            logger->set_level(spdlog::level::debug);
-            break;
-        case NH_LOG_TRACE:
-            logger->set_level(spdlog::level::trace);
-            break;
+    // Prompt log level
+    logger->set_level(spdlog::level::info);
+    SH_LOG_INFO(this, "Log level: {}", log_level_to_name(i_level));
+    // Set both levels
+    set_level(i_level);
 
-        default:
-            logger->set_level(spdlog::level::off);
-            break;
-    }
-
-    auto log_filepath = pv_backup_previous_logs(pv_log_file_rel_exec_path(),
-                                                MAX_LOGS, sh_logger);
+    auto log_filepath =
+        pv_backup_previous_logs(pv_log_file_rel_exec_path(), MAX_LOGS, this);
     if (!log_filepath.empty())
     {
         try
@@ -67,21 +65,52 @@ Logger::create(NHLogLevel i_level)
                 std::make_shared<spdlog::sinks::basic_file_sink_st>(
                     log_filepath, true);
             logger->sinks().push_back(std::move(file_sink));
-            SH_LOG_INFO(sh_logger, "Log file: {}", log_filepath);
+            SH_LOG_INFO(this, "Log file: {}", log_filepath);
         }
         catch (const spdlog::spdlog_ex &e)
         {
-            SH_LOG_ERROR(sh_logger, "Failed to create log file: {}, {}",
+            SH_LOG_ERROR(this, "Failed to create log file: {}, {}",
                          log_filepath, e.what());
         }
     }
     else
     {
-        SH_LOG_ERROR(sh_logger, "Failed to create log file: {}",
+        SH_LOG_ERROR(this, "Failed to create log file: {}",
                      std::string("./") + pv_log_file_rel_exec_path());
     }
+}
 
-    return sh_logger;
+void
+Logger::set_level(NHLogLevel i_level)
+{
+    this->level = i_level;
+    switch (i_level)
+    {
+        case NH_LOG_FATAL:
+            this->logger->set_level(spdlog::level::critical);
+            break;
+        case NH_LOG_ERROR:
+            this->logger->set_level(spdlog::level::err);
+            break;
+        case NH_LOG_WARN:
+            this->logger->set_level(spdlog::level::warn);
+            break;
+        case NH_LOG_INFO:
+            this->logger->set_level(spdlog::level::info);
+            break;
+        case NH_LOG_DEBUG:
+            this->logger->set_level(spdlog::level::debug);
+            break;
+        case NH_LOG_TRACE:
+            this->logger->set_level(spdlog::level::trace);
+            break;
+
+        // Invalid
+        default:
+            this->logger->set_level(spdlog::level::off);
+            this->level = NH_LOG_OFF;
+            break;
+    }
 }
 
 Logger::~Logger()

@@ -4,6 +4,8 @@
 #include "nhbase/filesystem.hpp"
 #include "nhbase/vc_intrinsics.hpp"
 
+#include "mini/ini.h"
+
 #include <string>
 #include <cstdio>
 
@@ -258,6 +260,125 @@ l_end:
         std::fclose(fp);
     }
     return !err;
+}
+
+bool
+load_sleepless(bool &o_val)
+{
+    try
+    {
+        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+        if (!nb::file_exists(user_cfg))
+        {
+            return false;
+        }
+
+        mINI::INIFile inifile(user_cfg);
+        mINI::INIStructure ini;
+        if (!inifile.read(ini))
+        {
+            return false;
+        }
+
+        if (!ini.has("Debug"))
+        {
+            return false;
+        }
+        if (!ini["Debug"].has("Sleepless"))
+        {
+            return false;
+        }
+
+        o_val = (ini["Debug"]["Sleepless"] == "1");
+        return true;
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
+}
+
+bool
+save_sleepless(bool i_val)
+{
+    try
+    {
+        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+
+        mINI::INIFile inifile(user_cfg);
+        mINI::INIStructure ini;
+        // No-file returns false
+        (void)inifile.read(ini);
+
+        ini["Debug"]["Sleepless"] = i_val ? "1" : "0";
+        return inifile.write(ini);
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
+}
+
+bool
+load_log_level(NHLogLevel &o_val)
+{
+    try
+    {
+        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+        if (!nb::file_exists(user_cfg))
+        {
+            return false;
+        }
+
+        mINI::INIFile inifile(user_cfg);
+        mINI::INIStructure ini;
+        if (!inifile.read(ini))
+        {
+            return false;
+        }
+
+        if (!ini.has("Debug"))
+        {
+            return false;
+        }
+        if (!ini["Debug"].has("LogLevel"))
+        {
+            return false;
+        }
+        auto val = static_cast<NHLogLevel>(std::stoi(ini["Debug"]["LogLevel"]));
+        if (val < NH_LOG_OFF || val > NH_LOG_TRACE)
+        {
+            return false;
+        }
+
+        o_val = val;
+        return true;
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
+}
+
+bool
+save_log_level(NHLogLevel i_val)
+{
+    try
+    {
+        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+
+        mINI::INIFile inifile(user_cfg);
+        mINI::INIStructure ini;
+        // No-file returns false
+        (void)inifile.read(ini);
+
+        ini["Debug"]["LogLevel"] = std::to_string(i_val);
+        return inifile.write(ini);
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
 }
 
 } // namespace sh

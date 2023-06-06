@@ -4,7 +4,6 @@
     "version-semver": "0.1.0",
     "dependencies": [
         "spdlog",
-        "cli11",
         "glfw3",
         {
             "name": "imgui",
@@ -23,10 +22,6 @@
         {
             "name": "spdlog",
             "version": "1.11.0"
-        },
-        {
-            "name": "cli11",
-            "version": "2.1.1"
         },
         {
             "name": "glfw3",
