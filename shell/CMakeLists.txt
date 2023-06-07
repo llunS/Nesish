@@ -21,6 +21,12 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 
+# -- CMake options
+
+# Because it supports Emscripten
+option(SH_USE_SOKOL_AUDIO "Use sokol_audio instead of RtAudio" ON)
+
+
 # -- Target
 
 set(tgt_name NesishShell)
@@ -52,7 +58,12 @@ list(APPEND sources src/rendering/texture.cpp)
 
 list(APPEND sources src/audio/resampler.cpp)
 list(APPEND sources src/audio/pcm_writer.cpp)
-list(APPEND sources src/audio/device.cpp)
+if(SH_USE_SOKOL_AUDIO)
+    list(APPEND sources src/audio/backend_sokol.cpp)
+    list(APPEND sources src/audio/sokol_log.cpp)
+else()
+    list(APPEND sources src/audio/backend_rtaudio.cpp)
+endif()
 
 list(APPEND sources src/input/controller.cpp)
 
@@ -67,7 +78,6 @@ target_sources(${tgt_name} PRIVATE ${sources})
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-find_package(RtAudio CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
@@ -81,7 +91,6 @@ add_subdirectory(3rd/mINI)
 target_link_libraries(${tgt_name} PRIVATE
     glfw
     imgui::imgui
-    RtAudio::rtaudio
     spdlog::spdlog_header_only
     glad
     blip_buf
@@ -90,9 +99,22 @@ target_link_libraries(${tgt_name} PRIVATE
     Nesish
     NesishBase
 )
+if(SH_USE_SOKOL_AUDIO)
+    add_subdirectory(3rd/sokol)
+    target_link_libraries(${tgt_name} PRIVATE sokol)
+    target_compile_definitions(${tgt_name} PRIVATE -DSH_USE_SOKOL_AUDIO)
+else()
+    find_package(RtAudio CONFIG REQUIRED)
+    target_link_libraries(${tgt_name} PRIVATE RtAudio::rtaudio)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_compile_definitions(${tgt_name} PRIVATE -DSH_TGT_MACOS)
+
+    if(SH_USE_SOKOL_AUDIO)
+        find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
+        target_link_libraries(${tgt_name} PRIVATE ${AUDIOTOOLBOX_LIBRARY})
+    endif()
 endif()
 target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)
 

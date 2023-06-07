@@ -10,7 +10,11 @@
 #include "audio/resampler.hpp"
 #include "audio/pcm_writer.hpp"
 #include "audio/channel.hpp"
-#include "audio/device.hpp"
+#ifndef SH_USE_SOKOL_AUDIO
+#include "audio/backend_rtaudio.hpp"
+#else
+#include "audio/backend_sokol.hpp"
+#endif
 
 #include "nhbase/path.hpp"
 
@@ -42,8 +46,7 @@ namespace sh {
 // 800 = 1 / 60 * 48000, x2 for peak storage
 #define AUDIO_CH_SIZE (800 * 2)
 
-#define SAMPLE_FORMAT RTAUDIO_SINT16
-typedef short sample_t;
+typedef float sample_t;
 typedef Channel<sample_t, AUDIO_CH_SIZE> AudioBuffer;
 
 #define to_AudioBuffer(ptr) (static_cast<AudioBuffer *>(ptr))
@@ -60,10 +63,15 @@ error_callback(int error, const char *description);
 static void
 pv_log(NHLogLevel level, const char *msg, void *user);
 
+#ifndef SH_USE_SOKOL_AUDIO
 static int
-audio_playback(void *outputBuffer, void *inputBuffer,
-               unsigned int nBufferFrames, double streamTime,
-               RtAudioStreamStatus status, void *userData);
+audio_playback(void *output_buffer, void *, unsigned int num_frames, double,
+               RtAudioStreamStatus status, void *user_data);
+#else
+static void
+audio_playback(float *output_buffer, int num_frames, int num_channels,
+               void *user_data);
+#endif
 
 static void
 pv_strobe(int enabled, void *user);
@@ -378,7 +386,8 @@ Application::tick()
                     {
                         // If failed, sample gets dropped, but we are free
                         // of inconsistent emulation due to blocking delay
-                        if (!to_AudioBuffer(m_audio_buf)->try_send(buf[j]))
+                        if (!to_AudioBuffer(m_audio_buf)
+                                 ->try_send(buf[j] / 32767.f))
                         {
 #if DEBUG_AUDIO
                             SH_LOG_WARN(m_logger, "Sample gets dropped");
@@ -479,16 +488,6 @@ Application::load_game(const std::string &i_rom_path)
     }
 
     /* init audio */
-    // device
-    if (!audio_init())
-    {
-        goto l_err;
-    }
-    if (!audio_open(AUDIO_SAMPLE_RATE, AUDIO_BUF_SIZE, SAMPLE_FORMAT,
-                    audio_playback, m_audio_data))
-    {
-        goto l_err;
-    }
     // resampler
     if (!m_resampler->set_rates(double(nh_get_sample_rate(m_emu)),
                                 AUDIO_SAMPLE_RATE))
@@ -517,7 +516,8 @@ Application::load_game(const std::string &i_rom_path)
     }
 
     /* Start audio playback */
-    if (!audio_start())
+    if (!audio_start(AUDIO_SAMPLE_RATE, AUDIO_BUF_SIZE, audio_playback,
+                     m_audio_data))
     {
         goto l_err;
     }
@@ -542,8 +542,6 @@ Application::release_game()
     {
         m_resampler->close();
     }
-    audio_close();
-    audio_uninit();
 
     if (m_pcm_writer)
     {
@@ -850,29 +848,34 @@ pv_log(NHLogLevel level, const char *msg, void *user)
     }
 }
 
+#ifndef SH_USE_SOKOL_AUDIO
 int
-audio_playback(void *outputBuffer, void *inputBuffer,
-               unsigned int nBufferFrames, double streamTime,
-               RtAudioStreamStatus status, void *userData)
+audio_playback(void *output_buffer, void *, unsigned int num_frames, double,
+               RtAudioStreamStatus status, void *user_data)
+#else
+void
+audio_playback(float *output_buffer, int num_frames, int num_channels,
+               void *user_data)
+#endif
 {
-    (void)(inputBuffer);
-    (void)(streamTime);
+    AudioData *audio_data = (AudioData *)user_data;
+
+#ifndef SH_USE_SOKOL_AUDIO
     (void)(status);
-
-    AudioData *audio_data = (AudioData *)userData;
-
 #if DEBUG_AUDIO
     if (status)
     {
         SH_LOG_WARN(audio_data->logger,
-                    "Stream underflow for buffer of {} detected!",
-                    nBufferFrames);
+                    "Stream underflow for buffer of {} detected!", num_frames);
     }
+#endif
+#else
+    (void)(num_channels); // num_channels == 2
 #endif
 
     // Write audio data
-    sample_t *buffer = (sample_t *)outputBuffer;
-    for (unsigned int i = 0; i < nBufferFrames; ++i)
+    sample_t *buffer = (sample_t *)output_buffer;
+    for (decltype(num_frames) i = 0; i < num_frames; ++i)
     {
         sample_t sample;
         if (audio_data->buf->try_receive(sample))
@@ -890,8 +893,9 @@ audio_playback(void *outputBuffer, void *inputBuffer,
             *buffer++ = sample;
         }
     }
-
+#ifndef SH_USE_SOKOL_AUDIO
     return 0;
+#endif
 }
 
 void

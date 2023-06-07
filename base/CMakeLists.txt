@@ -35,7 +35,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 # -- CMake options
 
-option(NB_BUILD_TESTS "Build tests" ON)
+option(NB_BUILD_TESTS "Build tests" OFF)
 
 
 # -- Target

@@ -7,6 +7,7 @@ Any feedback is welcome.
 ## Table of Contents
 
 - [Status](#status)
+- [TODO](#todo)
 - [Build From Source](#build-from-source)
 - [Acknowledgments](#acknowledgments)
 
@@ -18,6 +19,13 @@ Any feedback is welcome.
 - Sufficiently tested CPU, PPU and APU
 - PPU Debugger
 - C API for emulator core
+
+## TODO
+
+- Performance, and sound quality
+- More mappers
+- Debug tools
+- etc.
 
 ## Build From Source
 
