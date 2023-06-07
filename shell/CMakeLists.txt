@@ -101,3 +101,13 @@ target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)
 include(xform_shader)
 xform_shader(resources/shader/screen_rect.vert src/shaders sh)
 xform_shader(resources/shader/screen_rect.frag src/shaders sh)
+
+# --- Create all sub folders for config files
+# Since using fopen or fstream won’t handle sub-directories
+
+# If a directory already exists it will be silently ignored.
+add_custom_command(
+    TARGET ${tgt_name} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+    $<TARGET_FILE_DIR:${tgt_name}>/config
+)

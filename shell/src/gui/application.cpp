@@ -576,7 +576,10 @@ Application::release_game()
         glfwMakeContextCurrent(nullptr);
     }
 
-    nh_remove_cartridge(m_emu);
+    if (NH_VALID(m_emu))
+    {
+        nh_remove_cartridge(m_emu);
+    }
 }
 
 bool

@@ -116,7 +116,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 target_link_libraries(${tgt_name} PRIVATE NesishBase)
 
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(${tgt_name} PRIVATE fmt::fmt)
+target_link_libraries(${tgt_name} PRIVATE fmt::fmt-header-only)
 
 
 # -- Tests
