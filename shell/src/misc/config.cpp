@@ -4,7 +4,10 @@
 #include "nhbase/filesystem.hpp"
 #include "nhbase/vc_intrinsics.hpp"
 
+NB_VC_WARNING_PUSH
+NB_VC_WARNING_DISABLE(4706)
 #include "mini/ini.h"
+NB_VC_WARNING_POP
 
 #include <string>
 #include <cstdio>

@@ -46,11 +46,11 @@ Logger::Logger(NHLogLevel i_level)
     , level(NH_LOG_OFF)
 {
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
-    auto logger = new spdlog::logger("Nesish", console_sink);
-    this->logger = logger;
+    auto spd_logger = new spdlog::logger("Nesish", console_sink);
+    this->logger = spd_logger;
 
     // Prompt log level
-    logger->set_level(spdlog::level::info);
+    spd_logger->set_level(spdlog::level::info);
     SH_LOG_INFO(this, "Log level: {}", log_level_to_name(i_level));
     // Set both levels
     set_level(i_level);
@@ -64,7 +64,7 @@ Logger::Logger(NHLogLevel i_level)
             auto file_sink =
                 std::make_shared<spdlog::sinks::basic_file_sink_st>(
                     log_filepath, true);
-            logger->sinks().push_back(std::move(file_sink));
+            spd_logger->sinks().push_back(std::move(file_sink));
             SH_LOG_INFO(this, "Log file: {}", log_filepath);
         }
         catch (const spdlog::spdlog_ex &e)
