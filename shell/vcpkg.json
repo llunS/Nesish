@@ -3,46 +3,35 @@
     "name": "nesish-shell",
     "version-semver": "0.1.0",
     "dependencies": [
-        "spdlog",
-        "glfw3",
+        {
+            "name": "spdlog",
+            "version>=": "1.11.0#1"
+        },
+        {
+            "name": "fmt",
+            "version>=": "9.1.0"
+        },
+        {
+            "name": "glfw3",
+            "version>=": "3.3.6"
+        },
+        {
+            "name": "rtaudio",
+            "version>=": "2021-11-16"
+        },
+        {
+            "name": "gtest",
+            "version>=": "1.11.0"
+        },
         {
             "name": "imgui",
+            "version>=": "1.89.4#1",
             "features": [
                 "glfw-binding",
                 "opengl3-binding",
                 "docking-experimental"
             ]
-        },
-        "rtaudio",
-        "gtest",
-        "fmt"
-    ],
-    "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
-    "overrides": [
-        {
-            "name": "spdlog",
-            "version": "1.11.0"
-        },
-        {
-            "name": "glfw3",
-            "version": "3.3.6"
-        },
-        {
-            "name": "imgui",
-            "version": "1.89.4",
-            "port-version": 1
-        },
-        {
-            "name": "rtaudio",
-            "version": "2021-11-16"
-        },
-        {
-            "name": "gtest",
-            "version": "1.11.0"
-        },
-        {
-            "name": "fmt",
-            "version": "9.1.0"
         }
-    ]
+    ],
+    "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82"
 }

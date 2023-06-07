@@ -2,7 +2,11 @@
 
 #include "nesish/nesish.h"
 
+#include "nhbase/vc_intrinsics.hpp"
+NB_VC_WARNING_PUSH
+NB_VC_WARNING_DISABLE(6385)
 #include "fmt/core.h"
+NB_VC_WARNING_POP
 
 #define NH_LOG(i_logger, i_level, ...)                                         \
     if ((i_logger) && (i_logger)->active >= (i_level))                         \

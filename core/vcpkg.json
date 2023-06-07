@@ -3,18 +3,14 @@
     "name": "nesish",
     "version-semver": "0.1.0",
     "dependencies": [
-        "fmt",
-        "gtest"
-    ],
-    "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82",
-    "overrides": [
         {
             "name": "fmt",
-            "version": "9.1.0"
+            "version>=": "9.1.0"
         },
         {
             "name": "gtest",
-            "version": "1.11.0"
+            "version>=": "1.11.0"
         }
-    ]
+    ],
+    "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82"
 }
