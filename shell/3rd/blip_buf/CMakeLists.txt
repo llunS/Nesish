@@ -1,6 +1,7 @@
 set(tgt_name blip_buf)
 add_library(${tgt_name} STATIC)
 include(target_utils)
+configure_c(${tgt_name} 90)
 configure_optimizations(${tgt_name})
 
 # -- Source files

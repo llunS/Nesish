@@ -7,6 +7,15 @@ function(configure_cxx i_tgt i_cxx_std)
     )
 endfunction()
 
+function(configure_c i_tgt i_c_std)
+    set_target_properties(${i_tgt} PROPERTIES
+        C_STANDARD ${i_c_std}
+        C_STANDARD_REQUIRED TRUE
+        C_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN hidden
+    )
+endfunction()
+
 function(configure_warnings i_tgt)
     if(MSVC)
         target_compile_options(${i_tgt} PRIVATE
