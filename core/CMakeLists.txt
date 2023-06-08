@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.25.1)
 project(Nesish)
 
-
 # -- Global compiler/linker options/flags
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -20,11 +19,9 @@ endif()
 # Add cmake scripts
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
-
 # -- CMake options
 
 option(NH_BUILD_TESTS "Build tests" OFF)
-
 
 # -- Target
 
@@ -37,10 +34,10 @@ set(tgt_name Nesish)
 add_library(${tgt_name} SHARED)
 set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME NesishCore)
 include(target_utils)
-add_cxx(${tgt_name} 11)
-add_warnings(${tgt_name})
-add_vc_compile_opts(${tgt_name} /wd6285)
-add_opts(${tgt_name})
+configure_cxx(${tgt_name} 11)
+configure_warnings(${tgt_name})
+configure_vc_options(${tgt_name} /wd6285)
+configure_optimizations(${tgt_name})
 
 include(gen_api_macro)
 gen_api_macro(${tgt_name} NH ${CMAKE_CURRENT_SOURCE_DIR}/public/nesish)
@@ -117,7 +114,6 @@ target_link_libraries(${tgt_name} PRIVATE NesishBase)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(${tgt_name} PRIVATE fmt::fmt)
-
 
 # -- Tests
 

@@ -1,4 +1,4 @@
-function(add_cxx i_tgt i_cxx_std)
+function(configure_cxx i_tgt i_cxx_std)
     set_target_properties(${i_tgt} PROPERTIES
         CXX_STANDARD ${i_cxx_std}
         CXX_STANDARD_REQUIRED TRUE
@@ -7,7 +7,7 @@ function(add_cxx i_tgt i_cxx_std)
     )
 endfunction()
 
-function(add_warnings i_tgt)
+function(configure_warnings i_tgt)
     if(MSVC)
         target_compile_options(${i_tgt} PRIVATE
             /W4 # warning level 4 is enough
@@ -26,7 +26,7 @@ function(add_warnings i_tgt)
     endif()
 endfunction()
 
-function(add_vc_compile_opts i_tgt)
+function(configure_vc_options i_tgt)
     if(MSVC)
         target_compile_options(${i_tgt} PRIVATE
             ${ARGN}
@@ -34,7 +34,7 @@ function(add_vc_compile_opts i_tgt)
     endif()
 endfunction()
 
-function(add_opts i_tgt)
+function(configure_optimizations i_tgt)
     if(MSVC)
         target_compile_options(${i_tgt} PRIVATE
             $<$<CONFIG:Release,RelWithDebInfo>:/O2>

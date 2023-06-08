@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.25.1)
 project(NesishBase)
 
-
 # -- Target platform
 
 # Default to CMake target platform.
@@ -12,7 +11,6 @@ elseif(WIN32)
 else()
     message(FATAL_ERROR "Platform not supported yet!")
 endif()
-
 
 # -- Global compiler/linker options/flags
 
@@ -32,11 +30,9 @@ endif()
 # Add cmake scripts
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
-
 # -- CMake options
 
 option(NB_BUILD_TESTS "Build tests" OFF)
-
 
 # -- Target
 
@@ -48,9 +44,9 @@ endif()
 set(tgt_name NesishBase)
 add_library(${tgt_name} SHARED)
 include(target_utils)
-add_cxx(${tgt_name} 11)
-add_warnings(${tgt_name})
-add_opts(${tgt_name})
+configure_cxx(${tgt_name} 11)
+configure_warnings(${tgt_name})
+configure_optimizations(${tgt_name})
 
 include(gen_api_macro)
 gen_api_macro(${tgt_name} NB ${CMAKE_CURRENT_SOURCE_DIR}/public/nhbase)
@@ -75,7 +71,6 @@ elseif(NB_TGT_WINDOWS)
 endif()
 
 target_sources(${tgt_name} PRIVATE ${sources})
-
 
 # -- Tests
 

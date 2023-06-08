@@ -1,7 +1,7 @@
 set(tgt_name glad)
-add_library(${tgt_name} SHARED)
+add_library(${tgt_name} STATIC)
 include(target_utils)
-add_opts(${tgt_name})
+configure_optimizations(${tgt_name})
 
 # -- Source files
 

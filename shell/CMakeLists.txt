@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.25.1)
 project(NesishShell)
 
-
 # -- Global compiler/linker options/flags
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -20,12 +19,10 @@ endif()
 # Add cmake scripts
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
-
 # -- CMake options
 
 # Because it supports Emscripten
 option(SH_USE_SOKOL_AUDIO "Use sokol_audio instead of RtAudio" ON)
-
 
 # -- Target
 
@@ -33,10 +30,10 @@ set(tgt_name NesishShell)
 add_executable(${tgt_name})
 set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME Nesish)
 include(target_utils)
-add_cxx(${tgt_name} 11)
-add_warnings(${tgt_name})
-add_vc_compile_opts(${tgt_name} /wd6285)
-add_opts(${tgt_name})
+configure_cxx(${tgt_name} 11)
+configure_warnings(${tgt_name})
+configure_vc_options(${tgt_name} /wd6285)
+configure_optimizations(${tgt_name})
 
 # --- Include directories
 
@@ -77,7 +74,6 @@ target_sources(${tgt_name} PRIVATE ${sources})
 # --- Dependencies
 
 find_package(glfw3 CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
@@ -85,12 +81,13 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 add_subdirectory(3rd/glad)
 add_subdirectory(3rd/blip_buf)
+add_subdirectory(3rd/imgui) # before ImGuiFileBrowser
 add_subdirectory(3rd/ImGuiFileBrowser)
 add_subdirectory(3rd/mINI)
 
 target_link_libraries(${tgt_name} PRIVATE
     glfw
-    imgui::imgui
+    imgui
     spdlog::spdlog_header_only
     glad
     blip_buf

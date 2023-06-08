@@ -768,6 +768,7 @@ Application::draw_menubar(float *o_height)
             ImGui::Text("glad");
             ImGui::Text("ImGuiFileBrowser, by gallickgunner");
             ImGui::Text("mINI, by pulzed");
+            ImGui::Text("sokol (audio & log), by floooh");
             ImGui::Unindent();
 
             ImGui::Spacing();
