@@ -154,11 +154,32 @@ Application::init(Logger *i_logger)
                    GLFW_OPENGL_CORE_PROFILE);         // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true); // Required on Mac
 #endif
+    glfwWindowHint(GLFW_RED_BITS, 8);
+    glfwWindowHint(GLFW_GREEN_BITS, 8);
+    glfwWindowHint(GLFW_BLUE_BITS, 8);
+    glfwWindowHint(GLFW_ALPHA_BITS, 8);
     glfwWindowHint(GLFW_RESIZABLE, false);
     // hide first, cos we are about to adjust its size
     glfwWindowHint(GLFW_VISIBLE, false);
+#ifdef SH_GUI_FULLSCREEN
+    {
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        if (!monitor)
+        {
+            goto l_err;
+        }
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        if (!mode)
+        {
+            goto l_err;
+        }
+        m_win =
+            glfwCreateWindow(mode->width, mode->height, "Nesish", NULL, NULL);
+    }
+#else
     m_win = glfwCreateWindow(TARGET_WIN_WIDTH, TARGET_WIN_HEIGHT, "Nesish",
                              NULL, NULL);
+#endif
     if (!m_win)
     {
         goto l_err;
@@ -182,7 +203,9 @@ Application::init(Logger *i_logger)
         {
             goto l_err;
         }
+#ifndef SH_GUI_FULLSCREEN
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+#endif
         if (!ImGui_ImplGlfw_InitForOpenGL(m_win, true))
         {
             goto l_err;
@@ -195,7 +218,9 @@ Application::init(Logger *i_logger)
         }
         m_imgui_opengl_inited = true;
 
+#ifndef SH_GUI_FULLSCREEN
         ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
+#endif
     }
 
     /* Setup emulator controller */
@@ -233,12 +258,14 @@ Application::init(Logger *i_logger)
         // viewport
         int width, height;
         glfwGetFramebufferSize(m_win, &width, &height);
+#ifndef SH_GUI_FULLSCREEN
         // Change window size considering menubar
         // already current
         // glfwMakeContextCurrent(m_win);
         int menu_bar_height = get_menubar_height();
         glfwSetWindowSize(m_win, TARGET_WIN_WIDTH,
                           TARGET_WIN_HEIGHT + menu_bar_height);
+#endif
         // Restore framebuffer area excluding menubar
         glViewport(0, 0, width, height);
 
@@ -411,37 +438,57 @@ Application::tick()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         // Emualtor content
+#ifndef SH_GUI_FULLSCREEN
         if (running_game())
         {
             NHFrame framebuf = nh_get_frm(m_emu);
             m_renderer->render(framebuf);
+#else
+        if (ImGui::Begin("Frame", NULL,
+                         ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            NHFrame framebuf = nh_get_frm(m_emu);
+            if (m_frame_tex.from_frame(framebuf))
+            {
+                ImGui::Image(
+                    reinterpret_cast<ImTextureID>(m_frame_tex.texture()),
+                    ImVec2(TARGET_WIN_WIDTH, TARGET_WIN_HEIGHT), {0, 0}, {1, 1},
+                    {1, 1, 1, 1}, {1, 1, 1, 1});
+            }
+            else
+            {
+                ImGui::Text("Failed to update frame texture");
+            }
+        }
+        ImGui::End();
+#endif
+#ifndef SH_GUI_FULLSCREEN
+        }
+#endif
+
+        // Menubar
+        draw_menubar();
+
+        // Sub windows
+        for (auto it : m_sub_wins)
+        {
+            Window *win = it.second;
+            win->render();
         }
 
-        // IMGUI
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-            // Menubar
-            draw_menubar();
-
-            // Sub windows
-            for (auto it : m_sub_wins)
-            {
-                Window *win = it.second;
-                win->render();
-            }
-
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-            if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-            {
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-            }
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
         }
 
         glfwSwapBuffers(m_win);

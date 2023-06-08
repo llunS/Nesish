@@ -96,6 +96,7 @@ target_link_libraries(${tgt_name} PRIVATE
     Nesish
     NesishBase
 )
+
 if(SH_USE_SOKOL_AUDIO)
     add_subdirectory(3rd/sokol)
     target_link_libraries(${tgt_name} PRIVATE sokol)
@@ -113,7 +114,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         target_link_libraries(${tgt_name} PRIVATE ${AUDIOTOOLBOX_LIBRARY})
     endif()
 endif()
+
 target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)
+# target_compile_definitions(${tgt_name} PRIVATE -DSH_GUI_FULLSCREEN)
 
 # --- Transform shaders to compile-time data
 

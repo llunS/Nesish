@@ -17,6 +17,8 @@
 #include "gui/messager.hpp"
 #include "input/controller.hpp"
 
+#include "rendering/texture.hpp"
+
 namespace sh {
 
 struct Renderer;
@@ -103,6 +105,8 @@ struct Application {
 
     KeyMapping m_p1_keys;
     KeyMapping m_p2_keys;
+
+    Texture m_frame_tex;
 };
 
 } // namespace sh
