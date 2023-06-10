@@ -1,5 +1,7 @@
 #include "backend_rtaudio.hpp"
 
+#include "misc/exception.hpp"
+
 namespace sh {
 
 static RtAudio *g_rta;
@@ -10,11 +12,11 @@ audio_start(unsigned int i_sample_rate, unsigned int i_buffer_size,
 {
     /* Init */
     {
-        try
+        SH_TRY
         {
             g_rta = new RtAudio();
         }
-        catch (const std::exception &)
+        SH_CATCH(const std::exception &)
         {
             return false;
         }
@@ -38,14 +40,14 @@ audio_start(unsigned int i_sample_rate, unsigned int i_buffer_size,
         parameters.deviceId = g_rta->getDefaultOutputDevice();
         parameters.nChannels = 2;
         parameters.firstChannel = 0;
-        try
+        SH_TRY
         {
             // Align format with sokol
             // 32-bit float numbers in the range -1.0 to +1.0
             g_rta->openStream(&parameters, NULL, RTAUDIO_FLOAT32, i_sample_rate,
                               &i_buffer_size, i_callback, i_user_data);
         }
-        catch (RtAudioError &)
+        SH_CATCH(RtAudioError &)
         {
             return false;
         }
@@ -53,11 +55,11 @@ audio_start(unsigned int i_sample_rate, unsigned int i_buffer_size,
 
     /* Start */
     {
-        try
+        SH_TRY
         {
             g_rta->startStream();
         }
-        catch (RtAudioError &)
+        SH_CATCH(RtAudioError &)
         {
             return false;
         }
@@ -72,16 +74,14 @@ audio_stop()
     if (g_rta)
     {
         /* Stop */
-        try
+        SH_TRY
         {
             if (g_rta->isStreamRunning())
             {
                 g_rta->stopStream();
             }
         }
-        catch (RtAudioError &)
-        {
-        }
+        SH_CATCH(RtAudioError &) {}
 
         /* Close */
         if (g_rta->isStreamOpen())

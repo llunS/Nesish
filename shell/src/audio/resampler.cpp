@@ -4,29 +4,34 @@
 
 namespace sh {
 
-Resampler::Resampler(int i_buffer_size, short i_amp)
-    : m_amp(i_amp)
+Resampler::Resampler()
+    : m_amp(0)
     , m_blip(nullptr)
-    , m_buffer_size(i_buffer_size)
+    , m_buffer_size(0)
     , m_clock_in_frame(0)
     , m_frame_size(1)
 {
-    int blip_buffer_size = i_buffer_size;
-    if (blip_buffer_size <= 0)
-    {
-        throw "invalid rate";
-    }
-
-    m_blip = blip_new(blip_buffer_size);
-    if (m_blip == nullptr)
-    {
-        throw "blip out of memory";
-    }
 }
 
-Resampler::~Resampler()
+bool
+Resampler::init(int i_buffer_size, short i_amp)
 {
-    close();
+    if (i_buffer_size <= 0)
+    {
+        return false;
+    }
+
+    m_amp = i_amp;
+    m_buffer_size = i_buffer_size;
+    m_clock_in_frame = 0;
+    m_frame_size = 1;
+
+    m_blip = blip_new(i_buffer_size);
+    if (m_blip == nullptr)
+    {
+        return false;
+    }
+    return true;
 }
 
 void
@@ -35,8 +40,8 @@ Resampler::close()
     if (m_blip)
     {
         blip_delete(m_blip);
+        m_blip = nullptr;
     }
-    m_blip = nullptr;
 }
 
 bool

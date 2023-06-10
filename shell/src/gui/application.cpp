@@ -1,6 +1,6 @@
 #include "application.hpp"
 
-#ifdef SH_TGT_WEB
+#if defined(SH_TGT_WEB) || defined(SH_TGT_MACOS)
 #define SH_MUTED_DEF 1
 #else
 #define SH_MUTED_DEF 0
@@ -39,6 +39,7 @@
 #include "imgui_impl_opengl3.h"
 
 #include "misc/config.hpp"
+#include "misc/exception.hpp"
 
 #include "gui/ppu_debugger.hpp"
 #include "gui/custom_key.hpp"
@@ -181,13 +182,13 @@ Application::~Application() {}
 bool
 Application::init()
 {
-    try
+    SH_TRY
     {
         NHLogLevel log_level = SH_DEFAULT_LOG_LEVEL;
         (void)sh::load_log_level(log_level);
         m_logger = new sh::Logger(log_level);
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         goto l_err;
     }
@@ -220,7 +221,11 @@ Application::init()
 #if defined(SH_TGT_WEB)
     // GL ES 2.0 / WebGL 1.0
     static const char *glsl_version = "#version 100";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    // https://emscripten.org/docs/optimizing/Optimizing-WebGL.html#which-gl-mode-to-target
+    // https://emscripten.org/docs/optimizing/Optimizing-WebGL.html#migrating-to-webgl-2
+    // The link suggests that 2.0 has improvements over 1.0, try it without
+    // profiling
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
 #else
@@ -303,7 +308,7 @@ Application::init()
     }
 
     /* Setup emulator controller */
-    try
+    SH_TRY
     {
         m_p1.user = new sh::Controller(m_win, m_p1_keys);
         ASM_CTRL(m_p1);
@@ -312,13 +317,13 @@ Application::init()
         ASM_CTRL(m_p2);
         nh_plug_ctrl(m_emu, NH_CTRL_P2, &m_p2);
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         goto l_err;
     }
 
     /* Create sub windows */
-    try
+    SH_TRY
     {
         m_sub_wins.insert(
             {PPU_DEBUGGER_NAME,
@@ -326,7 +331,7 @@ Application::init()
         m_sub_wins.insert({CUSTOM_KEY_NAME,
                            new CustomKey(CUSTOM_KEY_NAME, m_emu, &m_messager)});
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         goto l_err;
     }
@@ -357,8 +362,7 @@ Application::init()
         (void)load_single_bool(m_sleepless, CONFIG_SECTION_DEBUG,
                                CONFIG_KEY_SLEEPLESS);
         m_muted = SH_MUTED_DEF;
-        (void)load_single_bool(m_sleepless, CONFIG_SECTION_DEBUG,
-                               CONFIG_KEY_MUTED);
+        (void)load_single_bool(m_muted, CONFIG_SECTION_DEBUG, CONFIG_KEY_MUTED);
     }
 
     return true;
@@ -459,8 +463,8 @@ Application::run()
     // projects that have objects with destructors on the stack at the time of
     // the call."
     //
-    // Although we don't enable exception handling (precisely no CATCH), we
-    // adhere to that since we can, to avoid potential problems.
+    // Although we don't enable exception handling, we adhere to that since we
+    // can, to avoid potential problems.
     g_loop_cb = [this]() -> void { this->tick(); };
     emscripten_set_main_loop(g_loop_cb_c, 0, 1);
     (void)emscripten_set_main_loop_timing(EM_TIMING_SETTIMEOUT, 16);
@@ -637,11 +641,11 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
     /* Create OpenGL renderer for emulator content */
     // need to call gl functions.
     glfwMakeContextCurrent(m_win);
-    try
+    SH_TRY
     {
         m_renderer = new Renderer();
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         goto l_err;
     }
@@ -652,22 +656,26 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
 #endif
 
     /* Create audio objects */
-    try
+    SH_TRY
     {
         m_audio_buf = new AudioBuffer();
         m_audio_data = new AudioData{0, to_AudioBuffer(m_audio_buf), m_logger};
-        m_resampler = new Resampler{AUDIO_BUF_SIZE * 2}; // More than enough
+        m_resampler = new Resampler();
 #ifndef SH_TGT_WEB
         m_pcm_writer = new PCMWriter();
 #endif
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         goto l_err;
     }
 
     /* init audio */
     // resampler
+    if (!m_resampler->init(AUDIO_BUF_SIZE * 2)) // More than enough
+    {
+        goto l_err;
+    }
     if (!m_resampler->set_rates(double(nh_get_sample_rate(m_emu)),
                                 AUDIO_SAMPLE_RATE))
     {
@@ -685,11 +693,11 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
     nh_power_up(m_emu);
 
     /* Flag running */
-    try
+    SH_TRY
     {
         m_running_rom = i_id_path;
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         goto l_err;
     }

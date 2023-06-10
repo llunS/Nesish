@@ -1,6 +1,7 @@
 #include "texture.hpp"
 
 #include "rendering/error.hpp"
+#include "misc/exception.hpp"
 
 #include <stdexcept>
 
@@ -49,10 +50,12 @@ Texture::genTexIf(int i_width, int i_height)
     // might as well set it on other platforms as well
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#ifndef NDEBUG
     if (checkGLError())
     {
         return false;
     }
+#endif
     m_width = i_width;
     m_height = i_height;
 
@@ -70,11 +73,11 @@ Texture::from_black_frame(int i_width, int i_height)
     int err = 0;
     // Don't use stack storage, e.g. on Emscripten, max stack size is 64*1024
     NHByte *data = nullptr;
-    try
+    SH_TRY
     {
         data = new NHByte[i_width * i_height * 3]{};
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         err = 1;
         goto l_end;
@@ -84,11 +87,13 @@ Texture::from_black_frame(int i_width, int i_height)
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, i_width, i_height, GL_RGB,
                     GL_UNSIGNED_BYTE, data);
+#ifndef NDEBUG
     if (checkGLError())
     {
         err = 1;
         goto l_end;
     }
+#endif
 
 l_end:
     if (data)
@@ -112,10 +117,12 @@ Texture::from_frame(NHFrame i_frame)
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB,
                     GL_UNSIGNED_BYTE, nh_frm_data(i_frame));
+#ifndef NDEBUG
     if (checkGLError())
     {
         return false;
     }
+#endif
 
     return true;
 }
@@ -134,10 +141,12 @@ Texture::from_ptn_tbl(NHDPatternTable i_tbl)
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
                     nhd_ptn_table_data(i_tbl));
+#ifndef NDEBUG
     if (checkGLError())
     {
         return false;
     }
+#endif
 
     return true;
 }
@@ -156,10 +165,12 @@ Texture::from_sprite(NHDSprite i_sprite)
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
                     nhd_sprite_data(i_sprite));
+#ifndef NDEBUG
     if (checkGLError())
     {
         return false;
     }
+#endif
 
     return true;
 }

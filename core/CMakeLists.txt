@@ -126,12 +126,8 @@ target_sources(${tgt_name} PRIVATE ${sources})
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 target_link_libraries(${tgt_name} PRIVATE NesishBase)
 
-find_package(fmt CONFIG REQUIRED)
-if(NH_TGT_WEB)
-    target_link_libraries(${tgt_name} PRIVATE fmt::fmt-header-only)
-else()
-    target_link_libraries(${tgt_name} PRIVATE fmt::fmt)
-endif()
+add_subdirectory(3rd/fmt)
+target_link_libraries(${tgt_name} PRIVATE fmt::fmt-header-only)
 
 # -- Tests
 

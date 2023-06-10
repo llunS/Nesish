@@ -10,6 +10,8 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
+#include "misc/exception.hpp"
+
 #include <unordered_map>
 
 namespace sh {
@@ -63,7 +65,7 @@ Logger::Logger(NHLogLevel i_level)
         pv_backup_previous_logs(pv_log_file_rel_exec_path(), MAX_LOGS, this);
     if (!log_filepath.empty())
     {
-        try
+        SH_TRY
         {
             auto file_sink =
                 std::make_shared<spdlog::sinks::basic_file_sink_st>(
@@ -71,7 +73,7 @@ Logger::Logger(NHLogLevel i_level)
             spd_logger->sinks().push_back(std::move(file_sink));
             SH_LOG_INFO(this, "Log file: {}", log_filepath);
         }
-        catch (const spdlog::spdlog_ex &e)
+        SH_CATCH(const spdlog::spdlog_ex &e)
         {
             SH_LOG_ERROR(this, "Failed to create log file: {}, {}",
                          log_filepath, e.what());

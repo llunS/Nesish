@@ -75,28 +75,31 @@ function(configure_em_options i_tgt)
         # Optimizations
         target_compile_options(${i_tgt} PRIVATE
             $<$<CONFIG:Release,RelWithDebInfo>:-O3>
-            $<$<CONFIG:Release,RelWithDebInfo>:-flto>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
         )
         target_link_options(${i_tgt} PRIVATE
             $<$<CONFIG:Release,RelWithDebInfo>:-O3>
-            $<$<CONFIG:Release,RelWithDebInfo>:-flto>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
         )
 
         set(em_flags
             "-fno-rtti"
-            # Can not set these two due to code having "throw"
-            # "-fno-exceptions"
-            # "-sDISABLE_EXCEPTION_THROWING=1"
+            "-fno-exceptions"
+            "-sDISABLE_EXCEPTION_THROWING=1"
             "-sDISABLE_EXCEPTION_CATCHING=1"
+            "-mnontrapping-fptoint"
         )
-        set(em_cppflags
+        set(em_cxxflags
         )
         set(em_ldflags
             "-sWASM=1"
             "-sALLOW_MEMORY_GROWTH=1"
             "-sEXIT_RUNTIME=0"
+            "-sENVIRONMENT=web"
+            # Uncomment this to track throw source
+            # "-Wl,--trace-symbol=__cxa_throw"
         )
-        target_compile_options(${i_tgt} PRIVATE ${em_cppflags} ${em_flags})
+        target_compile_options(${i_tgt} PRIVATE ${em_cxxflags} ${em_flags})
         target_link_options(${i_tgt} PRIVATE ${em_ldflags} ${em_flags})
     endif()
 endfunction()

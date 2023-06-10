@@ -40,7 +40,7 @@ NHErr
 CartridgeLoader::load_ines(const std::string &i_rom_path,
                            Cartridge **o_cartridge, NHLogger *i_logger)
 {
-    auto err = NH_ERR_OK;
+    NHErr err = NH_ERR_OK;
 
     std::FILE *file = nullptr;
     INES *o_ines = nullptr;
@@ -191,7 +191,7 @@ CartridgeLoader::pv_load_ines_prg_rom(std::FILE *i_file, INES *io_ines,
         return NH_ERR_CORRUPTED;
     }
 
-    auto err = NH_ERR_OK;
+    NHErr err = NH_ERR_OK;
 
     constexpr int KiB = 1024;
     std::size_t rom_bytes = io_ines->m_header.prg_rom_size * 16 * KiB;
@@ -236,7 +236,7 @@ CartridgeLoader::pv_load_ines_chr_rom(std::FILE *i_file, INES *io_ines,
         return NH_ERR_OK;
     }
 
-    auto err = NH_ERR_OK;
+    NHErr err = NH_ERR_OK;
 
     constexpr int KiB = 1024;
     std::size_t rom_bytes = io_ines->m_header.chr_rom_size * 8 * KiB;

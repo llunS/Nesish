@@ -8,11 +8,17 @@ namespace sh {
 
 struct Resampler {
   public:
-    Resampler(int i_buffer_size, short i_amp = 0);
-    ~Resampler();
+    Resampler();
+    ~Resampler(){};
+
     NB_KLZ_DELETE_COPY_MOVE(Resampler);
 
   public:
+    bool
+    init(int i_buffer_size, short i_amp = 0);
+    void
+    close();
+
     bool
     set_rates(double i_clock_rate, double i_sample_rate);
 
@@ -20,9 +26,6 @@ struct Resampler {
     clock(short i_amp);
     bool
     samples_avail(short o_samples[], int i_count);
-
-    void
-    close();
 
   private:
     short m_amp;

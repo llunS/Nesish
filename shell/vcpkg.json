@@ -4,14 +4,6 @@
     "version-semver": "0.1.0",
     "dependencies": [
         {
-            "name": "spdlog",
-            "version>=": "1.11.0#1"
-        },
-        {
-            "name": "fmt",
-            "version>=": "9.1.0"
-        },
-        {
             "name": "glfw3",
             "version>=": "3.3.6",
             "platform": "!emscripten"

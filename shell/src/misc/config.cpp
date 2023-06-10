@@ -3,6 +3,7 @@
 #include "nhbase/path.hpp"
 #include "nhbase/filesystem.hpp"
 #include "nhbase/vc_intrinsics.hpp"
+#include "misc/exception.hpp"
 
 NB_VC_WARNING_PUSH
 NB_VC_WARNING_DISABLE(4706)
@@ -274,7 +275,7 @@ l_end:
 bool
 load_single_bool(bool &o_val, const char *i_section, const char *i_key)
 {
-    try
+    SH_TRY
     {
         std::string user_cfg =
             nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
@@ -302,7 +303,7 @@ load_single_bool(bool &o_val, const char *i_section, const char *i_key)
         o_val = (ini[i_section][i_key] == "1");
         return true;
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         return false;
     }
@@ -311,7 +312,7 @@ load_single_bool(bool &o_val, const char *i_section, const char *i_key)
 bool
 save_single_bool(bool i_val, const char *i_section, const char *i_key)
 {
-    try
+    SH_TRY
     {
         std::string user_cfg =
             nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
@@ -324,7 +325,7 @@ save_single_bool(bool i_val, const char *i_section, const char *i_key)
         ini[i_section][i_key] = i_val ? "1" : "0";
         return inifile.write(ini);
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         return false;
     }
@@ -333,7 +334,7 @@ save_single_bool(bool i_val, const char *i_section, const char *i_key)
 bool
 load_log_level(NHLogLevel &o_val)
 {
-    try
+    SH_TRY
     {
         std::string user_cfg =
             nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
@@ -366,7 +367,7 @@ load_log_level(NHLogLevel &o_val)
         o_val = val;
         return true;
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         return false;
     }
@@ -375,7 +376,7 @@ load_log_level(NHLogLevel &o_val)
 bool
 save_log_level(NHLogLevel i_val)
 {
-    try
+    SH_TRY
     {
         std::string user_cfg =
             nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
@@ -388,7 +389,7 @@ save_log_level(NHLogLevel i_val)
         ini["Debug"]["LogLevel"] = std::to_string(i_val);
         return inifile.write(ini);
     }
-    catch (const std::exception &)
+    SH_CATCH(const std::exception &)
     {
         return false;
     }

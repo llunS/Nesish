@@ -16,7 +16,7 @@ function(inc_test i_directory i_test)
         target_link_libraries(${tgt_name} PRIVATE
             Nesish
             NesishBase
-            fmt::fmt
+            fmt::fmt-header-only
             GTest::gtest_main
         )
 

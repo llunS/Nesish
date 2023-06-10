@@ -8,7 +8,11 @@
 #include "nesish/nesish.h"
 #include "nhbase/path.hpp"
 
+#include "nhbase/vc_intrinsics.hpp"
+NB_VC_WARNING_PUSH
+NB_VC_WARNING_DISABLE(6385)
 #include "fmt/core.h"
+NB_VC_WARNING_POP
 
 static std::ifstream
 pv_open_log(const std::string &i_path, bool &o_ok);

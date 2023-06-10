@@ -22,7 +22,8 @@ typedef size_t NHCycle;
 #define NH_NES_WIDTH 256
 #define NH_NES_HEIGHT 240
 
-typedef enum NHErr {
+typedef int NHErr;
+enum {
     NH_ERR_OK = 0,
     NH_ERR_UNINITIALIZED,    // Uninitialized.
     NH_ERR_INVALID_ARGUMENT, // Invalid argument.
@@ -33,7 +34,7 @@ typedef enum NHErr {
     NH_ERR_PROGRAMMING,      // Someone wrote a bug, an unexpected behavior.
     NH_ERR_READ_ONLY,        // Attempted to write to read only area.
     NH_ERR_WRITE_ONLY,       // Attempted to read from write only area.
-} NHErr;
+};
 
 #define NH_FAILED(err) ((err) != NH_ERR_OK)
 

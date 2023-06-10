@@ -94,12 +94,18 @@ target_sources(${tgt_name} PRIVATE ${sources})
 if(NOT SH_TGT_WEB)
     find_package(glfw3 CONFIG REQUIRED)
 endif()
-find_package(spdlog CONFIG REQUIRED)
 
+if(SH_TGT_WEB)
+    set(FMT_NO_EXCEPTIONS ON CACHE BOOL "-fno-exceptions on Web" FORCE)
+endif()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 # @TODO: Formal separation of CMake projects using its export and import functionality
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 
+if(SH_TGT_WEB)
+    set(SPDLOG_NO_EXCEPTIONS ON CACHE BOOL "-fno-exceptions on Web" FORCE)
+endif()
+add_subdirectory(3rd/spdlog)
 add_subdirectory(3rd/blip_buf)
 add_subdirectory(3rd/imgui) # before ImGuiFileBrowser
 add_subdirectory(3rd/mINI)
@@ -129,8 +135,11 @@ else()
         "-lidbfs.js"
         "-sFILESYSTEM=1"
         "-sUSE_GLFW=3"
-        "-sMIN_WEBGL_VERSION=1"
-        "-sMAX_WEBGL_VERSION=1"
+        # https://emscripten.org/docs/optimizing/Optimizing-WebGL.html#which-gl-mode-to-target
+        # https://emscripten.org/docs/optimizing/Optimizing-WebGL.html#migrating-to-webgl-2
+        # The link suggests that 2.0 has improvements over 1.0, try it without profiling
+        "-sMIN_WEBGL_VERSION=2"
+        "-sMAX_WEBGL_VERSION=2"
         "-sASYNCIFY=1"
         "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/template/shell_minimal.html"
     )
