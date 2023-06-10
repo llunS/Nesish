@@ -115,12 +115,13 @@ CustomKey::draw_key_config(NHCtrlPort i_port, const char *i_port_name)
                             ImVec2(cell_w_with_spacing * KEY_BUTTONS[i].x +
                                        group_spacing_x * KEY_BUTTONS[i].y,
                                    cell_h_with_spacing * KEY_BUTTONS[i].z));
-        (void)snprintf(key_label, sizeof(key_label), "%s###%s",
-                       !(m_recording && m_recording_port == i_port &&
-                         KEY_BUTTONS[i].nhkey == m_recording_key)
-                           ? pv_vkey_to_keyname(mapping[KEY_BUTTONS[i].nhkey])
-                           : "...",
-                       KEY_BUTTONS[i].id);
+        (void)std::snprintf(
+            key_label, sizeof(key_label), "%s###%s",
+            !(m_recording && m_recording_port == i_port &&
+              KEY_BUTTONS[i].nhkey == m_recording_key)
+                ? pv_vkey_to_keyname(mapping[KEY_BUTTONS[i].nhkey])
+                : "...",
+            KEY_BUTTONS[i].id);
         if (ImGui::Button(key_label, key_cell_size))
         {
             on_key_clicked(i_port, KEY_BUTTONS[i].nhkey);

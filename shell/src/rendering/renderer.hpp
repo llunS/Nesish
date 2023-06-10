@@ -5,7 +5,7 @@
 #include "nhbase/klass.hpp"
 
 #include "rendering/shader.hpp"
-#include "glad.h"
+#include "misc/glfunc.hpp"
 #include "rendering/texture.hpp"
 
 namespace sh {

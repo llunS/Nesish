@@ -16,10 +16,10 @@ bool
 reset_default_key_config(KeyMapping *o_p1, KeyMapping *o_p2, Logger *i_logger);
 
 bool
-load_sleepless(bool &o_val);
+load_single_bool(bool &o_val, const char *i_section, const char *i_key);
 
 bool
-save_sleepless(bool i_val);
+save_single_bool(bool i_val, const char *i_section, const char *i_key);
 
 bool
 load_log_level(NHLogLevel &o_val);

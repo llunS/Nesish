@@ -12,15 +12,15 @@
 
 #include <unordered_map>
 
-#define MAX_LOGS 5
-
 namespace sh {
 
+#ifndef SH_TGT_WEB
 static std::string
 pv_log_file_rel_exec_path();
 static std::string
 pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
                         Logger *i_logger);
+#endif
 
 static const std::unordered_map<NHLogLevel, const char *> g_level_to_name{
     /* clang-format off */
@@ -45,8 +45,9 @@ Logger::Logger(NHLogLevel i_level)
     : logger(nullptr)
     , level(NH_LOG_OFF)
 {
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
-    auto spd_logger = new spdlog::logger("Nesish", console_sink);
+    /* Create logger with stdout sink */
+    auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
+    auto spd_logger = new spdlog::logger("Nesish", stdout_sink);
     this->logger = spd_logger;
 
     // Prompt log level
@@ -55,6 +56,9 @@ Logger::Logger(NHLogLevel i_level)
     // Set both levels
     set_level(i_level);
 
+#ifndef SH_TGT_WEB
+    /* Create file sink */
+    constexpr int MAX_LOGS = 5;
     auto log_filepath =
         pv_backup_previous_logs(pv_log_file_rel_exec_path(), MAX_LOGS, this);
     if (!log_filepath.empty())
@@ -78,6 +82,7 @@ Logger::Logger(NHLogLevel i_level)
         SH_LOG_ERROR(this, "Failed to create log file: {}",
                      std::string("./") + pv_log_file_rel_exec_path());
     }
+#endif
 }
 
 void
@@ -121,6 +126,8 @@ Logger::~Logger()
     }
 }
 
+#ifndef SH_TGT_WEB
+
 std::string
 pv_log_file_rel_exec_path()
 {
@@ -150,7 +157,7 @@ pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
         auto basename = curr == 0
                             ? i_log_exec_rel_path
                             : i_log_exec_rel_path + "." + std::to_string(curr);
-        std::string cur_abs_path = nb::path_join_exe(basename);
+        std::string cur_abs_path = nb::resolve_exe_dir(basename);
         if (nb::file_exists(cur_abs_path))
         {
             rename_indices.push(curr);
@@ -171,7 +178,7 @@ pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
 
         auto basename = i == 0 ? i_log_exec_rel_path
                                : i_log_exec_rel_path + "." + std::to_string(i);
-        std::string cur_abs_path = nb::path_join_exe(basename);
+        std::string cur_abs_path = nb::resolve_exe_dir(basename);
 
         // something may happen since we collect it, we not exist anymore,
         // ignore it.
@@ -181,7 +188,7 @@ pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
         }
 
         auto next_basename = i_log_exec_rel_path + "." + std::to_string(i + 1);
-        auto next_file_abs_path = nb::path_join_exe(next_basename);
+        auto next_file_abs_path = nb::resolve_exe_dir(next_basename);
         if (!nb::file_rename(cur_abs_path, next_file_abs_path, true))
         {
             // if we failed to rename, then this file may be overwritten.
@@ -201,7 +208,9 @@ pv_backup_previous_logs(const std::string &i_log_exec_rel_path, int i_max_logs,
         }
     }
 
-    return nb::path_join_exe(i_log_exec_rel_path);
+    return nb::resolve_exe_dir(i_log_exec_rel_path);
 }
+
+#endif
 
 } // namespace sh

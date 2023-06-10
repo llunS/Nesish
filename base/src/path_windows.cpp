@@ -13,7 +13,7 @@ path_delimiter()
 }
 
 std::string
-get_exec_path()
+get_exec_dir()
 {
     // add 1, not sure "MAX_PATH" include "NULL" or not.
     char path[MAX_PATH + 1];
@@ -22,7 +22,7 @@ get_exec_path()
     {
         return "";
     }
-    return path;
+    return dirname(path);
 }
 
 } // namespace nb

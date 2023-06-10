@@ -1,6 +1,6 @@
 #include "error.hpp"
 
-#include "glad.h"
+#include "misc/glfunc.hpp"
 
 #include <cstdio>
 

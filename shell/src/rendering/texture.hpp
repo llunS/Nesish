@@ -3,7 +3,7 @@
 
 #include "nhbase/klass.hpp"
 #include "nesish/nesish.h"
-#include "glad.h"
+#include "misc/glfunc.hpp"
 
 namespace sh {
 
@@ -25,6 +25,9 @@ struct Texture {
     from_ptn_tbl(NHDPatternTable i_tbl);
     bool
     from_sprite(NHDSprite i_sprite);
+
+    bool
+    from_black_frame(int i_width, int i_height);
 
     int
     get_width();

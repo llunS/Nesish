@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Nesish</title>
+    <style>
+      body {
+        font-family: arial;
+        margin: 0;
+        padding: none;
+      }
+
+      .emscripten {
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+      }
+
+      div.emscripten {
+        text-align: center;
+      }
+
+      div.emscripten_border {
+        border: none;
+      }
+
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas.emscripten {
+        border: 0px none;
+        background-color: white;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="emscripten_border">
+      <canvas
+        class="emscripten"
+        id="canvas"
+        oncontextmenu="event.preventDefault()"
+      ></canvas>
+    </div>
+
+    <input id="open_game" type="file" accept=".nes" style="display: none" />
+
+    <script type="text/javascript">
+      /* Courtesy of https://github.com/jnmaloney/WebGui, modified version of it */
+
+      var Module = {
+        preRun: [],
+        postRun: [],
+        print: (function () {
+          return function (text) {
+            if (arguments.length > 1)
+              text = Array.prototype.slice.call(arguments).join(" ");
+            console.log(text);
+          };
+        })(),
+        printErr: function (text) {
+          if (arguments.length > 1)
+            text = Array.prototype.slice.call(arguments).join(" ");
+          console.error(text);
+        },
+        canvas: (() => {
+          let canvas = document.getElementById("canvas");
+
+          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+          // application robust, you may want to override this behavior before shipping!
+          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+          canvas.addEventListener(
+            "webglcontextlost",
+            (e) => {
+              alert("WebGL context lost. You will need to reload the page.");
+              e.preventDefault();
+            },
+            false
+          );
+
+          return canvas;
+        })(),
+        setStatus: function (text) {
+          console.log("status: [" + text + "]");
+        },
+        monitorRunDependencies: function (left) {
+          // no run dependencies to log
+        },
+
+        openGameInput: (function () {
+          let input = document.getElementById("open_game");
+
+          input.onchange = function (e) {
+            let file = e.target.files[0];
+            if (!file) {
+              return;
+            }
+
+            let reader = new FileReader();
+            reader.onload = (event) => {
+              const buffer_view = new Uint8Array(event.target.result);
+
+              // Store the file content to intermediate storage
+              let stream = FS.open("/tmp_open_game", "w"); // value synced with the one in code
+              FS.write(stream, buffer_view, 0, buffer_view.length, 0);
+              FS.close(stream);
+
+              // Notify the emulator to read it
+              let ptr = stringToNewUTF8(file.name);
+              _nh_on_game_opened(ptr);
+              _free(ptr);
+            };
+            reader.readAsArrayBuffer(file);
+          };
+
+          return input;
+        })(),
+      };
+
+      function setCanvasFullscreen() {
+        document.getElementById("canvas").width = window.innerWidth;
+        document.getElementById("canvas").height = window.innerHeight;
+      }
+      window.addEventListener(
+        "resize",
+        function () {
+          setCanvasFullscreen();
+          _nh_on_canvas_size_changed(window.innerWidth, window.innerHeight);
+        },
+        false
+      );
+      setCanvasFullscreen();
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>

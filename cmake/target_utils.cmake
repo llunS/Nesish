@@ -44,7 +44,10 @@ function(configure_vc_options i_tgt)
 endfunction()
 
 function(configure_optimizations i_tgt)
-    if(MSVC)
+    # May report Clang compiler, so check first
+    if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+        # no-op
+    elseif(MSVC)
         target_compile_options(${i_tgt} PRIVATE
             $<$<CONFIG:Release,RelWithDebInfo>:/O2>
             $<$<CONFIG:Release,RelWithDebInfo>:/GL>
@@ -59,9 +62,41 @@ function(configure_optimizations i_tgt)
             $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
         )
         target_link_options(${i_tgt} PRIVATE
+            $<$<CONFIG:Release,RelWithDebInfo>:-O3>
             $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
         )
     else()
         message(FATAL_ERROR "Platform not supported yet!")
+    endif()
+endfunction()
+
+function(configure_em_options i_tgt)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+        # Optimizations
+        target_compile_options(${i_tgt} PRIVATE
+            $<$<CONFIG:Release,RelWithDebInfo>:-O3>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto>
+        )
+        target_link_options(${i_tgt} PRIVATE
+            $<$<CONFIG:Release,RelWithDebInfo>:-O3>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto>
+        )
+
+        set(em_flags
+            "-fno-rtti"
+            # Can not set these two due to code having "throw"
+            # "-fno-exceptions"
+            # "-sDISABLE_EXCEPTION_THROWING=1"
+            "-sDISABLE_EXCEPTION_CATCHING=1"
+        )
+        set(em_cppflags
+        )
+        set(em_ldflags
+            "-sWASM=1"
+            "-sALLOW_MEMORY_GROWTH=1"
+            "-sEXIT_RUNTIME=0"
+        )
+        target_compile_options(${i_tgt} PRIVATE ${em_cppflags} ${em_flags})
+        target_link_options(${i_tgt} PRIVATE ${em_ldflags} ${em_flags})
     endif()
 endfunction()

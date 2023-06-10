@@ -8,6 +8,6 @@ char
 path_delimiter();
 
 std::string
-get_exec_path();
+get_exec_dir();
 
 } // namespace nb

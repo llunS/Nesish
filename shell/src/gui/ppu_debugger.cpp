@@ -70,8 +70,8 @@ PPUDebugger::draw_pattern()
     static_assert(names[PALETTE_COUNT - 1] && PALETTE_COUNT >= 1,
                   "Incorrect count of Palette set");
     char buf[64];
-    (void)snprintf(buf, sizeof(buf), "%s###ptn_tbl_palette_trigger",
-                   names[m_ptn_tbl_palette]);
+    (void)std::snprintf(buf, sizeof(buf), "%s###ptn_tbl_palette_trigger",
+                        names[m_ptn_tbl_palette]);
     if (ImGui::Button(buf))
     {
         ImGui::OpenPopup("ptn_tbl_palette_popup");

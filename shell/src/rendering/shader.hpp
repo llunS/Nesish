@@ -2,8 +2,7 @@
 #pragma once
 
 #include "nhbase/klass.hpp"
-
-#include "glad.h"
+#include "misc/glfunc.hpp"
 
 namespace sh {
 

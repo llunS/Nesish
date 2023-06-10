@@ -9,7 +9,8 @@
         },
         {
             "name": "gtest",
-            "version>=": "1.11.0"
+            "version>=": "1.11.0",
+            "platform": "!emscripten"
         }
     ],
     "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82"

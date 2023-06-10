@@ -25,7 +25,6 @@ struct PPUDebugger : public Window {
     draw_oam();
 
   private:
-    Texture m_frame_tex;
     Texture m_sp_tex[64];
     Texture m_ptn_tbl_texs[2];
 

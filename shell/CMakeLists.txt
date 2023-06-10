@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.25.1)
 project(NesishShell)
 
+# -- Target platform
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(SH_TGT_WEB ON)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(SH_TGT_MACOS ON)
+endif()
+
 # -- Global compiler/linker options/flags
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -28,12 +36,20 @@ option(SH_USE_SOKOL_AUDIO "Use sokol_audio instead of RtAudio" ON)
 
 set(tgt_name NesishShell)
 add_executable(${tgt_name})
-set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME Nesish)
+if(NOT SH_TGT_WEB)
+    set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME Nesish)
+else()
+    set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME index)
+endif()
 include(target_utils)
 configure_cxx(${tgt_name} 11)
 configure_warnings(${tgt_name})
 configure_vc_options(${tgt_name} /wd6285)
-configure_optimizations(${tgt_name})
+if(SH_TGT_WEB)
+    configure_em_options(${tgt_name})
+else()
+    configure_optimizations(${tgt_name})
+endif()
 
 # --- Include directories
 
@@ -54,8 +70,10 @@ list(APPEND sources src/rendering/renderer.cpp)
 list(APPEND sources src/rendering/texture.cpp)
 
 list(APPEND sources src/audio/resampler.cpp)
-list(APPEND sources src/audio/pcm_writer.cpp)
-if(SH_USE_SOKOL_AUDIO)
+if(NOT SH_TGT_WEB)
+    list(APPEND sources src/audio/pcm_writer.cpp)
+endif()
+if(SH_USE_SOKOL_AUDIO OR SH_TGT_WEB)
     list(APPEND sources src/audio/backend_sokol.cpp)
     list(APPEND sources src/audio/sokol_log.cpp)
 else()
@@ -73,31 +91,54 @@ target_sources(${tgt_name} PRIVATE ${sources})
 
 # --- Dependencies
 
-find_package(glfw3 CONFIG REQUIRED)
+if(NOT SH_TGT_WEB)
+    find_package(glfw3 CONFIG REQUIRED)
+endif()
 find_package(spdlog CONFIG REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 # @TODO: Formal separation of CMake projects using its export and import functionality
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
-add_subdirectory(3rd/glad)
+
 add_subdirectory(3rd/blip_buf)
 add_subdirectory(3rd/imgui) # before ImGuiFileBrowser
-add_subdirectory(3rd/ImGuiFileBrowser)
 add_subdirectory(3rd/mINI)
+if(NOT SH_TGT_WEB)
+    add_subdirectory(3rd/glad)
+    add_subdirectory(3rd/ImGuiFileBrowser)
+endif()
 
 target_link_libraries(${tgt_name} PRIVATE
-    glfw
     imgui
     spdlog::spdlog_header_only
-    glad
     blip_buf
-    ImGuiFileBrowser
     mINI_header_only
     Nesish
     NesishBase
 )
 
-if(SH_USE_SOKOL_AUDIO)
+if(NOT SH_TGT_WEB)
+    target_link_libraries(${tgt_name} PRIVATE glfw)
+    target_link_libraries(${tgt_name} PRIVATE glad)
+    target_link_libraries(${tgt_name} PRIVATE ImGuiFileBrowser)
+else()
+    # Enable EM_ASM_XXX blocks
+    target_compile_options(${tgt_name} PRIVATE "-Wno-dollar-in-identifier-extension")
+
+    target_link_options(${tgt_name} PRIVATE
+        "-lidbfs.js"
+        "-sFILESYSTEM=1"
+        "-sUSE_GLFW=3"
+        "-sMIN_WEBGL_VERSION=1"
+        "-sMAX_WEBGL_VERSION=1"
+        "-sASYNCIFY=1"
+        "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/template/shell_minimal.html"
+    )
+
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+endif()
+
+if(SH_USE_SOKOL_AUDIO OR SH_TGT_WEB)
     add_subdirectory(3rd/sokol)
     target_link_libraries(${tgt_name} PRIVATE sokol)
     target_compile_definitions(${tgt_name} PRIVATE -DSH_USE_SOKOL_AUDIO)
@@ -106,30 +147,34 @@ else()
     target_link_libraries(${tgt_name} PRIVATE RtAudio::rtaudio)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(SH_TGT_MACOS)
     target_compile_definitions(${tgt_name} PRIVATE -DSH_TGT_MACOS)
 
     if(SH_USE_SOKOL_AUDIO)
         find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
         target_link_libraries(${tgt_name} PRIVATE ${AUDIOTOOLBOX_LIBRARY})
     endif()
+elseif(SH_TGT_WEB)
+    target_compile_definitions(${tgt_name} PRIVATE -DSH_TGT_WEB)
 endif()
 
 target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)
-# target_compile_definitions(${tgt_name} PRIVATE -DSH_GUI_FULLSCREEN)
 
 # --- Transform shaders to compile-time data
 
-include(xform_shader)
-xform_shader(resources/shader/screen_rect.vert src/shaders sh)
-xform_shader(resources/shader/screen_rect.frag src/shaders sh)
+if(NOT SH_TGT_WEB)
+    include(xform_shader)
+    xform_shader(resources/shader/opengl33/screen_rect.vert src/shaders sh)
+    xform_shader(resources/shader/opengl33/screen_rect.frag src/shaders sh)
+endif()
 
 # --- Create all sub folders for config files
 # Since using fopen or fstream won’t handle sub-directories
-
-# If a directory already exists it will be silently ignored.
-add_custom_command(
-    TARGET ${tgt_name} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-    $<TARGET_FILE_DIR:${tgt_name}>/config
-)
+if(NOT SH_TGT_WEB)
+    # If a directory already exists it will be silently ignored.
+    add_custom_command(
+        TARGET ${tgt_name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:${tgt_name}>/config # value synced with the one in code
+    )
+endif()

@@ -16,7 +16,7 @@ path_delimiter()
 }
 
 std::string
-get_exec_path()
+get_exec_dir()
 {
     char path[PATH_MAX + 1];
     uint32_t size = sizeof path;
@@ -27,7 +27,7 @@ get_exec_path()
         char abs_path[PATH_MAX + 1];
         if (realpath(path, abs_path))
         {
-            return abs_path;
+            return dirname(abs_path);
         }
     }
 

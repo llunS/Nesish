@@ -16,6 +16,6 @@ path_join(const std::string &lhs, const std::string &rhs);
 
 NB_API
 std::string
-path_join_exe(const std::string &rel_path);
+resolve_exe_dir(const std::string &rel_path);
 
 } // namespace nb

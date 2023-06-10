@@ -60,12 +60,12 @@ TEST_F(cpu_test, nestest)
     NHLogger logger{pv_log, nullptr, NH_LOG_TRACE};
     console = nh_new_console(&logger);
     ASSERT_TRUE(NH_VALID(console));
-    auto rom_path = nb::path_join_exe("nestest.nes");
+    auto rom_path = nb::resolve_exe_dir("nestest.nes");
     ASSERT_FALSE(NH_FAILED(nh_insert_cartridge(console, rom_path.c_str())));
     nh_power_up(console);
 
     bool open = false;
-    auto log_file = pv_open_log(nb::path_join_exe("nestest.log"), open);
+    auto log_file = pv_open_log(nb::resolve_exe_dir("nestest.log"), open);
     ASSERT_TRUE(open);
 
     NHCPU cpu = nh_test_get_cpu(console);

@@ -13,15 +13,18 @@
         },
         {
             "name": "glfw3",
-            "version>=": "3.3.6"
+            "version>=": "3.3.6",
+            "platform": "!emscripten"
         },
         {
             "name": "rtaudio",
-            "version>=": "2021-11-16"
+            "version>=": "2021-11-16",
+            "platform": "!emscripten"
         },
         {
             "name": "gtest",
-            "version>=": "1.11.0"
+            "version>=": "1.11.0",
+            "platform": "!emscripten"
         }
     ],
     "builtin-baseline": "134505003bb46e20fbace51ccfb69243fbbc5f82"

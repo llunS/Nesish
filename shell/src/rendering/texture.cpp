@@ -1,5 +1,9 @@
 #include "texture.hpp"
 
+#include "rendering/error.hpp"
+
+#include <stdexcept>
+
 namespace sh {
 
 Texture::Texture()
@@ -41,11 +45,57 @@ Texture::genTexIf(int i_width, int i_height)
                  GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+    // clamp to edge required for NPOT textures on emscripten
+    // might as well set it on other platforms as well
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    if (checkGLError())
+    {
+        return false;
+    }
     m_width = i_width;
     m_height = i_height;
 
     return true;
+}
+
+bool
+Texture::from_black_frame(int i_width, int i_height)
+{
+    if (!genTexIf(i_width, i_height))
+    {
+        return false;
+    }
+
+    int err = 0;
+    // Don't use stack storage, e.g. on Emscripten, max stack size is 64*1024
+    NHByte *data = nullptr;
+    try
+    {
+        data = new NHByte[i_width * i_height * 3]{};
+    }
+    catch (const std::exception &)
+    {
+        err = 1;
+        goto l_end;
+    }
+
+    /* update input texture */
+    glBindTexture(GL_TEXTURE_2D, m_tex);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, i_width, i_height, GL_RGB,
+                    GL_UNSIGNED_BYTE, data);
+    if (checkGLError())
+    {
+        err = 1;
+        goto l_end;
+    }
+
+l_end:
+    if (data)
+    {
+        delete[] data;
+    }
+    return !err;
 }
 
 bool
@@ -62,6 +112,10 @@ Texture::from_frame(NHFrame i_frame)
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB,
                     GL_UNSIGNED_BYTE, nh_frm_data(i_frame));
+    if (checkGLError())
+    {
+        return false;
+    }
 
     return true;
 }
@@ -80,6 +134,10 @@ Texture::from_ptn_tbl(NHDPatternTable i_tbl)
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
                     nhd_ptn_table_data(i_tbl));
+    if (checkGLError())
+    {
+        return false;
+    }
 
     return true;
 }
@@ -98,6 +156,10 @@ Texture::from_sprite(NHDSprite i_sprite)
     glBindTexture(GL_TEXTURE_2D, m_tex);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
                     nhd_sprite_data(i_sprite));
+    if (checkGLError())
+    {
+        return false;
+    }
 
     return true;
 }

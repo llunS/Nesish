@@ -1,5 +1,11 @@
 #include "application.hpp"
 
+#ifdef SH_TGT_WEB
+#define SH_MUTED_DEF 1
+#else
+#define SH_MUTED_DEF 0
+#endif
+
 #include <cstdio>
 #include <chrono>
 #ifdef SH_TGT_MACOS
@@ -8,7 +14,9 @@
 #include <cmath>
 
 #include "audio/resampler.hpp"
+#ifndef SH_TGT_WEB
 #include "audio/pcm_writer.hpp"
+#endif
 #include "audio/channel.hpp"
 #ifndef SH_USE_SOKOL_AUDIO
 #include "audio/backend_rtaudio.hpp"
@@ -18,8 +26,14 @@
 
 #include "nhbase/path.hpp"
 
-#include "glad.h"
+// @FIXME: spdlog will include windows header files, we need to include them
+// before "glfw3.h" so that glfw won't redefine symbols.
+#include "misc/logger.hpp"
+#include "glfw/glfw3.h"
+#include "misc/glfunc.hpp"
+#ifndef SH_TGT_WEB
 #include "rendering/renderer.hpp"
+#endif
 
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -28,6 +42,51 @@
 
 #include "gui/ppu_debugger.hpp"
 #include "gui/custom_key.hpp"
+
+sh::Application *g_app_instance = nullptr;
+
+#ifdef SH_TGT_WEB
+
+#include <emscripten.h>
+#include <functional>
+
+static std::function<void()> g_loop_cb;
+static void
+g_loop_cb_c()
+{
+    g_loop_cb();
+};
+
+EM_JS(int, js_canvas_width, (), { return Module.canvas.width; });
+EM_JS(int, js_canvas_height, (), { return Module.canvas.height; });
+EM_JS(void, js_open_game_popup, (), { Module.openGameInput.click(); };)
+
+extern "C" void EMSCRIPTEN_KEEPALIVE
+nh_on_canvas_size_changed(int width, int height)
+{
+    if (g_app_instance)
+    {
+        if (g_app_instance->m_win)
+        {
+            glfwSetWindowSize(g_app_instance->m_win, width, height);
+        }
+    }
+}
+
+extern "C" void EMSCRIPTEN_KEEPALIVE
+nh_on_game_opened(const char *basename)
+{
+    // e.g. XXX.nes
+    // So file in different directories but with the same name as the current
+    // one gets ignored.
+    // So far so good.
+    if (g_app_instance)
+    {
+        g_app_instance->on_game_opened(basename, "/tmp_open_game");
+    }
+}
+
+#endif
 
 namespace sh {
 
@@ -45,6 +104,10 @@ namespace sh {
 #define AUDIO_BUF_SIZE 512      // Close to 1 frame worth of buffer
 // 800 = 1 / 60 * 48000, x2 for peak storage
 #define AUDIO_CH_SIZE (800 * 2)
+
+#define CONFIG_SECTION_DEBUG "Debug"
+#define CONFIG_KEY_SLEEPLESS "Sleepless"
+#define CONFIG_KEY_MUTED "Muted"
 
 typedef float sample_t;
 typedef Channel<sample_t, AUDIO_CH_SIZE> AudioBuffer;
@@ -87,8 +150,6 @@ pv_reset(void *user);
         ctrl.reset = pv_reset;                                                 \
     }
 
-Application *Application::s_instance = nullptr;
-
 Application::Application()
     : m_win(nullptr)
     , m_glfw_inited(false)
@@ -97,13 +158,18 @@ Application::Application()
     , m_imgui_opengl_inited(false)
     , m_logger(nullptr)
     , m_emu(NH_NULL)
+#ifndef SH_TGT_WEB
     , m_renderer(nullptr)
+#endif
     , m_audio_buf(nullptr)
     , m_audio_data(nullptr)
     , m_resampler(nullptr)
+#ifndef SH_TGT_WEB
     , m_pcm_writer(nullptr)
+#endif
     , m_paused(false)
     , m_sleepless(false)
+    , m_muted(false)
     , m_messager(this)
 {
     m_p1.user = nullptr;
@@ -113,13 +179,18 @@ Application::Application()
 Application::~Application() {}
 
 bool
-Application::init(Logger *i_logger)
+Application::init()
 {
-    if (!i_logger)
+    try
+    {
+        NHLogLevel log_level = SH_DEFAULT_LOG_LEVEL;
+        (void)sh::load_log_level(log_level);
+        m_logger = new sh::Logger(log_level);
+    }
+    catch (const std::exception &)
     {
         goto l_err;
     }
-    m_logger = i_logger;
 
     /* load key config */
     if (!load_key_config(m_p1_keys, m_p2_keys, m_logger))
@@ -146,13 +217,22 @@ Application::init(Logger *i_logger)
     m_glfw_inited = true;
 
     /* create glfw window */
+#if defined(SH_TGT_WEB)
+    // GL ES 2.0 / WebGL 1.0
+    static const char *glsl_version = "#version 100";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#else
     // OpenGL 3.3
+    static const char *glsl_version = "#version 330";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-#if defined(__APPLE__)
-    glfwWindowHint(GLFW_OPENGL_PROFILE,
-                   GLFW_OPENGL_CORE_PROFILE);         // 3.2+ only
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if defined(SH_TGT_MACOS)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true); // Required on Mac
+#endif
 #endif
     glfwWindowHint(GLFW_RED_BITS, 8);
     glfwWindowHint(GLFW_GREEN_BITS, 8);
@@ -161,21 +241,11 @@ Application::init(Logger *i_logger)
     glfwWindowHint(GLFW_RESIZABLE, false);
     // hide first, cos we are about to adjust its size
     glfwWindowHint(GLFW_VISIBLE, false);
-#ifdef SH_GUI_FULLSCREEN
-    {
-        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        if (!monitor)
-        {
-            goto l_err;
-        }
-        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-        if (!mode)
-        {
-            goto l_err;
-        }
-        m_win =
-            glfwCreateWindow(mode->width, mode->height, "Nesish", NULL, NULL);
-    }
+#ifdef SH_TGT_WEB
+    // GLFW in Emscripten supports only 1 window
+    // So GUI style/layout differs from it is on desktop
+    m_win = glfwCreateWindow(js_canvas_width(), js_canvas_height(), "Nesish",
+                             NULL, NULL);
 #else
     m_win = glfwCreateWindow(TARGET_WIN_WIDTH, TARGET_WIN_HEIGHT, "Nesish",
                              NULL, NULL);
@@ -186,14 +256,24 @@ Application::init(Logger *i_logger)
     }
     // Load OpenGL functions
     glfwMakeContextCurrent(m_win);
+#ifndef SH_TGT_WEB
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         goto l_err;
     }
+#endif
     // We do the timing ourselves.
     glfwSwapInterval(0);
     // Register callbacks
     glfwSetKeyCallback(m_win, Application::key_callback);
+
+#ifdef SH_TGT_WEB
+    /* init textures */
+    if (!m_black_frm_tex.from_black_frame(16, 16))
+    {
+        goto l_err;
+    }
+#endif
 
     /* Init IMGUI */
     {
@@ -203,7 +283,7 @@ Application::init(Logger *i_logger)
         {
             goto l_err;
         }
-#ifndef SH_GUI_FULLSCREEN
+#ifndef SH_TGT_WEB
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 #endif
         if (!ImGui_ImplGlfw_InitForOpenGL(m_win, true))
@@ -211,14 +291,13 @@ Application::init(Logger *i_logger)
             goto l_err;
         }
         m_imgui_glfw_inited = true;
-        const char *glsl_version = "#version 330";
         if (!ImGui_ImplOpenGL3_Init(glsl_version))
         {
             goto l_err;
         }
         m_imgui_opengl_inited = true;
 
-#ifndef SH_GUI_FULLSCREEN
+#ifndef SH_TGT_WEB
         ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
 #endif
     }
@@ -258,7 +337,7 @@ Application::init(Logger *i_logger)
         // viewport
         int width, height;
         glfwGetFramebufferSize(m_win, &width, &height);
-#ifndef SH_GUI_FULLSCREEN
+#ifndef SH_TGT_WEB
         // Change window size considering menubar
         // already current
         // glfwMakeContextCurrent(m_win);
@@ -275,7 +354,11 @@ Application::init(Logger *i_logger)
     /* Load config */
     {
         m_sleepless = false;
-        (void)load_sleepless(m_sleepless);
+        (void)load_single_bool(m_sleepless, CONFIG_SECTION_DEBUG,
+                               CONFIG_KEY_SLEEPLESS);
+        m_muted = SH_MUTED_DEF;
+        (void)load_single_bool(m_sleepless, CONFIG_SECTION_DEBUG,
+                               CONFIG_KEY_MUTED);
     }
 
     return true;
@@ -329,6 +412,14 @@ Application::release()
 
     if (m_win)
     {
+        glfwMakeContextCurrent(m_win);
+#ifdef SH_TGT_WEB
+        m_black_frm_tex.cleanup();
+#endif
+        m_frame_tex.cleanup();
+        glfwMakeContextCurrent(nullptr);
+
+        glfwMakeContextCurrent(nullptr);
         glfwDestroyWindow(m_win);
         m_win = nullptr;
     }
@@ -345,15 +436,35 @@ Application::release()
         m_emu = NH_NULL;
     }
 
-    m_logger = nullptr;
+    if (m_logger)
+    {
+        delete m_logger;
+        m_logger = nullptr;
+    }
 }
 
 int
 Application::run()
 {
-    Application::s_instance = this;
+    g_app_instance = this;
 
     /* Main loop */
+#ifdef SH_TGT_WEB
+    // @NOTE: Better don't have objects with non-trivial destructor on the stack
+    // before this call. Currently, this holds. See main() entry for details.
+    //
+    // https://emscripten.org/docs/api_reference/emscripten.h.html#c.emscripten_set_main_loop
+    // Quote: "Currently, using the new Wasm exception handling and
+    // simulate_infinite_loop == true at the same time does not work yet in C++
+    // projects that have objects with destructors on the stack at the time of
+    // the call."
+    //
+    // Although we don't enable exception handling (precisely no CATCH), we
+    // adhere to that since we can, to avoid potential problems.
+    g_loop_cb = [this]() -> void { this->tick(); };
+    emscripten_set_main_loop(g_loop_cb_c, 0, 1);
+    (void)emscripten_set_main_loop_timing(EM_TIMING_SETTIMEOUT, 16);
+#else
     auto currTime = std::chrono::steady_clock::now();
     auto nextLoopTime = currTime + std::chrono::duration<double>(0.0);
     while (true)
@@ -385,8 +496,9 @@ Application::run()
         }
     }
 l_loop_end:;
+#endif
 
-    Application::s_instance = nullptr;
+    g_app_instance = nullptr;
     return 0;
 }
 
@@ -401,7 +513,7 @@ Application::tick()
         {
             if (nh_tick(m_emu, nullptr))
             {
-                double sample = nh_get_sample(m_emu);
+                double sample = m_muted ? 0.0 : nh_get_sample(m_emu);
                 m_resampler->clock(short(sample * 32767));
                 // Once clocked, samples must be drained to avoid
                 // buffer overflow.
@@ -421,10 +533,12 @@ Application::tick()
 #endif
                         }
 
-                        if (m_pcm_writer->is_open())
+#ifndef SH_TGT_WEB
+                        if (m_pcm_writer->is_open() && !m_muted)
                         {
                             m_pcm_writer->write_s16le(buf[j]);
                         }
+#endif
                     }
                 }
             }
@@ -435,7 +549,11 @@ Application::tick()
     {
         glfwMakeContextCurrent(m_win);
 
+#ifndef SH_TGT_WEB
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+#else
+        glClearColor(54 / 255.f, 134 / 255.f, 160 / 255.f, 1.0f);
+#endif
         glClear(GL_COLOR_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -443,7 +561,7 @@ Application::tick()
         ImGui::NewFrame();
 
         // Emualtor content
-#ifndef SH_GUI_FULLSCREEN
+#ifndef SH_TGT_WEB
         if (running_game())
         {
             NHFrame framebuf = nh_get_frm(m_emu);
@@ -453,22 +571,32 @@ Application::tick()
                          ImGuiWindowFlags_NoResize |
                              ImGuiWindowFlags_AlwaysAutoResize))
         {
-            NHFrame framebuf = nh_get_frm(m_emu);
-            if (m_frame_tex.from_frame(framebuf))
+            if (!running_game())
             {
                 ImGui::Image(
-                    reinterpret_cast<ImTextureID>(m_frame_tex.texture()),
+                    reinterpret_cast<ImTextureID>(m_black_frm_tex.texture()),
                     ImVec2(TARGET_WIN_WIDTH, TARGET_WIN_HEIGHT), {0, 0}, {1, 1},
                     {1, 1, 1, 1}, {1, 1, 1, 1});
             }
             else
             {
-                ImGui::Text("Failed to update frame texture");
+                NHFrame framebuf = nh_get_frm(m_emu);
+                if (m_frame_tex.from_frame(framebuf))
+                {
+                    ImGui::Image(
+                        reinterpret_cast<ImTextureID>(m_frame_tex.texture()),
+                        ImVec2(TARGET_WIN_WIDTH, TARGET_WIN_HEIGHT), {0, 0},
+                        {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
+                }
+                else
+                {
+                    ImGui::Text("Failed to update frame texture");
+                }
             }
         }
         ImGui::End();
 #endif
-#ifndef SH_GUI_FULLSCREEN
+#ifndef SH_TGT_WEB
         }
 #endif
 
@@ -496,15 +624,16 @@ Application::tick()
 }
 
 void
-Application::load_game(const std::string &i_rom_path)
+Application::load_game(const char *i_id_path, const char *i_real_path)
 {
     /* Insert cartridge */
-    NHErr nh_err = nh_insert_cartridge(m_emu, i_rom_path.c_str());
+    NHErr nh_err = nh_insert_cartridge(m_emu, i_real_path);
     if (NH_FAILED(nh_err))
     {
         goto l_err;
     }
 
+#ifndef SH_TGT_WEB
     /* Create OpenGL renderer for emulator content */
     // need to call gl functions.
     glfwMakeContextCurrent(m_win);
@@ -520,6 +649,7 @@ Application::load_game(const std::string &i_rom_path)
     {
         goto l_err;
     }
+#endif
 
     /* Create audio objects */
     try
@@ -527,7 +657,9 @@ Application::load_game(const std::string &i_rom_path)
         m_audio_buf = new AudioBuffer();
         m_audio_data = new AudioData{0, to_AudioBuffer(m_audio_buf), m_logger};
         m_resampler = new Resampler{AUDIO_BUF_SIZE * 2}; // More than enough
+#ifndef SH_TGT_WEB
         m_pcm_writer = new PCMWriter();
+#endif
     }
     catch (const std::exception &)
     {
@@ -541,9 +673,9 @@ Application::load_game(const std::string &i_rom_path)
     {
         goto l_err;
     }
-#if DEBUG_AUDIO_PCM
+#if DEBUG_AUDIO_PCM && !defined(SH_TGT_WEB)
     // pcm recorder
-    if (m_pcm_writer->open(nb::path_join_exe("audio.pcm")))
+    if (m_pcm_writer->open(nb::resolve_exe_dir("audio.pcm")))
     {
         goto l_err;
     }
@@ -555,7 +687,7 @@ Application::load_game(const std::string &i_rom_path)
     /* Flag running */
     try
     {
-        m_running_rom = i_rom_path;
+        m_running_rom = i_id_path;
     }
     catch (const std::exception &)
     {
@@ -581,20 +713,24 @@ Application::release_game()
 
     m_running_rom.clear();
 
+#ifndef SH_TGT_WEB
     if (m_pcm_writer)
     {
         (void)m_pcm_writer->close();
     }
+#endif
     if (m_resampler)
     {
         m_resampler->close();
     }
 
+#ifndef SH_TGT_WEB
     if (m_pcm_writer)
     {
         delete m_pcm_writer;
         m_pcm_writer = nullptr;
     }
+#endif
     if (m_resampler)
     {
         delete m_resampler;
@@ -611,6 +747,7 @@ Application::release_game()
         m_audio_buf = nullptr;
     }
 
+#ifndef SH_TGT_WEB
     if (m_renderer)
     {
         // m_win != nullptr;
@@ -620,10 +757,25 @@ Application::release_game()
         m_renderer = nullptr;
         glfwMakeContextCurrent(nullptr);
     }
+#endif
 
     if (NH_VALID(m_emu))
     {
         nh_remove_cartridge(m_emu);
+    }
+}
+
+void
+Application::on_game_opened(const char *i_id_path, const char *i_real_path)
+{
+    if (!running_game())
+    {
+        load_game(i_id_path, i_real_path);
+    }
+    else if (m_running_rom != i_id_path)
+    {
+        release_game();
+        load_game(i_id_path, i_real_path);
     }
 }
 
@@ -659,7 +811,9 @@ Application::get_menubar_height()
 void
 Application::draw_menubar(float *o_height)
 {
+#ifndef SH_TGT_WEB
     bool open_game_popup = false;
+#endif
     static bool s_open_about = false;
 
     if (ImGui::BeginMainMenuBar())
@@ -668,7 +822,15 @@ Application::draw_menubar(float *o_height)
         {
             if (ImGui::MenuItem("Open"))
             {
+#ifndef SH_TGT_WEB
                 open_game_popup = true;
+#else
+                js_open_game_popup();
+#endif
+            }
+            if (ImGui::MenuItem("Stop"))
+            {
+                release_game();
             }
 
             ImGui::EndMenu();
@@ -716,9 +878,18 @@ Application::draw_menubar(float *o_height)
             {
                 if (ImGui::MenuItem("Sleepless", nullptr, m_sleepless))
                 {
-                    if (save_sleepless(!m_sleepless))
+                    if (save_single_bool(!m_sleepless, CONFIG_SECTION_DEBUG,
+                                         CONFIG_KEY_SLEEPLESS))
                     {
                         m_sleepless = !m_sleepless;
+                    }
+                }
+                if (ImGui::MenuItem("Mute", nullptr, m_muted))
+                {
+                    if (save_single_bool(!m_muted, CONFIG_SECTION_DEBUG,
+                                         CONFIG_KEY_MUTED))
+                    {
+                        m_muted = !m_muted;
                     }
                 }
 
@@ -762,6 +933,7 @@ Application::draw_menubar(float *o_height)
         ImGui::EndMainMenuBar();
     }
 
+#ifndef SH_TGT_WEB
     if (open_game_popup)
     {
         ImGui::OpenPopup("Open Game");
@@ -770,16 +942,10 @@ Application::draw_menubar(float *o_height)
             "Open Game", imgui_addons::ImGuiFileBrowser::DialogMode::OPEN,
             ImVec2(0, 0), ".nes"))
     {
-        if (!running_game())
-        {
-            load_game(m_file_dialog.selected_path);
-        }
-        else if (m_running_rom != m_file_dialog.selected_path)
-        {
-            release_game();
-            load_game(m_file_dialog.selected_path);
-        }
+        on_game_opened(m_file_dialog.selected_path.c_str(),
+                       m_file_dialog.selected_path.c_str());
     }
+#endif
 
     if (s_open_about)
     {
@@ -806,16 +972,21 @@ Application::draw_menubar(float *o_height)
             ImGui::Separator();
             ImGui::Text("Production dependencies");
             ImGui::Indent();
-            ImGui::Text("fmt");
             ImGui::Text("spdlog");
+            ImGui::Text("fmt");
             ImGui::Text("glfw");
             ImGui::Text("Dear ImGui");
-            ImGui::Text("rtaudio");
             ImGui::Text("blip_buf, by Shay Green (blargg)");
+            ImGui::Text("mINI, by pulzed");
+#ifndef SH_TGT_WEB
             ImGui::Text("glad");
             ImGui::Text("ImGuiFileBrowser, by gallickgunner");
-            ImGui::Text("mINI, by pulzed");
+#endif
+#ifndef SH_USE_SOKOL_AUDIO
+            ImGui::Text("rtaudio");
+#else
             ImGui::Text("sokol (audio & log), by floooh");
+#endif
             ImGui::Unindent();
 
             ImGui::Spacing();
@@ -835,14 +1006,14 @@ Application::draw_menubar(float *o_height)
 void
 error_callback(int error, const char *description)
 {
-    fprintf(stderr, "Error: %d, %s\n", error, description);
+    std::fprintf(stderr, "Error: %d, %s\n", error, description);
 }
 
 void
 Application::key_callback(GLFWwindow *, int vkey, int, int action, int)
 {
     // @FIXME: Effectively global, bad
-    Application *app = Application::s_instance;
+    Application *app = g_app_instance;
     if (app && GLFW_RELEASE == action)
     {
         auto it = app->m_sub_wins.find(CUSTOM_KEY_NAME);

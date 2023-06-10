@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.25.1)
 project(Nesish)
 
+# -- Target platform
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(NH_TGT_WEB ON)
+endif()
+
 # -- Global compiler/linker options/flags
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -26,18 +32,26 @@ option(NH_BUILD_TESTS "Build tests" OFF)
 # -- Target
 
 # Enable test
-if(NH_BUILD_TESTS)
+if(NH_BUILD_TESTS AND NOT NH_TGT_WEB)
     enable_testing()
 endif()
 
 set(tgt_name Nesish)
-add_library(${tgt_name} SHARED)
+if(NH_TGT_WEB)
+    add_library(${tgt_name} STATIC)
+else()
+    add_library(${tgt_name} SHARED)
+endif()
 set_target_properties(${tgt_name} PROPERTIES OUTPUT_NAME NesishCore)
 include(target_utils)
 configure_cxx(${tgt_name} 11)
 configure_warnings(${tgt_name})
 configure_vc_options(${tgt_name} /wd6285)
-configure_optimizations(${tgt_name})
+if(NH_TGT_WEB)
+    configure_em_options(${tgt_name})
+else()
+    configure_optimizations(${tgt_name})
+endif()
 
 include(gen_api_macro)
 gen_api_macro(${tgt_name} NH ${CMAKE_CURRENT_SOURCE_DIR}/public/nesish)
@@ -113,10 +127,14 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 target_link_libraries(${tgt_name} PRIVATE NesishBase)
 
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(${tgt_name} PRIVATE fmt::fmt)
+if(NH_TGT_WEB)
+    target_link_libraries(${tgt_name} PRIVATE fmt::fmt-header-only)
+else()
+    target_link_libraries(${tgt_name} PRIVATE fmt::fmt)
+endif()
 
 # -- Tests
 
-if(NH_BUILD_TESTS)
+if(NH_BUILD_TESTS AND NOT NH_TGT_WEB)
     add_subdirectory(tests)
 endif()

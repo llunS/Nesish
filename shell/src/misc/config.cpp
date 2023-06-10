@@ -14,6 +14,12 @@ NB_VC_WARNING_POP
 
 namespace sh {
 
+#ifndef SH_TGT_WEB
+#define CONFIG_PREFIX_DIR "config/"
+#else
+#define CONFIG_PREFIX_DIR ""
+#endif
+
 static constexpr VirtualKey g_key_config[NH_KEYS * 2] = {
     /* P1 */
     GLFW_KEY_K, // A
@@ -118,7 +124,7 @@ bool
 reset_default_key_config(KeyMapping *o_p1, KeyMapping *o_p2, Logger *i_logger)
 {
     KeyMapping p1{}, p2{};
-    std::string input_cfg = nb::path_join_exe("config/input.ini");
+    std::string input_cfg = nb::resolve_exe_dir(CONFIG_PREFIX_DIR "input.ini");
     std::FILE *fp = nullptr;
     int err = 0;
     {
@@ -191,7 +197,7 @@ std::string
 pv_get_or_init_key_cfg(Logger *i_logger)
 {
     // Check if exists
-    std::string input_cfg = nb::path_join_exe("config/input.ini");
+    std::string input_cfg = nb::resolve_exe_dir(CONFIG_PREFIX_DIR "input.ini");
     if (nb::file_exists(input_cfg))
     {
         return input_cfg;
@@ -266,11 +272,12 @@ l_end:
 }
 
 bool
-load_sleepless(bool &o_val)
+load_single_bool(bool &o_val, const char *i_section, const char *i_key)
 {
     try
     {
-        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+        std::string user_cfg =
+            nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
         if (!nb::file_exists(user_cfg))
         {
             return false;
@@ -283,16 +290,16 @@ load_sleepless(bool &o_val)
             return false;
         }
 
-        if (!ini.has("Debug"))
+        if (!ini.has(i_section))
         {
             return false;
         }
-        if (!ini["Debug"].has("Sleepless"))
+        if (!ini[i_section].has(i_key))
         {
             return false;
         }
 
-        o_val = (ini["Debug"]["Sleepless"] == "1");
+        o_val = (ini[i_section][i_key] == "1");
         return true;
     }
     catch (const std::exception &)
@@ -302,18 +309,19 @@ load_sleepless(bool &o_val)
 }
 
 bool
-save_sleepless(bool i_val)
+save_single_bool(bool i_val, const char *i_section, const char *i_key)
 {
     try
     {
-        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+        std::string user_cfg =
+            nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
 
         mINI::INIFile inifile(user_cfg);
         mINI::INIStructure ini;
         // No-file returns false
         (void)inifile.read(ini);
 
-        ini["Debug"]["Sleepless"] = i_val ? "1" : "0";
+        ini[i_section][i_key] = i_val ? "1" : "0";
         return inifile.write(ini);
     }
     catch (const std::exception &)
@@ -327,7 +335,8 @@ load_log_level(NHLogLevel &o_val)
 {
     try
     {
-        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+        std::string user_cfg =
+            nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
         if (!nb::file_exists(user_cfg))
         {
             return false;
@@ -368,7 +377,8 @@ save_log_level(NHLogLevel i_val)
 {
     try
     {
-        std::string user_cfg = nb::path_join_exe("config/nesish.ini");
+        std::string user_cfg =
+            nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
 
         mINI::INIFile inifile(user_cfg);
         mINI::INIStructure ini;

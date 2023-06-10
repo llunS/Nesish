@@ -1,15 +1,12 @@
 #pragma once
 
-// @FIXME: spdlog will include windows header files, we need to include them
-// before "glfw3.h" so that glfw won't redefine symbols.
-#include "misc/logger.hpp"
-#include "glfw/glfw3.h"
-
 #include "nesish/nesish.h"
 #include "nhbase/klass.hpp"
 
 #include "imgui.h"
+#ifndef SH_TGT_WEB
 #include "ImGuiFileBrowser.h"
+#endif
 
 #include <string>
 #include <unordered_map>
@@ -19,12 +16,23 @@
 
 #include "rendering/texture.hpp"
 
+struct GLFWwindow;
+
+#ifdef SH_TGT_WEB
+extern "C" void
+nh_on_canvas_size_changed(int, int);
+extern "C" void
+nh_on_game_opened(const char *);
+#endif
+
 namespace sh {
 
 struct Renderer;
 struct AudioData;
 struct Resampler;
+#ifndef SH_TGT_WEB
 struct PCMWriter;
+#endif
 
 struct Window;
 
@@ -37,7 +45,7 @@ struct Application {
 
   public:
     bool
-    init(Logger *i_logger);
+    init();
     void
     release();
 
@@ -49,11 +57,18 @@ struct Application {
     tick();
 
     void
-    load_game(const std::string &i_rom_path);
+    load_game(const char *i_id_path, const char *i_real_path);
     void
     release_game();
 
+    void
+    on_game_opened(const char *i_id_path, const char *i_real_path);
+
     friend struct Messager;
+#ifdef SH_TGT_WEB
+    friend void ::nh_on_canvas_size_changed(int, int);
+    friend void ::nh_on_game_opened(const char *);
+#endif
 
     bool
     running_game() const;
@@ -70,9 +85,6 @@ struct Application {
                  int mods);
 
   private:
-    static Application *s_instance;
-
-  private:
     GLFWwindow *m_win;
     bool m_glfw_inited;
 
@@ -80,7 +92,9 @@ struct Application {
     bool m_imgui_glfw_inited;
     bool m_imgui_opengl_inited;
 
+#ifndef SH_TGT_WEB
     imgui_addons::ImGuiFileBrowser m_file_dialog;
+#endif
 
     Logger *m_logger;
     NHLogger m_nh_logger;
@@ -90,15 +104,20 @@ struct Application {
     NHController m_p1;
     NHController m_p2;
 
+#ifndef SH_TGT_WEB
     Renderer *m_renderer;
+#endif
 
     void *m_audio_buf;
     AudioData *m_audio_data;
     Resampler *m_resampler;
+#ifndef SH_TGT_WEB
     PCMWriter *m_pcm_writer;
+#endif
 
     bool m_paused;
     bool m_sleepless;
+    bool m_muted;
 
     Messager m_messager;
     std::unordered_map<std::string, Window *> m_sub_wins;
@@ -107,6 +126,9 @@ struct Application {
     KeyMapping m_p2_keys;
 
     Texture m_frame_tex;
+#ifdef SH_TGT_WEB
+    Texture m_black_frm_tex;
+#endif
 };
 
 } // namespace sh

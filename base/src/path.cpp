@@ -39,15 +39,9 @@ path_join(const std::string &lhs, const std::string &rhs)
 }
 
 std::string
-path_join_exe(const std::string &rel_path)
+resolve_exe_dir(const std::string &rel_path)
 {
-    auto exec_path = get_exec_path();
-    if (exec_path.empty())
-    {
-        return "";
-    }
-
-    auto exec_dir = dirname(exec_path);
+    auto exec_dir = get_exec_dir();
     if (exec_dir.empty())
     {
         return "";
