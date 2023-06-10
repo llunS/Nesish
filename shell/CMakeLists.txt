@@ -84,6 +84,9 @@ list(APPEND sources src/input/controller.cpp)
 
 list(APPEND sources src/misc/logger.cpp)
 list(APPEND sources src/misc/config.cpp)
+if(SH_TGT_WEB)
+    list(APPEND sources src/misc/web_utils.cpp)
+endif()
 
 list(APPEND sources src/main.cpp)
 

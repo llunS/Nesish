@@ -59,7 +59,7 @@ main(int, char **)
 
     app.release();
 
-#ifdef SH_TGT_WEB
+#if defined(SH_TGT_WEB) && 0 /* Seems not working */
     /* unmount db */
     EM_ASM(({
                Module['nh_db_uninit_done'] = 0;

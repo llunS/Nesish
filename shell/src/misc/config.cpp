@@ -13,6 +13,10 @@ NB_VC_WARNING_POP
 #include <string>
 #include <cstdio>
 
+#ifdef SH_TGT_WEB
+#include "misc/web_utils.hpp"
+#endif
+
 namespace sh {
 
 #ifndef SH_TGT_WEB
@@ -118,6 +122,12 @@ l_end:
     {
         std::fclose(fp);
     }
+    if (!err)
+    {
+#ifdef SH_TGT_WEB
+        web_sync_fs_async();
+#endif
+    }
     return !err;
 }
 
@@ -190,6 +200,9 @@ l_end:
         {
             *o_p2 = p2;
         }
+#ifdef SH_TGT_WEB
+        web_sync_fs_async();
+#endif
     }
     return !err;
 }
@@ -323,7 +336,11 @@ save_single_bool(bool i_val, const char *i_section, const char *i_key)
         (void)inifile.read(ini);
 
         ini[i_section][i_key] = i_val ? "1" : "0";
-        return inifile.write(ini);
+        bool res = inifile.write(ini);
+#ifdef SH_TGT_WEB
+        web_sync_fs_async();
+#endif
+        return res;
     }
     SH_CATCH(const std::exception &)
     {
@@ -387,7 +404,11 @@ save_log_level(NHLogLevel i_val)
         (void)inifile.read(ini);
 
         ini["Debug"]["LogLevel"] = std::to_string(i_val);
-        return inifile.write(ini);
+        bool res = inifile.write(ini);
+#ifdef SH_TGT_WEB
+        web_sync_fs_async();
+#endif
+        return res;
     }
     SH_CATCH(const std::exception &)
     {

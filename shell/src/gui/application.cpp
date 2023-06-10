@@ -923,16 +923,6 @@ Application::draw_menubar(float *o_height)
 #ifndef SH_TGT_WEB
             if (ImGui::BeginMenu("Switch"))
             {
-#ifdef SH_TGT_MACOS
-                if (ImGui::MenuItem("Sleepless", nullptr, m_sleepless))
-                {
-                    if (save_single_bool(!m_sleepless, CONFIG_SECTION_DEBUG,
-                                         CONFIG_KEY_SLEEPLESS))
-                    {
-                        m_sleepless = !m_sleepless;
-                    }
-                }
-#endif
 #ifndef SH_NO_AUDIO
                 if (ImGui::MenuItem("Mute", nullptr, m_muted))
                 {
@@ -940,6 +930,16 @@ Application::draw_menubar(float *o_height)
                                          CONFIG_KEY_MUTED))
                     {
                         m_muted = !m_muted;
+                    }
+                }
+#endif
+#ifdef SH_TGT_MACOS
+                if (ImGui::MenuItem("Sleepless", nullptr, m_sleepless))
+                {
+                    if (save_single_bool(!m_sleepless, CONFIG_SECTION_DEBUG,
+                                         CONFIG_KEY_SLEEPLESS))
+                    {
+                        m_sleepless = !m_sleepless;
                     }
                 }
 #endif
