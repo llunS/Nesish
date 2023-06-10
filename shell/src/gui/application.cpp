@@ -51,6 +51,8 @@ sh::Application *g_app_instance = nullptr;
 #include <emscripten.h>
 #include <functional>
 
+static bool g_loop_inited = false;
+static double g_loop_time;
 static std::function<void()> g_loop_cb;
 static void
 g_loop_cb_c()
@@ -162,14 +164,18 @@ Application::Application()
 #ifndef SH_TGT_WEB
     , m_renderer(nullptr)
 #endif
+#ifndef SH_NO_AUDIO
     , m_audio_buf(nullptr)
     , m_audio_data(nullptr)
     , m_resampler(nullptr)
 #ifndef SH_TGT_WEB
     , m_pcm_writer(nullptr)
 #endif
+#endif
     , m_paused(false)
+#ifdef SH_TGT_MACOS
     , m_sleepless(false)
+#endif
     , m_muted(false)
     , m_messager(this)
 {
@@ -358,9 +364,11 @@ Application::init()
 
     /* Load config */
     {
+#ifdef SH_TGT_MACOS
         m_sleepless = false;
         (void)load_single_bool(m_sleepless, CONFIG_SECTION_DEBUG,
                                CONFIG_KEY_SLEEPLESS);
+#endif
         m_muted = SH_MUTED_DEF;
         (void)load_single_bool(m_muted, CONFIG_SECTION_DEBUG, CONFIG_KEY_MUTED);
     }
@@ -465,9 +473,27 @@ Application::run()
     //
     // Although we don't enable exception handling, we adhere to that since we
     // can, to avoid potential problems.
-    g_loop_cb = [this]() -> void { this->tick(); };
+    g_loop_cb = [this]() -> void {
+        if (!g_loop_inited)
+        {
+            g_loop_time = emscripten_get_now();
+            g_loop_inited = true;
+        }
+        else
+        {
+            double curr_time = emscripten_get_now();
+            double delta = (curr_time - g_loop_time) / 1000.0;
+            if (delta > FRAME_TIME)
+            {
+                delta = FRAME_TIME;
+            }
+            this->tick(delta);
+            g_loop_time = curr_time;
+        }
+    };
+    g_loop_inited = false;
     emscripten_set_main_loop(g_loop_cb_c, 0, 1);
-    (void)emscripten_set_main_loop_timing(EM_TIMING_SETTIMEOUT, 16);
+    g_loop_inited = false;
 #else
     auto currTime = std::chrono::steady_clock::now();
     auto nextLoopTime = currTime + std::chrono::duration<double>(0.0);
@@ -485,7 +511,7 @@ Application::run()
             }
 
             /* Emulate & render */
-            tick();
+            tick(FRAME_TIME);
 
             /* Update time */
             nextLoopTime = currTime + std::chrono::duration<double>(FRAME_TIME);
@@ -507,16 +533,17 @@ l_loop_end:;
 }
 
 void
-Application::tick()
+Application::tick(double i_delta_s)
 {
     /* Emulate */
     if (running_game() && !m_paused)
     {
-        NHCycle ticks = nh_advance(m_emu, FRAME_TIME);
+        NHCycle ticks = nh_advance(m_emu, i_delta_s);
         for (decltype(ticks) i = 0; i < ticks; ++i)
         {
             if (nh_tick(m_emu, nullptr))
             {
+#ifndef SH_NO_AUDIO
                 double sample = m_muted ? 0.0 : nh_get_sample(m_emu);
                 m_resampler->clock(short(sample * 32767));
                 // Once clocked, samples must be drained to avoid
@@ -545,6 +572,7 @@ Application::tick()
 #endif
                     }
                 }
+#endif
             }
         }
     }
@@ -655,6 +683,7 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
     }
 #endif
 
+#ifndef SH_NO_AUDIO
     /* Create audio objects */
     SH_TRY
     {
@@ -688,6 +717,7 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
         goto l_err;
     }
 #endif
+#endif
 
     /* Powerup */
     nh_power_up(m_emu);
@@ -702,12 +732,16 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
         goto l_err;
     }
 
+#ifndef SH_NO_AUDIO
     /* Start audio playback */
     if (!audio_start(AUDIO_SAMPLE_RATE, AUDIO_BUF_SIZE, audio_playback,
                      m_audio_data))
     {
         goto l_err;
     }
+#else
+    (void)(audio_playback);
+#endif
 
     return;
 l_err:
@@ -717,10 +751,13 @@ l_err:
 void
 Application::release_game()
 {
+#ifndef SH_NO_AUDIO
     (void)audio_stop();
+#endif
 
     m_running_rom.clear();
 
+#ifndef SH_NO_AUDIO
 #ifndef SH_TGT_WEB
     if (m_pcm_writer)
     {
@@ -754,6 +791,7 @@ Application::release_game()
         delete to_AudioBuffer(m_audio_buf);
         m_audio_buf = nullptr;
     }
+#endif
 
 #ifndef SH_TGT_WEB
     if (m_renderer)
@@ -882,8 +920,10 @@ Application::draw_menubar(float *o_height)
             {
                 m_sub_wins.at(PPU_DEBUGGER_NAME)->show();
             }
+#ifndef SH_TGT_WEB
             if (ImGui::BeginMenu("Switch"))
             {
+#ifdef SH_TGT_MACOS
                 if (ImGui::MenuItem("Sleepless", nullptr, m_sleepless))
                 {
                     if (save_single_bool(!m_sleepless, CONFIG_SECTION_DEBUG,
@@ -892,6 +932,8 @@ Application::draw_menubar(float *o_height)
                         m_sleepless = !m_sleepless;
                     }
                 }
+#endif
+#ifndef SH_NO_AUDIO
                 if (ImGui::MenuItem("Mute", nullptr, m_muted))
                 {
                     if (save_single_bool(!m_muted, CONFIG_SECTION_DEBUG,
@@ -900,9 +942,11 @@ Application::draw_menubar(float *o_height)
                         m_muted = !m_muted;
                     }
                 }
+#endif
 
                 ImGui::EndMenu();
             }
+#endif
             if (ImGui::BeginMenu("Log Level"))
             {
                 constexpr NHLogLevel LOG_ITEMS[] = {

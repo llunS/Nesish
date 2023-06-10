@@ -16,6 +16,11 @@
 
 #include "rendering/texture.hpp"
 
+// Current implementation on Web is far from ideal, so disable it.
+#if defined(SH_TGT_WEB)
+#define SH_NO_AUDIO
+#endif
+
 struct GLFWwindow;
 
 #ifdef SH_TGT_WEB
@@ -54,7 +59,7 @@ struct Application {
 
   private:
     void
-    tick();
+    tick(double i_delta_s);
 
     void
     load_game(const char *i_id_path, const char *i_real_path);
@@ -108,15 +113,19 @@ struct Application {
     Renderer *m_renderer;
 #endif
 
+#ifndef SH_NO_AUDIO
     void *m_audio_buf;
     AudioData *m_audio_data;
     Resampler *m_resampler;
 #ifndef SH_TGT_WEB
     PCMWriter *m_pcm_writer;
 #endif
+#endif
 
     bool m_paused;
+#ifdef SH_TGT_MACOS
     bool m_sleepless;
+#endif
     bool m_muted;
 
     Messager m_messager;
