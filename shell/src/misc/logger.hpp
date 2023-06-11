@@ -7,7 +7,11 @@
 #define SPDLOG_NO_SOURCE_LOC
 #endif
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#include "nhbase/vc_intrinsics.hpp"
+NB_VC_WARNING_PUSH
+NB_VC_WARNING_DISABLE(6385)
 #include "spdlog/spdlog.h"
+NB_VC_WARNING_POP
 
 #define SH_DEFAULT_LOG_LEVEL NH_LOG_INFO
 

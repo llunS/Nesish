@@ -69,8 +69,16 @@ Render::tick(Cycle i_col)
         if (m_accessor->get_context().sp_count)
         {
             m_ctx.to_draw_sps_f.resize(m_accessor->get_context().sp_count);
+            // the max size of m_ctx.to_draw_sps_f <= NH_MAX_VISIBLE_SP_NUM, so
+            // no risk of unsigned interger wrapping around
+            static_assert(
+                NH_MAX_VISIBLE_SP_NUM >= 1 &&
+                    NH_MAX_VISIBLE_SP_NUM - 1 <=
+                        std::numeric_limits<
+                            decltype(m_ctx.to_draw_sps_f)::value_type>::max(),
+                "Risk of unsigned interger wrapping around");
             std::iota(m_ctx.to_draw_sps_f.begin(), m_ctx.to_draw_sps_f.end(),
-                      0);
+                      decltype(m_ctx.to_draw_sps_f)::value_type(0));
         }
         m_ctx.to_draw_sps_b.clear();
     }
