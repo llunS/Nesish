@@ -6,6 +6,13 @@
 #define SH_MUTED_DEF 0
 #endif
 
+#define SH_SAVE_IMGUI_INI 1
+#define SH_IMGUI_INI_FILEPATH "imgui.ini"
+
+#if defined(SH_TGT_WEB) && SH_SAVE_IMGUI_INI
+#include "misc/web_utils.hpp"
+#endif
+
 #include <cstdio>
 #include <chrono>
 #ifdef SH_TGT_MACOS
@@ -311,6 +318,13 @@ Application::init()
 
 #ifndef SH_TGT_WEB
         ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
+#else
+        // Manually save/load imgui config
+        ImGui::GetIO().IniFilename = nullptr;
+#if defined(SH_TGT_WEB) && SH_SAVE_IMGUI_INI
+        // load
+        ImGui::LoadIniSettingsFromDisk(SH_IMGUI_INI_FILEPATH);
+#endif
 #endif
     }
 
@@ -708,6 +722,17 @@ Application::tick(double i_delta_s)
 
         glfwSwapBuffers(m_win);
     }
+
+    /* Save IMGUI config */
+#if defined(SH_TGT_WEB) && SH_SAVE_IMGUI_INI
+    ImGuiIO &io = ImGui::GetIO();
+    if (io.WantSaveIniSettings)
+    {
+        ImGui::SaveIniSettingsToDisk(SH_IMGUI_INI_FILEPATH);
+        web_sync_fs_async(); // Initiate asynchronously
+        io.WantSaveIniSettings = false;
+    }
+#endif
 }
 
 void

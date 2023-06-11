@@ -7,7 +7,6 @@
 
 EM_JS(int, js_db_inited, (), {return Module['nh_db_inited']});
 EM_JS(int, js_db_init_failed, (), { return Module['nh_db_init_failed']; });
-EM_JS(int, js_db_uninit_done, (), { return Module['nh_db_uninit_done']; });
 #endif
 
 int
@@ -35,6 +34,9 @@ main(int, char **)
                            Module['nh_db_inited'] = 1;
                        }
                    });
+
+               // Change working directory as well, for imgui saving to work
+               FS.chdir(user_dir);
            }),
            NB_WEB_USER_DIR);
     // busy poll
@@ -58,31 +60,6 @@ main(int, char **)
     int err = app.run();
 
     app.release();
-
-#if defined(SH_TGT_WEB) && 0 /* Seems not working */
-    /* unmount db */
-    EM_ASM(({
-               Module['nh_db_uninit_done'] = 0;
-               FS.syncfs(
-                   false, function(err) {
-                       if (err)
-                       {
-                           console.error("Failed to sync back user directory");
-                       }
-                       else
-                       {
-                           console.log("User directory unloaded");
-                       }
-                       Module['nh_db_uninit_done'] = 1;
-                   });
-           }),
-           0);
-    // busy poll
-    while (!js_db_uninit_done())
-    {
-        emscripten_sleep(100);
-    }
-#endif
 
     return err;
 }
