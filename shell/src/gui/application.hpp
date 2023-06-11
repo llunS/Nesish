@@ -54,10 +54,10 @@ struct Application {
     int
     run();
 
-  private:
     void
     tick(double i_delta_s);
 
+  private:
     void
     load_game(const char *i_id_path, const char *i_real_path);
     void

@@ -47,52 +47,54 @@
 #include "gui/ppu_debugger.hpp"
 #include "gui/custom_key.hpp"
 
-sh::Application *g_app_instance = nullptr;
-
 #ifdef SH_TGT_WEB
 
 #include <emscripten.h>
+
+static bool g_em_loop_inited = false;
+static double g_em_loop_time;
+static void
+on_em_tick(sh::Application *app, double now);
+
+#ifndef SH_EXPLICIT_RAF
+
 #include <functional>
 
-static bool g_loop_inited = false;
-static double g_loop_time;
-static std::function<void()> g_loop_cb;
+static std::function<void()> g_em_loop_cb;
 static void
-g_loop_cb_c()
+em_loop_cb_c()
 {
-    g_loop_cb();
+    g_em_loop_cb();
 };
+
+#else
+
+#include <emscripten/html5.h>
+
+static EM_BOOL
+em_raf_cb(double now, void *user_data)
+{
+    sh::Application *app = static_cast<sh::Application *>(user_data);
+    on_em_tick(app, now);
+    // The loop never ends.
+    return EM_TRUE;
+}
+
+#endif
 
 EM_JS(int, js_canvas_width, (), { return Module.canvas.width; });
 EM_JS(int, js_canvas_height, (), { return Module.canvas.height; });
 EM_JS(void, js_open_game_popup, (), { Module.openGameInput.click(); };)
 
 extern "C" void EMSCRIPTEN_KEEPALIVE
-nh_on_canvas_size_changed(int width, int height)
-{
-    if (g_app_instance)
-    {
-        if (g_app_instance->m_win)
-        {
-            glfwSetWindowSize(g_app_instance->m_win, width, height);
-        }
-    }
-}
+nh_on_canvas_size_changed(int width, int height);
 
 extern "C" void EMSCRIPTEN_KEEPALIVE
-nh_on_game_opened(const char *basename)
-{
-    // e.g. XXX.nes
-    // So file in different directories but with the same name as the current
-    // one gets ignored.
-    // So far so good.
-    if (g_app_instance)
-    {
-        g_app_instance->on_game_opened(basename, "/tmp_open_game");
-    }
-}
+nh_on_game_opened(const char *basename);
 
 #endif
+
+sh::Application *g_app = nullptr;
 
 namespace sh {
 
@@ -527,7 +529,7 @@ Application::release()
 int
 Application::run()
 {
-    g_app_instance = this;
+    g_app = this;
 
     /* Main loop */
 #ifdef SH_TGT_WEB
@@ -542,27 +544,14 @@ Application::run()
     //
     // Although we don't enable exception handling, we adhere to that since we
     // can, to avoid potential problems.
-    g_loop_cb = [this]() -> void {
-        if (!g_loop_inited)
-        {
-            g_loop_time = emscripten_get_now();
-            g_loop_inited = true;
-        }
-        else
-        {
-            double curr_time = emscripten_get_now();
-            double delta = (curr_time - g_loop_time) / 1000.0;
-            if (delta > FRAME_TIME)
-            {
-                delta = FRAME_TIME;
-            }
-            this->tick(delta);
-            g_loop_time = curr_time;
-        }
-    };
-    g_loop_inited = false;
-    emscripten_set_main_loop(g_loop_cb_c, 0, 1);
-    g_loop_inited = false;
+#ifndef SH_EXPLICIT_RAF
+    g_em_loop_cb = [this]() -> void { on_em_tick(this, emscripten_get_now()); };
+    g_em_loop_inited = false;
+    emscripten_set_main_loop(em_loop_cb_c, 0, 1);
+    g_em_loop_inited = false;
+#else
+    emscripten_request_animation_frame_loop(em_raf_cb, this);
+#endif
 #else
     auto currTime = std::chrono::steady_clock::now();
     auto nextLoopTime = currTime + std::chrono::duration<double>(0.0);
@@ -597,7 +586,9 @@ Application::run()
 l_loop_end:;
 #endif
 
-    g_app_instance = nullptr;
+#ifndef SH_EXPLICIT_RAF
+    g_app = nullptr;
+#endif
     return 0;
 }
 
@@ -1111,7 +1102,7 @@ void
 Application::key_callback(GLFWwindow *, int vkey, int, int action, int)
 {
     // @FIXME: Effectively global, bad
-    Application *app = g_app_instance;
+    Application *app = g_app;
     if (app && GLFW_RELEASE == action)
     {
         auto it = app->m_sub_wins.find(CUSTOM_KEY_NAME);
@@ -1243,3 +1234,59 @@ pv_reset(void *user)
 }
 
 } // namespace sh
+
+#ifdef SH_TGT_WEB
+
+void
+on_em_tick(sh::Application *app, double now)
+{
+    if (!g_em_loop_inited)
+    {
+        g_em_loop_time = now;
+        g_em_loop_inited = true;
+    }
+    else
+    {
+        double delta = (now - g_em_loop_time) / 1000.0;
+        // For now we have to clamp large delta, for we will be otherwise
+        // spending our lifetime to catch up with the large amount of work (to
+        // user this means freezing).
+        // Large delta time happens:
+        // 1) Open up chrome devtools,
+        // 2) Switch to other tabs,
+        // We need to improve the performance of the emulator to fix this.
+        if (delta > FRAME_TIME)
+        {
+            delta = FRAME_TIME;
+        }
+        app->tick(delta);
+        g_em_loop_time = now;
+    }
+}
+
+void
+nh_on_canvas_size_changed(int width, int height)
+{
+    if (g_app)
+    {
+        if (g_app->m_win)
+        {
+            glfwSetWindowSize(g_app->m_win, width, height);
+        }
+    }
+}
+
+void
+nh_on_game_opened(const char *basename)
+{
+    // e.g. XXX.nes
+    // So file in different directories but with the same name as the current
+    // one gets ignored.
+    // So far so good.
+    if (g_app)
+    {
+        g_app->on_game_opened(basename, "/tmp_open_game");
+    }
+}
+
+#endif

@@ -168,6 +168,10 @@ if(SH_TGT_MACOS)
     endif()
 elseif(SH_TGT_WEB)
     target_compile_definitions(${tgt_name} PRIVATE -DSH_TGT_WEB)
+    # Toggle this to experiment differences
+    # One of the difference is the use of emscripten_get_now(), which may have performance penalty?
+    # SH_EXPLICIT_RAF implies SH_TGT_WEB
+    target_compile_definitions(${tgt_name} PRIVATE -DSH_EXPLICIT_RAF)
 endif()
 
 target_compile_definitions(${tgt_name} PRIVATE -DGLFW_INCLUDE_NONE)

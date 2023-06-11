@@ -51,15 +51,30 @@ main(int, char **)
     std::printf("User directory loaded\n");
 #endif
 
-    sh::Application app;
-    if (!app.init())
+    int err = 0;
+
+    // Heap allocation so that on Web we can continue to reference it.
+    sh::Application *app = new sh::Application();
+    if (!app->init())
     {
-        return 1;
+        err = 1;
+        goto l_end;
     }
 
-    int err = app.run();
+    err = app->run();
 
-    app.release();
+#ifndef SH_EXPLICIT_RAF
+    app->release();
 
+l_end:
+    if (app)
+    {
+        delete app;
+    }
     return err;
+#else
+// Let Emscripten runtime collect resources
+l_end:
+    return err;
+#endif
 }
