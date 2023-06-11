@@ -90,6 +90,10 @@
         openGameInput: (function () {
           let input = document.getElementById("open_game");
 
+          // So that onchange is triggered for consecutive same files
+          input.onclick = function () {
+            this.value = null;
+          };
           input.onchange = function (e) {
             let file = e.target.files[0];
             if (!file) {

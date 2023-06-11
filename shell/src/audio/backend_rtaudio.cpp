@@ -1,4 +1,4 @@
-#include "backend_rtaudio.hpp"
+#include "backend.hpp"
 
 #include "misc/exception.hpp"
 
@@ -7,7 +7,7 @@ namespace sh {
 static RtAudio *g_rta;
 
 bool
-audio_start(unsigned int i_sample_rate, unsigned int i_buffer_size,
+audio_setup(unsigned int i_sample_rate, unsigned int i_buffer_size,
             stream_cb_t i_callback, void *i_user_data)
 {
     /* Init */
@@ -53,18 +53,25 @@ audio_start(unsigned int i_sample_rate, unsigned int i_buffer_size,
         }
     }
 
-    /* Start */
+    return true;
+}
+
+bool
+audio_start()
+{
+    if (!g_rta)
     {
-        SH_TRY
-        {
-            g_rta->startStream();
-        }
-        SH_CATCH(RtAudioError &)
-        {
-            return false;
-        }
+        return false;
     }
 
+    SH_TRY
+    {
+        g_rta->startStream();
+    }
+    SH_CATCH(RtAudioError &)
+    {
+        return false;
+    }
     return true;
 }
 
@@ -73,7 +80,6 @@ audio_stop()
 {
     if (g_rta)
     {
-        /* Stop */
         SH_TRY
         {
             if (g_rta->isStreamRunning())
@@ -82,7 +88,14 @@ audio_stop()
             }
         }
         SH_CATCH(RtAudioError &) {}
+    }
+}
 
+void
+audio_shutdown()
+{
+    if (g_rta)
+    {
         /* Close */
         if (g_rta->isStreamOpen())
         {

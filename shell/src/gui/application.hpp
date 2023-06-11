@@ -16,10 +16,7 @@
 
 #include "rendering/texture.hpp"
 
-// Current implementation on Web is far from ideal, so disable it.
-#if defined(SH_TGT_WEB)
-#define SH_NO_AUDIO
-#endif
+#define SH_NO_AUDIO 0
 
 struct GLFWwindow;
 
@@ -113,7 +110,7 @@ struct Application {
     Renderer *m_renderer;
 #endif
 
-#ifndef SH_NO_AUDIO
+#if !SH_NO_AUDIO
     void *m_audio_buf;
     AudioData *m_audio_data;
     Resampler *m_resampler;

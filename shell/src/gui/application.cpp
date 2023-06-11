@@ -1,6 +1,6 @@
 #include "application.hpp"
 
-#if defined(SH_TGT_WEB) || defined(SH_TGT_MACOS)
+#if defined(SH_TGT_WEB)
 #define SH_MUTED_DEF 1
 #else
 #define SH_MUTED_DEF 0
@@ -18,11 +18,7 @@
 #include "audio/pcm_writer.hpp"
 #endif
 #include "audio/channel.hpp"
-#ifndef SH_USE_SOKOL_AUDIO
-#include "audio/backend_rtaudio.hpp"
-#else
-#include "audio/backend_sokol.hpp"
-#endif
+#include "audio/backend.hpp"
 
 #include "nhbase/path.hpp"
 
@@ -121,6 +117,7 @@ struct AudioData {
     sample_t prev;
     AudioBuffer *buf;
     Logger *logger;
+    bool stopped;
 };
 
 static void
@@ -164,7 +161,7 @@ Application::Application()
 #ifndef SH_TGT_WEB
     , m_renderer(nullptr)
 #endif
-#ifndef SH_NO_AUDIO
+#if !SH_NO_AUDIO
     , m_audio_buf(nullptr)
     , m_audio_data(nullptr)
     , m_resampler(nullptr)
@@ -273,8 +270,12 @@ Application::init()
         goto l_err;
     }
 #endif
+#ifndef SH_TGT_WEB
     // We do the timing ourselves.
     glfwSwapInterval(0);
+#else
+    // Setup this later on via emscripten APIs
+#endif
     // Register callbacks
     glfwSetKeyCallback(m_win, Application::key_callback);
 
@@ -342,6 +343,33 @@ Application::init()
         goto l_err;
     }
 
+#if !SH_NO_AUDIO
+    /* Create audio objects */
+    SH_TRY
+    {
+        m_audio_buf = new AudioBuffer();
+        m_audio_data =
+            new AudioData{0, to_AudioBuffer(m_audio_buf), m_logger, false};
+        m_resampler = new Resampler();
+#ifndef SH_TGT_WEB
+        m_pcm_writer = new PCMWriter();
+#endif
+    }
+    SH_CATCH(const std::exception &)
+    {
+        goto l_err;
+    }
+
+    /* Init audio */
+    if (!audio_setup(AUDIO_SAMPLE_RATE, AUDIO_BUF_SIZE, audio_playback,
+                     m_audio_data))
+    {
+        goto l_err;
+    }
+#else
+    (void)(audio_playback);
+#endif
+
     /* Adjust window size and show it */
     {
         // Cache target framebuffer size, cos glfwSetWindowSize() changes OpenGL
@@ -383,6 +411,33 @@ void
 Application::release()
 {
     release_game(); // if any
+
+#if !SH_NO_AUDIO
+    audio_shutdown();
+
+#ifndef SH_TGT_WEB
+    if (m_pcm_writer)
+    {
+        delete m_pcm_writer;
+        m_pcm_writer = nullptr;
+    }
+#endif
+    if (m_resampler)
+    {
+        delete m_resampler;
+        m_resampler = nullptr;
+    }
+    if (m_audio_data)
+    {
+        delete m_audio_data;
+        m_audio_data = nullptr;
+    }
+    if (m_audio_buf)
+    {
+        delete to_AudioBuffer(m_audio_buf);
+        m_audio_buf = nullptr;
+    }
+#endif
 
     for (auto it : m_sub_wins)
     {
@@ -543,7 +598,7 @@ Application::tick(double i_delta_s)
         {
             if (nh_tick(m_emu, nullptr))
             {
-#ifndef SH_NO_AUDIO
+#if !SH_NO_AUDIO
                 double sample = m_muted ? 0.0 : nh_get_sample(m_emu);
                 m_resampler->clock(short(sample * 32767));
                 // Once clocked, samples must be drained to avoid
@@ -683,23 +738,7 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
     }
 #endif
 
-#ifndef SH_NO_AUDIO
-    /* Create audio objects */
-    SH_TRY
-    {
-        m_audio_buf = new AudioBuffer();
-        m_audio_data = new AudioData{0, to_AudioBuffer(m_audio_buf), m_logger};
-        m_resampler = new Resampler();
-#ifndef SH_TGT_WEB
-        m_pcm_writer = new PCMWriter();
-#endif
-    }
-    SH_CATCH(const std::exception &)
-    {
-        goto l_err;
-    }
-
-    /* init audio */
+#if !SH_NO_AUDIO
     // resampler
     if (!m_resampler->init(AUDIO_BUF_SIZE * 2)) // More than enough
     {
@@ -710,8 +749,9 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
     {
         goto l_err;
     }
-#if DEBUG_AUDIO_PCM && !defined(SH_TGT_WEB)
+
     // pcm recorder
+#if DEBUG_AUDIO_PCM && !defined(SH_TGT_WEB)
     if (m_pcm_writer->open(nb::resolve_exe_dir("audio.pcm")))
     {
         goto l_err;
@@ -732,15 +772,17 @@ Application::load_game(const char *i_id_path, const char *i_real_path)
         goto l_err;
     }
 
-#ifndef SH_NO_AUDIO
+#if !SH_NO_AUDIO
+#ifdef SH_USE_SOKOL_AUDIO
+    /* Resume audio buffer */
+    m_audio_data->stopped = false;
+#else
     /* Start audio playback */
-    if (!audio_start(AUDIO_SAMPLE_RATE, AUDIO_BUF_SIZE, audio_playback,
-                     m_audio_data))
+    if (!audio_start())
     {
         goto l_err;
     }
-#else
-    (void)(audio_playback);
+#endif
 #endif
 
     return;
@@ -751,13 +793,17 @@ l_err:
 void
 Application::release_game()
 {
-#ifndef SH_NO_AUDIO
-    (void)audio_stop();
+#if !SH_NO_AUDIO
+#ifdef SH_USE_SOKOL_AUDIO
+    m_audio_data->stopped = true;
+#else
+    audio_stop();
+#endif
 #endif
 
     m_running_rom.clear();
 
-#ifndef SH_NO_AUDIO
+#if !SH_NO_AUDIO
 #ifndef SH_TGT_WEB
     if (m_pcm_writer)
     {
@@ -767,29 +813,6 @@ Application::release_game()
     if (m_resampler)
     {
         m_resampler->close();
-    }
-
-#ifndef SH_TGT_WEB
-    if (m_pcm_writer)
-    {
-        delete m_pcm_writer;
-        m_pcm_writer = nullptr;
-    }
-#endif
-    if (m_resampler)
-    {
-        delete m_resampler;
-        m_resampler = nullptr;
-    }
-    if (m_audio_data)
-    {
-        delete m_audio_data;
-        m_audio_data = nullptr;
-    }
-    if (m_audio_buf)
-    {
-        delete to_AudioBuffer(m_audio_buf);
-        m_audio_buf = nullptr;
     }
 #endif
 
@@ -911,6 +934,16 @@ Application::draw_menubar(float *o_height)
             {
                 m_sub_wins.at(CUSTOM_KEY_NAME)->show();
             }
+#if !SH_NO_AUDIO
+            if (ImGui::MenuItem("Mute", nullptr, m_muted))
+            {
+                if (save_single_bool(!m_muted, CONFIG_SECTION_DEBUG,
+                                     CONFIG_KEY_MUTED))
+                {
+                    m_muted = !m_muted;
+                }
+            }
+#endif
 
             ImGui::EndMenu();
         }
@@ -920,20 +953,9 @@ Application::draw_menubar(float *o_height)
             {
                 m_sub_wins.at(PPU_DEBUGGER_NAME)->show();
             }
-#ifndef SH_TGT_WEB
+#ifdef SH_TGT_MACOS
             if (ImGui::BeginMenu("Switch"))
             {
-#ifndef SH_NO_AUDIO
-                if (ImGui::MenuItem("Mute", nullptr, m_muted))
-                {
-                    if (save_single_bool(!m_muted, CONFIG_SECTION_DEBUG,
-                                         CONFIG_KEY_MUTED))
-                    {
-                        m_muted = !m_muted;
-                    }
-                }
-#endif
-#ifdef SH_TGT_MACOS
                 if (ImGui::MenuItem("Sleepless", nullptr, m_sleepless))
                 {
                     if (save_single_bool(!m_sleepless, CONFIG_SECTION_DEBUG,
@@ -942,7 +964,6 @@ Application::draw_menubar(float *o_height)
                         m_sleepless = !m_sleepless;
                     }
                 }
-#endif
 
                 ImGui::EndMenu();
             }
@@ -1155,7 +1176,15 @@ audio_playback(float *output_buffer, int num_frames, int num_channels,
         }
         else
         {
-            sample = audio_data->prev;
+            if (audio_data->stopped)
+            {
+                sample = 0;
+                audio_data->prev = sample;
+            }
+            else
+            {
+                sample = audio_data->prev;
+            }
         }
 
         // interleaved, 2 channels, mono ouput

@@ -1,12 +1,12 @@
 #define SOKOL_AUDIO_IMPL
-#include "backend_sokol.hpp"
+#include "backend.hpp"
 
 #include "sokol_log.h"
 
 namespace sh {
 
 bool
-audio_start(unsigned int i_sample_rate, unsigned int i_buffer_size,
+audio_setup(unsigned int i_sample_rate, unsigned int i_buffer_size,
             stream_cb_t i_callback, void *i_user_data)
 {
     saudio_desc desc{};
@@ -24,7 +24,7 @@ audio_start(unsigned int i_sample_rate, unsigned int i_buffer_size,
 }
 
 void
-audio_stop()
+audio_shutdown()
 {
     saudio_shutdown();
 }

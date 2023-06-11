@@ -2,6 +2,7 @@ function(configure_cxx i_tgt i_cxx_std)
     set_target_properties(${i_tgt} PROPERTIES
         CXX_STANDARD ${i_cxx_std}
         CXX_STANDARD_REQUIRED TRUE
+        CXX_EXTENSIONS 0
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN hidden
     )
@@ -11,6 +12,7 @@ function(configure_c i_tgt i_c_std)
     set_target_properties(${i_tgt} PROPERTIES
         C_STANDARD ${i_c_std}
         C_STANDARD_REQUIRED TRUE
+        C_EXTENSIONS 0
         C_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN hidden
     )
