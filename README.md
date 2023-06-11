@@ -9,30 +9,36 @@ Any feedback is welcome.
 - [Status](#status)
 - [TODO](#todo)
 - [Build From Source](#build-from-source)
+  - [Desktop](#desktop)
+  - [Web](#web)
 - [Acknowledgments](#acknowledgments)
 
 ## Status
 
-- Windows/MacOS
+- Windows, MacOS and [Web](https://lluns.github.io/Nesish/)
 - Mapper 0 games (Donkey Kong, Super Mario Bros. and Galaga were tested)
 - Custom key mapping
 - Sufficiently tested CPU, PPU and APU
-- PPU Debugger
+- PPU Viewer
 - C API for emulator core
 
 ## TODO
 
-- Performance, and sound quality
+- Performance and audio quality
 - More mappers
 - Debug tools
 - etc.
 
 ## Build From Source
 
+> For stability, use tagged revision.
+
+### Desktop
+
 Prerequisites:
 
 - C++11 compiler and C compiler
-- CMake (>=3.25.1)
+- CMake
 - vcpkg
 
 Example:
@@ -44,7 +50,22 @@ cmake -S shell -B build -DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsyst
 cmake --build build
 ```
 
-> For stability, use tagged revision.
+### Web
+
+Prerequisites:
+
+- [emsdk](https://github.com/emscripten-core/emsdk)
+- CMake
+- Ninja
+
+Example:
+
+```bash
+# configure and generate
+cmake -S shell -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+# build
+cmake --build build
+```
 
 ## Acknowledgments
 
