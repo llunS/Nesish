@@ -10,10 +10,8 @@
 
 namespace nh {
 
-CPU::CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu, NHLogger *i_logger)
+CPU::CPU(Memory *i_memory, NHLogger *i_logger)
     : m_memory(i_memory)
-    , m_ppu(i_ppu)
-    , m_apu(i_apu)
     , m_logger(i_logger)
 {
 }
@@ -265,7 +263,7 @@ CPU::pre_tick(bool i_rdy, bool i_dma_op_cycle, bool &o_2002_read)
 }
 
 void
-CPU::post_tick()
+CPU::post_tick(bool i_nmi, bool i_apu_interrupt)
 {
     if (m_instr_halt)
     {
@@ -277,14 +275,14 @@ CPU::post_tick()
     // Edge/Level detector polls lines during φ2 of each CPU cycle.
     // So this sets up signals for NEXT cycle.
     // --- NMI
-    if (!m_nmi_asserted && m_ppu->nmi())
+    if (!m_nmi_asserted && i_nmi)
     {
         m_nmi_sig = true; // raise an internal signal
     }
-    m_nmi_asserted = m_ppu->nmi();
+    m_nmi_asserted = i_nmi;
     // --- IRQ
     m_irq_sig = false; // inactive unless keep asserting.
-    if (m_apu->interrupt())
+    if (i_apu_interrupt)
     {
         // The cause of delayed IRQ response for some instructions.
         if (!check_flag(StatusFlag::I))

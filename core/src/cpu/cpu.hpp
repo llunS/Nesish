@@ -17,7 +17,7 @@ struct APU;
 
 struct CPU {
   public:
-    CPU(Memory *i_memory, PPU *i_ppu, const APU *i_apu, NHLogger *i_logger);
+    CPU(Memory *i_memory, NHLogger *i_logger);
     NB_KLZ_DELETE_COPY_MOVE(CPU);
 
   public:
@@ -33,7 +33,7 @@ struct CPU {
     bool
     pre_tick(bool i_rdy, bool i_dma_op_cycle, bool &o_2002_read);
     void
-    post_tick();
+    post_tick(bool i_nmi, bool i_apu_interrupt);
 
     bool
     dma_halt() const;
@@ -139,8 +139,6 @@ struct CPU {
 
     // ---- External components references
     Memory *m_memory;
-    PPU *m_ppu;
-    const APU *m_apu;
 
   private:
     // This may wrap around back to 0, which is fine, since current
@@ -205,5 +203,3 @@ struct CPU {
 };
 
 } // namespace nh
-
-// #include "cpu.inl"

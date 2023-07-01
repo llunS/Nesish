@@ -11,7 +11,7 @@ namespace nh {
 constexpr int Console::CTRL_SIZE;
 
 Console::Console(NHLogger *i_logger)
-    : m_cpu(&m_memory, &m_ppu, &m_apu, i_logger)
+    : m_cpu(&m_memory, i_logger)
     , m_memory(i_logger)
     , m_ppu(&m_video_memory, m_debug_flags, i_logger)
     , m_oam_dma(m_apu_clock, m_memory, m_ppu)
@@ -400,7 +400,7 @@ Console::tick(bool *o_cpu_instr)
     }
 
     m_ppu.tick(read_2002);
-    m_cpu.post_tick();
+    m_cpu.post_tick(m_ppu.nmi(), m_apu.interrupt());
     m_ppu.tick();
 
     // @NOTE: Tick after CPU pre_tick(), frame counter reset relys on this.
