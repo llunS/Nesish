@@ -58,11 +58,11 @@ else()
 endif()
 
 include(gen_api_macro)
-gen_api_macro(${tgt_name} NB ${CMAKE_CURRENT_SOURCE_DIR}/public/nhbase)
+gen_api_macro(${tgt_name} NB ${CMAKE_CURRENT_SOURCE_DIR}/include/nhbase)
 
 # --- Include directories
 
-target_include_directories(${tgt_name} PUBLIC public)
+target_include_directories(${tgt_name} PUBLIC include)
 target_include_directories(${tgt_name} PRIVATE src)
 
 # --- Source files

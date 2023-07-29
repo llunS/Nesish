@@ -15,8 +15,8 @@ extern "C" {
 #endif
 #define NH_VALID(handle) ((handle) != NH_NULL)
 
-typedef unsigned char NHByte;  // At least 8-bit by both standards
-typedef unsigned short NHAddr; // At least 16-bit by both standards
+typedef unsigned char NHByte;  // At least 8-bit in both standards
+typedef unsigned short NHAddr; // At least 16-bit in both standards
 typedef size_t NHCycle;
 
 #define NH_NES_WIDTH 256
@@ -38,7 +38,7 @@ enum {
 
 #define NH_FAILED(err) ((err) != NH_ERR_OK)
 
-/// @note Order/Value matters for implementation
+/// @note Value matters
 typedef int NHLogLevel;
 enum {
     NH_LOG_OFF,

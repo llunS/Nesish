@@ -54,11 +54,11 @@ else()
 endif()
 
 include(gen_api_macro)
-gen_api_macro(${tgt_name} NH ${CMAKE_CURRENT_SOURCE_DIR}/public/nesish)
+gen_api_macro(${tgt_name} NH ${CMAKE_CURRENT_SOURCE_DIR}/include/nesish)
 
 # --- Include directories
 
-target_include_directories(${tgt_name} PUBLIC public)
+target_include_directories(${tgt_name} PUBLIC include)
 target_include_directories(${tgt_name} PRIVATE src)
 
 # --- Source files

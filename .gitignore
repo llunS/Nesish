@@ -8,5 +8,5 @@ imgui.ini
 
 /shell/src/shaders/
 
-/base/public/nhbase/api.h
-/core/public/nesish/api.h
+/base/include/nhbase/api.h
+/core/include/nesish/api.h
