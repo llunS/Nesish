@@ -103,7 +103,7 @@ if(SH_TGT_WEB)
 endif()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core core)
 # @TODO: Formal separation of CMake projects using its export and import functionality
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../base base)
 
 if(SH_TGT_WEB)
     set(SPDLOG_NO_EXCEPTIONS ON CACHE BOOL "-fno-exceptions on Web" FORCE)

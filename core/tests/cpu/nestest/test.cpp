@@ -8,7 +8,7 @@
 #include "nesish/nesish.h"
 #include "nhbase/path.hpp"
 
-#include "nhbase/vc_intrinsics.hpp"
+#include "nhbase/vc_intrinsics.h"
 NB_VC_WARNING_PUSH
 NB_VC_WARNING_DISABLE(6385)
 #include "fmt/core.h"
@@ -29,15 +29,15 @@ pv_log(NHLogLevel level, const char *msg, void *user)
     printf("%d: %s\n", level, msg);
 }
 
-#define MY_LOG(i_logger, i_level, ...)                                         \
+#define LOG_(i_logger, i_level, ...)                                           \
     if ((i_logger) && (i_logger)->active >= (i_level))                         \
     {                                                                          \
         std::string s = fmt::format(__VA_ARGS__);                              \
         (i_logger)->log((i_level), s.c_str(), (i_logger)->user);               \
     }
-#define MY_LOG_INFO(i_logger, ...) MY_LOG(i_logger, NH_LOG_INFO, __VA_ARGS__)
-#define MY_LOG_ERROR(i_logger, ...) MY_LOG(i_logger, NH_LOG_ERROR, __VA_ARGS__)
-#define MY_LOG_TRACE(i_logger, ...) MY_LOG(i_logger, NH_LOG_TRACE, __VA_ARGS__)
+#define LOG_INFO(i_logger, ...) LOG_(i_logger, NH_LOG_INFO, __VA_ARGS__)
+#define LOG_ERROR(i_logger, ...) LOG_(i_logger, NH_LOG_ERROR, __VA_ARGS__)
+#define LOG_TRACE(i_logger, ...) LOG_(i_logger, NH_LOG_TRACE, __VA_ARGS__)
 
 class cpu_test : public ::testing::Test {
   protected:
@@ -89,18 +89,17 @@ TEST_F(cpu_test, nestest)
             int byte_count;
             nh_test_cpu_instr_bytes(cpu, nh_test_cpu_pc(cpu), bytes,
                                     &byte_count);
-            MY_LOG_TRACE(
-                &logger, "Instruction {:>4}: ${:04X} {:02X} {} {}", i_instr + 1,
-                nh_test_cpu_pc(cpu), bytes[0],
-                byte_count >= 2 ? fmt::format("{:02X}", bytes[1]) : "  ",
-                byte_count >= 3 ? fmt::format("{:02X}", bytes[2]) : "  ");
-            MY_LOG_TRACE(&logger,
-                         "A:{:02X} X:{:02X} Y:{:02X} "
-                         "P:{:02X} SP:{:02X}",
-                         nh_test_cpu_a(cpu), nh_test_cpu_x(cpu),
-                         nh_test_cpu_y(cpu), nh_test_cpu_p(cpu),
-                         nh_test_cpu_s(cpu));
-            MY_LOG_TRACE(&logger, "CYC: {}", CYC_BASE + nh_test_cpu_cycle(cpu));
+            LOG_TRACE(&logger, "Instruction {:>4}: ${:04X} {:02X} {} {}",
+                      i_instr + 1, nh_test_cpu_pc(cpu), bytes[0],
+                      byte_count >= 2 ? fmt::format("{:02X}", bytes[1]) : "  ",
+                      byte_count >= 3 ? fmt::format("{:02X}", bytes[2]) : "  ");
+            LOG_TRACE(&logger,
+                      "A:{:02X} X:{:02X} Y:{:02X} "
+                      "P:{:02X} SP:{:02X}",
+                      nh_test_cpu_a(cpu), nh_test_cpu_x(cpu),
+                      nh_test_cpu_y(cpu), nh_test_cpu_p(cpu),
+                      nh_test_cpu_s(cpu));
+            LOG_TRACE(&logger, "CYC: {}", CYC_BASE + nh_test_cpu_cycle(cpu));
             // log opcode coverage
             opcode_set.insert(bytes[0]);
 
@@ -125,7 +124,7 @@ TEST_F(cpu_test, nestest)
         }
     }
 
-    MY_LOG_INFO(&logger, "Opcode kinds covered: {}", opcode_set.size());
+    LOG_INFO(&logger, "Opcode kinds covered: {}", opcode_set.size());
     pv_close_log(log_file);
 }
 
@@ -145,7 +144,7 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
     std::getline(*io_file, line);
     if (line.empty())
     {
-        MY_LOG_ERROR(i_logger, "Empty log line");
+        LOG_ERROR(i_logger, "Empty log line");
         return false;
     }
 
@@ -164,8 +163,8 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
 
         if (actual != expected)
         {
-            MY_LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}]",
-                         i_instr + 1, actual);
+            LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}]",
+                      i_instr + 1, actual);
             return false;
         }
     }
@@ -181,8 +180,8 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
 
         if (actual != expected)
         {
-            MY_LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}]",
-                         i_instr + 1, actual);
+            LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}]",
+                      i_instr + 1, actual);
             return false;
         }
     }
@@ -194,8 +193,8 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
         expected.pop_back(); // '\r'
         if (actual != expected)
         {
-            MY_LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}] cycles",
-                         i_instr + 1, expected);
+            LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}] cycles",
+                      i_instr + 1, expected);
             return false;
         }
     }

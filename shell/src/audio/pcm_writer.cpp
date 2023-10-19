@@ -1,6 +1,6 @@
 #include "pcm_writer.hpp"
 
-#include "nhbase/vc_intrinsics.hpp"
+#include "nhbase/vc_intrinsics.h"
 
 namespace sh {
 

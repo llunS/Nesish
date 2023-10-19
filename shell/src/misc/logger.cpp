@@ -7,7 +7,7 @@
 #include "nhbase/path.hpp"
 #include "nhbase/filesystem.hpp"
 
-#include "nhbase/vc_intrinsics.hpp"
+#include "nhbase/vc_intrinsics.h"
 NB_VC_WARNING_PUSH
 NB_VC_WARNING_DISABLE(6385)
 #include "spdlog/sinks/stdout_color_sinks.h"

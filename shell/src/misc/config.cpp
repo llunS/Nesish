@@ -2,7 +2,7 @@
 
 #include "nhbase/path.hpp"
 #include "nhbase/filesystem.hpp"
-#include "nhbase/vc_intrinsics.hpp"
+#include "nhbase/vc_intrinsics.h"
 #include "misc/exception.hpp"
 
 NB_VC_WARNING_PUSH

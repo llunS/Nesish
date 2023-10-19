@@ -2,10 +2,22 @@
 
 #include "nesish/api.h"
 
+#ifdef __cplusplus
+#include <cstdint> // C++11
+#include <cstddef>
+#else
+#include <stdint.h> // C99
 #include <stddef.h>
+#endif
 
 #ifdef __cplusplus
-extern "C" {
+typedef std::uint8_t NHByte;
+typedef std::uint16_t NHAddr;
+typedef std::size_t NHCycle;
+#else
+typedef uint8_t NHByte;
+typedef uint16_t NHAddr;
+typedef size_t NHCycle;
 #endif
 
 #ifdef __cplusplus
@@ -15,16 +27,15 @@ extern "C" {
 #endif
 #define NH_VALID(handle) ((handle) != NH_NULL)
 
-typedef unsigned char NHByte;  // At least 8-bit in both standards
-typedef unsigned short NHAddr; // At least 16-bit in both standards
-typedef size_t NHCycle;
-
 #define NH_NES_WIDTH 256
 #define NH_NES_HEIGHT 240
 
-typedef int NHErr;
-enum {
-    NH_ERR_OK = 0,
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum NHErr {
+    NH_ERR_OK,
     NH_ERR_UNINITIALIZED,    // Uninitialized.
     NH_ERR_INVALID_ARGUMENT, // Invalid argument.
     NH_ERR_CORRUPTED,        // Invalid or corrupted resource.
@@ -34,13 +45,15 @@ enum {
     NH_ERR_PROGRAMMING,      // Someone wrote a bug, an unexpected behavior.
     NH_ERR_READ_ONLY,        // Attempted to write to read only area.
     NH_ERR_WRITE_ONLY,       // Attempted to read from write only area.
-};
+    NH_ERR_OOM,              // Out of memory
+} NHErr;
 
 #define NH_FAILED(err) ((err) != NH_ERR_OK)
 
+#define NHERRFMT "%d"
+
 /// @note Value matters
-typedef int NHLogLevel;
-enum {
+typedef enum NHLogLevel {
     NH_LOG_OFF,
     NH_LOG_FATAL,
     NH_LOG_ERROR,
@@ -48,7 +61,7 @@ enum {
     NH_LOG_INFO,
     NH_LOG_DEBUG,
     NH_LOG_TRACE,
-};
+} NHLogLevel;
 
 typedef struct NHLogger {
     void (*log)(NHLogLevel level, const char *msg, void *user);
@@ -64,25 +77,24 @@ NH_API void
 nh_release_console(NHConsole console);
 
 /// @note Valid as array index
-typedef int NHCtrlPort;
-enum {
-    NH_CTRL_P1 = 0,
-    NH_CTRL_P2 = 1,
-};
+typedef enum NHCtrlPort {
+    NH_CTRL_P1,
+    NH_CTRL_P2,
+} NHCtrlPort;
 
 /// @note Valid as array index
 typedef int NHKey;
 enum {
-    NH_KEY_A = 0,
-    NH_KEY_B = 1,
-    NH_KEY_SELECT = 2,
-    NH_KEY_START = 3,
-    NH_KEY_UP = 4,
-    NH_KEY_DOWN = 5,
-    NH_KEY_LEFT = 6,
-    NH_KEY_RIGHT = 7,
-    NH_KEYS = 8,
+    NH_KEY_A,
+    NH_KEY_B,
+    NH_KEY_SELECT,
+    NH_KEY_START,
+    NH_KEY_UP,
+    NH_KEY_DOWN,
+    NH_KEY_LEFT,
+    NH_KEY_RIGHT,
 
+    NH_KEYS,
     NH_KEY_BEGIN = NH_KEY_A,
     NH_KEY_END = NH_KEYS,
 };
@@ -167,14 +179,14 @@ nhd_get_ptn_table(NHConsole console, int right);
 /// @note Valid as array index
 typedef int NHDPaletteSet;
 enum {
-    NHD_PALETTE_BG0 = 0,
-    NHD_PALETTE_BG1 = 1,
-    NHD_PALETTE_BG2 = 2,
-    NHD_PALETTE_BG3 = 3,
-    NHD_PALETTE_SP0 = 4,
-    NHD_PALETTE_SP1 = 5,
-    NHD_PALETTE_SP2 = 6,
-    NHD_PALETTE_SP3 = 7,
+    NHD_PALETTE_BG0,
+    NHD_PALETTE_BG1,
+    NHD_PALETTE_BG2,
+    NHD_PALETTE_BG3,
+    NHD_PALETTE_SP0,
+    NHD_PALETTE_SP1,
+    NHD_PALETTE_SP2,
+    NHD_PALETTE_SP3,
 };
 
 NH_API void
