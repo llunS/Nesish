@@ -601,7 +601,24 @@ Application::tick(double i_delta_s)
         NHCycle ticks = nh_advance(m_emu, i_delta_s);
         for (decltype(ticks) i = 0; i < ticks; ++i)
         {
-            if (nh_tick(m_emu, nullptr))
+#if SH_PROFILE_FRM
+            std::chrono::steady_clock::time_point begin =
+                std::chrono::steady_clock::now();
+#endif
+            int sample_avail = nh_tick(m_emu, nullptr);
+#if SH_PROFILE_FRM
+            std::chrono::steady_clock::time_point end =
+                std::chrono::steady_clock::now();
+            m_acc_time += std::chrono::duration<double>(end - begin).count();
+            ++m_acc_ticks;
+            if (m_acc_ticks >= 1789773 * FRAME_TIME)
+            {
+                SH_LOG_INFO(m_logger, "Time difference = {} [s]", m_acc_time);
+                m_acc_time = 0;
+                m_acc_ticks = 0;
+            }
+#endif
+            if (sample_avail)
             {
 #if !SH_NO_AUDIO
                 double sample = m_muted ? 0.0 : nh_get_sample(m_emu);

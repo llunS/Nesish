@@ -18,6 +18,8 @@
 
 #define SH_NO_AUDIO 0
 
+#define SH_PROFILE_FRM 0
+
 struct GLFWwindow;
 
 #ifdef SH_TGT_WEB
@@ -134,6 +136,11 @@ struct Application {
     Texture m_frame_tex;
 #ifdef SH_TGT_WEB
     Texture m_black_frm_tex;
+#endif
+
+#if SH_PROFILE_FRM
+    std::size_t m_acc_ticks = 0;
+    double m_acc_time = 0;
 #endif
 };
 
