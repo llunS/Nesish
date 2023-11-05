@@ -67,6 +67,10 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
 {
     // col: [2, 257]
 
+    // Since sprite evaluation doesn't occur on pre-render scanline
+    // and thus no valid data is available for sprite rendering.
+    bool hasValidSpData = 0 != placcessor_GetCtx(self->accessor_)->ScanlineNo;
+
     /* reset some states */
     if (2 == col)
     {
@@ -77,7 +81,8 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
         }
         placcessor_GetCtx(self->accessor_)->PixelCol = 0;
 
-        u8 spcount = placcessor_GetCtx(self->accessor_)->SpCount;
+        u8 spcount =
+            hasValidSpData ? placcessor_GetCtx(self->accessor_)->SpCount : 0;
         self->ctx_.ToDrawSpsFrontSz = spcount;
         // the max size of self->ctx_.ToDrawSpsFront <= NH_MAX_VISIBLE_SP_NUM,
         // so no risk of unsigned interger wrapping around
@@ -147,11 +152,7 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
         }
 
         outcolor_s spClr = spRender(self->accessor_, &self->ctx_);
-        // Don't draw sprites on the first visible scanline,
-        // since sprite evaluation doesn't occur on pre-render scanline
-        // and thus no valid data is available for rendering.
-        bool renderSp = placcessor_SpEnabled(self->accessor_) &&
-                        0 != placcessor_GetCtx(self->accessor_)->ScanlineNo;
+        bool renderSp = placcessor_SpEnabled(self->accessor_) && hasValidSpData;
         if (!renderSp ||
             (!(placcessor_GetCtx(self->accessor_)->PixelCol & ~0x07) &&
              !(placcessor_GetReg(self->accessor_, PR_PPUMASK) & 0x04)))
