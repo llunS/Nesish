@@ -230,8 +230,8 @@ spEval(cycle_t step, placcessor_s *accessor, spevalfetchctx_s *slctx)
                 }
                 else
                 {
-                    // static_assert(NH_PATTERN_TILE_HEIGHT == 8,
-                    //               "Invalid NH_PATTERN_TILE_HEIGHT");
+                    _Static_assert(NH_PATTERN_TILE_HEIGHT == 8,
+                                   "Invalid NH_PATTERN_TILE_HEIGHT");
                     u8 spH = placcessor_Is8x16(accessor)
                                  ? NH_PATTERN_TILE_HEIGHT * 2
                                  : NH_PATTERN_TILE_HEIGHT;
@@ -327,8 +327,8 @@ getPatSliver(placcessor_s *accessor, spevalfetchctx_s *slctx, u8 spidx,
     placcessor_ResolveSpTile(slctx->SpTileByte, placcessor_Is8x16(accessor),
                              flipY, yInSp, &tileidx);
 
-    // static_assert(NH_PATTERN_TILE_HEIGHT == 8,
-    //               "Invalid NH_PATTERN_TILE_HEIGHT");
+    _Static_assert(NH_PATTERN_TILE_HEIGHT == 8,
+                   "Invalid NH_PATTERN_TILE_HEIGHT");
     u8 fineY = yInSp % NH_PATTERN_TILE_HEIGHT;
     if (flipY)
     {

@@ -32,7 +32,7 @@
 // @FIXME: spdlog will include windows header files, we need to include them
 // before "glfw3.h" so that glfw won't redefine symbols.
 #include "misc/logger.hpp"
-#include "glfw/glfw3.h"
+#include "GLFW/glfw3.h"
 #include "misc/glfunc.hpp"
 #ifndef SH_TGT_WEB
 #include "rendering/renderer.hpp"

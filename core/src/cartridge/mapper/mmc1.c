@@ -57,6 +57,12 @@ mmc1_Init(mmc1_s *self, const inesromaccessor_s *accessor, mmc1var_e var)
 }
 
 void
+mmc1_Deinit(void *self)
+{
+    (void)(self);
+}
+
+void
 clearShift(mmc1_s *self)
 {
     self->shift_ = 0x10;
@@ -112,8 +118,10 @@ prgRamEnabled(const mmc1_s *self)
 }
 
 NHErr
-mmc1_Validate(const mmc1_s *self)
+mmc1_Validate(const void *me)
 {
+    const mmc1_s *self = (const mmc1_s *)(me);
+
     if (self->var_ != MMC1B)
     {
         return NH_ERR_UNIMPLEMENTED;
@@ -126,8 +134,10 @@ mmc1_Validate(const mmc1_s *self)
 }
 
 void
-mmc1_Powerup(mmc1_s *self)
+mmc1_Powerup(void *me)
 {
+    mmc1_s *self = (mmc1_s *)(me);
+
     clearShift(self);
 
     self->ctrl_ = 0;
@@ -154,7 +164,7 @@ mmc1_Powerup(mmc1_s *self)
 }
 
 void
-mmc1_Reset(mmc1_s *self)
+mmc1_Reset(void *self)
 {
     mmc1_Powerup(self);
 }
@@ -389,8 +399,10 @@ dynMirror(void *opaque)
 }
 
 void
-mmc1_MapMemory(mmc1_s *self, mmem_s *mmem, vmem_s *vmem)
+mmc1_MapMemory(void *me, mmem_s *mmem, vmem_s *vmem)
 {
+    mmc1_s *self = (mmc1_s *)(me);
+
     // PRG ROM
     {
         inesromaccessor_GetPrgRom(self->base_.romaccessor,
@@ -421,8 +433,8 @@ mmc1_MapMemory(mmc1_s *self, mmem_s *mmem, vmem_s *vmem)
         else
         {
             self->chrctx_.Base = self->chrram_;
-            // static_assert(sizeof(self->chrram_) % sizeof(u8) == 0,
-            //               "Incorrect CHR RAM size");
+            _Static_assert(sizeof(self->chrram_) % sizeof(u8) == 0,
+                           "Incorrect CHR RAM size");
             self->chrctx_.Size = sizeof(self->chrram_) / sizeof(u8);
         }
         mementry_s entry;
@@ -436,7 +448,7 @@ mmc1_MapMemory(mmc1_s *self, mmem_s *mmem, vmem_s *vmem)
 }
 
 void
-mmc1_UnmapMemory(mmc1_s *self, mmem_s *mmem, vmem_s *vmem)
+mmc1_UnmapMemory(void *self, mmem_s *mmem, vmem_s *vmem)
 {
     (void)(self);
 

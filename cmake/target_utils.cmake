@@ -25,12 +25,16 @@ function(configure_warnings i_tgt)
             /WX # warnings as errors
             /analyze # enable code analysis warnings
         )
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-        OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
         OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         # lots of warnings and all warnings as errors
         target_compile_options(${i_tgt} PRIVATE
             -Wall -Wextra -pedantic -Werror
+        )
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${i_tgt} PRIVATE
+            -Wall -Wextra -pedantic -Werror
+            -Wno-error=type-limits
         )
     else()
         message(FATAL_ERROR "Platform not supported yet!")
@@ -66,6 +70,15 @@ function(configure_optimizations i_tgt)
         target_link_options(${i_tgt} PRIVATE
             $<$<CONFIG:Release,RelWithDebInfo>:-O3>
             $<$<CONFIG:Release,RelWithDebInfo>:-flto=full>
+        )
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${i_tgt} PRIVATE
+            $<$<CONFIG:Release,RelWithDebInfo>:-O3>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto=auto>
+        )
+        target_link_options(${i_tgt} PRIVATE
+            $<$<CONFIG:Release,RelWithDebInfo>:-O3>
+            $<$<CONFIG:Release,RelWithDebInfo>:-flto=auto>
         )
     else()
         message(FATAL_ERROR "Platform not supported yet!")

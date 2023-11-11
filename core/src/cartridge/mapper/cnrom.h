@@ -23,21 +23,18 @@ typedef struct cnrom_s {
 void
 cnrom_Init(cnrom_s *self, const inesromaccessor_s *accessor);
 
-inline void
-cnrom_Deinit(cnrom_s *self)
-{
-    (void)(self);
-}
+void
+cnrom_Deinit(void *self);
 
 NHErr
-cnrom_Validate(const cnrom_s *self);
+cnrom_Validate(const void *self);
 
 void
-cnrom_Powerup(cnrom_s *self);
+cnrom_Powerup(void *self);
 void
-cnrom_Reset(cnrom_s *self);
+cnrom_Reset(void *self);
 
 void
-cnrom_MapMemory(cnrom_s *self, mmem_s *mmem, vmem_s *vmem);
+cnrom_MapMemory(void *self, mmem_s *mmem, vmem_s *vmem);
 void
-cnrom_UnmapMemory(cnrom_s *self, mmem_s *mmem, vmem_s *vmem);
+cnrom_UnmapMemory(void *self, mmem_s *mmem, vmem_s *vmem);

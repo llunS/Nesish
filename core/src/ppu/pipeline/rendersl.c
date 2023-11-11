@@ -60,7 +60,7 @@ getBackdropClr(placcessor_s *accessor)
     color_s backdrop =
         placcessor_GetPal(accessor)->ToRgb((palettecolor_s){backdropByte});
     return backdrop;
-};
+}
 
 void
 rendersl_Tick(rendersl_s *self, cycle_t col)

@@ -22,21 +22,18 @@ typedef struct nrom_s {
 void
 nrom_Init(nrom_s *self, const inesromaccessor_s *accessor);
 
-inline void
-nrom_Deinit(nrom_s *self)
-{
-    (void)(self);
-}
+void
+nrom_Deinit(void *self);
 
 NHErr
-nrom_Validate(const nrom_s *self);
+nrom_Validate(const void *self);
 
 void
-nrom_Powerup(nrom_s *self);
+nrom_Powerup(void *self);
 void
-nrom_Reset(nrom_s *self);
+nrom_Reset(void *self);
 
 void
-nrom_MapMemory(nrom_s *self, mmem_s *mmem, vmem_s *vmem);
+nrom_MapMemory(void *self, mmem_s *mmem, vmem_s *vmem);
 void
-nrom_UnmapMemory(nrom_s *self, mmem_s *mmem, vmem_s *vmem);
+nrom_UnmapMemory(void *self, mmem_s *mmem, vmem_s *vmem);

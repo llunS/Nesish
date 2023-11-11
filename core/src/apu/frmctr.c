@@ -44,7 +44,7 @@ checkSetIrq(frmctr_s *self)
     {
         self->irq_ = true;
     }
-};
+}
 
 void
 frmctr_Tick(frmctr_s *self)

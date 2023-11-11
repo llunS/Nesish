@@ -37,21 +37,18 @@ typedef struct mmc1_s {
 void
 mmc1_Init(mmc1_s *self, const inesromaccessor_s *accessor, mmc1var_e var);
 
-inline void
-mmc1_Deinit(mmc1_s *self)
-{
-    (void)(self);
-}
+void
+mmc1_Deinit(void *self);
 
 NHErr
-mmc1_Validate(const mmc1_s *self);
+mmc1_Validate(const void *self);
 
 void
-mmc1_Powerup(mmc1_s *self);
+mmc1_Powerup(void *self);
 void
-mmc1_Reset(mmc1_s *self);
+mmc1_Reset(void *self);
 
 void
-mmc1_MapMemory(mmc1_s *self, mmem_s *mmem, vmem_s *vmem);
+mmc1_MapMemory(void *self, mmem_s *mmem, vmem_s *vmem);
 void
-mmc1_UnmapMemory(mmc1_s *self, mmem_s *mmem, vmem_s *vmem);
+mmc1_UnmapMemory(void *self, mmem_s *mmem, vmem_s *vmem);

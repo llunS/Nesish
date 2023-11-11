@@ -102,7 +102,7 @@ pretickChkToFlagHalt(cpu_s *self)
             self->dmahalt_ = true;
         }
     }
-};
+}
 
 bool
 cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)

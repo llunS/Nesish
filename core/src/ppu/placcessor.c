@@ -82,7 +82,7 @@ placcessor_GetOamByte(placcessor_s *self, u8 addr)
 u8 *
 placcessor_GetOamPtr(placcessor_s *self, u8 addr)
 {
-    // static_assert(sizeof(self->ppu_->oam_) == 256, "Wrong primary OAM size");
+    _Static_assert(sizeof(self->ppu_->oam_) == 256, "Wrong primary OAM size");
     return &self->ppu_->oam_[addr];
 }
 
@@ -218,7 +218,7 @@ capturePalette(placcessor_s *self)
 {
     for (int i = 0; i < NHD_PALETTE_COLORS; ++i)
     {
-        // static_assert(NHD_PALETTE_COLORS == 32, "Might overflow below");
+        _Static_assert(NHD_PALETTE_COLORS == 32, "Might overflow below");
         u8 clrbyte = placcessor_GetColorByte(self, i);
         color_s clr = placcessor_GetPal(self)->ToRgb((palettecolor_s){clrbyte});
         dbgpal_SetColor(&self->ppu_->palsnap_, i, clrbyte, clr.R, clr.G, clr.B);
@@ -279,8 +279,8 @@ updateOamSpr(placcessor_s *self, dbgspr_s *spr, int idx)
         u8 tileidx;
         placcessor_ResolveSpTile(tile, mode8x16, flipy, yInSp, &tileidx);
 
-        // static_assert(NH_PATTERN_TILE_HEIGHT == 8,
-        //               "Invalid NH_PATTERN_TILE_HEIGHT");
+        _Static_assert(NH_PATTERN_TILE_HEIGHT == 8,
+                       "Invalid NH_PATTERN_TILE_HEIGHT");
         u8 finey = yInSp % NH_PATTERN_TILE_HEIGHT;
         if (flipy)
         {
@@ -319,8 +319,8 @@ updateOamSpr(placcessor_s *self, dbgspr_s *spr, int idx)
             int addrPalSetOffset = attr & 0x03; // 4-color palette
             int ptn = ((bool)(ptnbit1B & (0x80 >> fineX)) << 1) |
                       ((bool)(ptnbit0B & (0x80 >> fineX)) << 0);
-            // static_assert(NH_PALETTE_SIZE == 32,
-            //               "Incorrect color byte position");
+            _Static_assert(NH_PALETTE_SIZE == 32,
+                           "Incorrect color byte position");
             color_s pixel = getPalColor(self, 16 + addrPalSetOffset * 4 + ptn);
             dbgspr_SetPixel(spr, yInSp, fineX, pixel);
         }
@@ -336,12 +336,12 @@ capturePtnTblsOn(placcessor_s *self)
 static void
 captureTable(placcessor_s *self, bool right, dbgpattbl_s *tbl)
 {
-    // static_assert(DBGPATTBL_TILES == 16 * 16, "Incorrect loop count");
+    _Static_assert(DBGPATTBL_TILES == 16 * 16, "Incorrect loop count");
     // static_assert(std::numeric_limits<int>::max() >= 16 * 16,
     //               "Type of loop variable too small");
     for (int tileidx = 0; tileidx < DBGPATTBL_TILES; ++tileidx)
     {
-        // static_assert(DBGPATTBL_TILE_H == 8, "Incorrect loop count");
+        _Static_assert(DBGPATTBL_TILE_H == 8, "Incorrect loop count");
         for (u8 fineY = 0; fineY < DBGPATTBL_TILE_H; ++fineY)
         {
             // static_assert(std::numeric_limits<u8>::max() >= 16 * 16 - 1,
@@ -369,13 +369,13 @@ captureTable(placcessor_s *self, bool right, dbgpattbl_s *tbl)
             }
 
             /* Now that we have a row of data available */
-            // static_assert(DBGPATTBL_TILE_W == 8, "Incorrect loop count");
+            _Static_assert(DBGPATTBL_TILE_W == 8, "Incorrect loop count");
             for (int fineX = 0; fineX < DBGPATTBL_TILE_W; ++fineX)
             {
                 int ptn = ((bool)(ptnbit1B & (0x80 >> fineX)) << 1) |
                           ((bool)(ptnbit0B & (0x80 >> fineX)) << 0);
-                // static_assert(NH_PALETTE_SIZE == 32,
-                //               "Incorrect color byte position");
+                _Static_assert(NH_PALETTE_SIZE == 32,
+                               "Incorrect color byte position");
                 color_s pixel =
                     getPalColor(self, self->ppu_->ptntblPalIdx_ * 4 + ptn);
                 dbgpattble_SetPixel(tbl, tileidx, fineY, fineX, pixel);

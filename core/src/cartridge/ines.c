@@ -28,8 +28,10 @@ ines_init_(ines_s *self, NHLogger *logger)
 }
 
 void
-ines_Deinit(ines_s *self)
+ines_Deinit(void *me)
 {
+    ines_s *self = (ines_s *)me;
+
     if (self->prgrom_)
     {
         free(self->prgrom_);
@@ -68,8 +70,10 @@ ines_resolve_(ines_s *self)
 }
 
 NHErr
-ines_Validate(const ines_s *self)
+ines_Validate(const void *me)
 {
+    const ines_s *self = (const ines_s *)me;
+
     // 1. header metadata check
     // magic number: NES^Z
     if (!(self->header_.Magic[0] == 0x4e && self->header_.Magic[1] == 0x45 &&
@@ -109,26 +113,34 @@ ines_Validate(const ines_s *self)
 }
 
 void
-ines_Powerup(ines_s *self)
+ines_Powerup(void *me)
 {
+    ines_s *self = (ines_s *)me;
+
     self->mapper_.Powerup(self->mapper_.Impl);
 }
 
 void
-ines_Reset(ines_s *self)
+ines_Reset(void *me)
 {
+    ines_s *self = (ines_s *)me;
+
     self->mapper_.Reset(self->mapper_.Impl);
 }
 
 void
-ines_MapMemory(ines_s *self, mmem_s *mmem, vmem_s *vmem)
+ines_MapMemory(void *me, mmem_s *mmem, vmem_s *vmem)
 {
+    ines_s *self = (ines_s *)me;
+
     self->mapper_.MapMemory(self->mapper_.Impl, mmem, vmem);
 }
 
 void
-ines_UnmapMemory(ines_s *self, mmem_s *mmem, vmem_s *vmem)
+ines_UnmapMemory(void *me, mmem_s *mmem, vmem_s *vmem)
 {
+    ines_s *self = (ines_s *)me;
+
     self->mapper_.UnmapMemory(self->mapper_.Impl, mmem, vmem);
 }
 

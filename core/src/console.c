@@ -195,8 +195,8 @@ readCtrlReg(console_s *self, ctrlreg_e reg)
         case CR_4017:
         {
             int index = reg - CR_4016;
-            // static_assert(CONSOLE_CTRLSIZE == CR_SIZE,
-            //               "Controller index mismatch");
+            _Static_assert(CONSOLE_CTRLSIZE == CR_SIZE,
+                           "Controller index mismatch");
             if (index < 0 || index >= CONSOLE_CTRLSIZE)
             {
                 ASSERT_FATAL(self->logger_,

@@ -47,20 +47,20 @@ typedef struct ines_s {
 } ines_s;
 
 void
-ines_Deinit(ines_s *self);
+ines_Deinit(void *self);
 
 NHErr
-ines_Validate(const ines_s *self);
+ines_Validate(const void *self);
 
 void
-ines_Powerup(ines_s *self);
+ines_Powerup(void *self);
 void
-ines_Reset(ines_s *self);
+ines_Reset(void *self);
 
 void
-ines_MapMemory(ines_s *self, mmem_s *mmem, vmem_s *vmem);
+ines_MapMemory(void *self, mmem_s *mmem, vmem_s *vmem);
 void
-ines_UnmapMemory(ines_s *self, mmem_s *mmem, vmem_s *vmem);
+ines_UnmapMemory(void *self, mmem_s *mmem, vmem_s *vmem);
 
 void
 ines_init_(ines_s *self, NHLogger *logger);

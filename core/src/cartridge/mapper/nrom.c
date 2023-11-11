@@ -18,9 +18,17 @@ nrom_Init(nrom_s *self, const inesromaccessor_s *accessor)
     memset(self->chrram_, 0, sizeof(self->chrram_));
 }
 
-NHErr
-nrom_Validate(const nrom_s *self)
+void
+nrom_Deinit(void *self)
 {
+    (void)(self);
+}
+
+NHErr
+nrom_Validate(const void *me)
+{
+    const nrom_s *self = (const nrom_s *)(me);
+
     usize prgRomSize;
     inesromaccessor_GetPrgRom(self->base_.romaccessor, NULL, &prgRomSize);
     if (!(prgRomSize == NH_128_PRG_RAM_SIZE ||
@@ -33,13 +41,13 @@ nrom_Validate(const nrom_s *self)
 }
 
 void
-nrom_Powerup(nrom_s *self)
+nrom_Powerup(void *self)
 {
     (void)(self);
 }
 
 void
-nrom_Reset(nrom_s *self)
+nrom_Reset(void *self)
 {
     (void)(self);
 }
@@ -84,8 +92,10 @@ chrDecode(const mementry_s *entry, addr_t addr, u8 **ptr)
 }
 
 void
-nrom_MapMemory(nrom_s *self, mmem_s *mmem, vmem_s *vmem)
+nrom_MapMemory(void *me, mmem_s *mmem, vmem_s *vmem)
 {
+    nrom_s *self = (nrom_s *)(me);
+
     // PRG ROM
     {
         inesromaccessor_GetPrgRom(self->base_.romaccessor,
@@ -127,8 +137,10 @@ nrom_MapMemory(nrom_s *self, mmem_s *mmem, vmem_s *vmem)
 }
 
 void
-nrom_UnmapMemory(nrom_s *self, mmem_s *mmem, vmem_s *vmem)
+nrom_UnmapMemory(void *me, mmem_s *mmem, vmem_s *vmem)
 {
+    nrom_s *self = (nrom_s *)(me);
+
     membase_UnsetMapping(&mmem->Base, MMP_PRGROM);
     membase_UnsetMapping(&mmem->Base, MMP_PRGRAM);
 

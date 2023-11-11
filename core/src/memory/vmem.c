@@ -101,9 +101,8 @@ mirrorDynDecode(const mementry_s *entry, addr_t addr, u8 **ptr)
 {
     vmem_s *self = (vmem_s *)entry->Opaque;
 
-    // require at least C11, not that much needed
-    // static_assert(sizeof(self->ram_) == sizeof(u8) * 2 * NH_NT_ONE_SIZE,
-    //   "Wrong internal ram size");
+    _Static_assert(sizeof(self->ram_) == sizeof(u8) * 2 * NH_NT_ONE_SIZE,
+                   "Wrong internal ram size");
 
     mirmode_e mode = self->mirDynDecode_(self->mirOpaque_);
     switch (mode)
