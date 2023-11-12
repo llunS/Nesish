@@ -3,7 +3,8 @@
 #include "gui/window.hpp"
 #include "input/controller.hpp"
 
-namespace sh {
+namespace sh
+{
 
 struct CustomKey : public Window {
   public:

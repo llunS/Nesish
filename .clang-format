@@ -1,35 +1,50 @@
-# version 12
 ---
 BasedOnStyle: LLVM
-IndentWidth: 4
 
-SortIncludes: false
+UseTab: Never
+IndentWidth: 4
+ColumnLimit: 80
+
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: false
+IndentExternBlock: NoIndent
+IndentGotoLabels: true
+IndentPPDirectives: None
+IndentWrappedFunctionNames: false
+
+BreakBeforeBraces: Linux
 AlwaysBreakAfterDefinitionReturnType: All
 AlwaysBreakAfterReturnType: All
 BreakConstructorInitializers: BeforeComma
-AllowShortBlocksOnASingleLine: Empty
-AllowShortFunctionsOnASingleLine: Empty
-AlignTrailingComments: true
-ReflowComments: true
-IndentPPDirectives: None
-AllowShortEnumsOnASingleLine: false
-IndentCaseLabels: true
-IndentCaseBlocks: false
 
-# The brace breaking style to use.
-BreakBeforeBraces: Custom
-BraceWrapping:
-  BeforeElse: true
-  BeforeCatch: true
-  BeforeLambdaBody: false
-  BeforeWhile: false
-  AfterControlStatement: Always
-  AfterCaseLabel: true
-  AfterUnion: false
-  AfterExternBlock: false
-  AfterStruct: false
-  AfterClass: false
-  AfterEnum: false
-  AfterFunction: true
-  SplitEmptyFunction: true
-  AfterNamespace: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+
+MaxEmptyLinesToKeep: 1
+SortIncludes: false
+SortUsingDeclarations: Never
+ReflowComments: true
+FixNamespaceComments: true
+SpacesBeforeTrailingComments: 1
+
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments:
+  Enabled: false
+AlignConsecutiveBitFields:
+  Enabled: false
+AlignConsecutiveDeclarations:
+  Enabled: false
+AlignConsecutiveMacros:
+  Enabled: false
+AlignEscapedNewlines: Right
+AlignOperands: AlignAfterOperator
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0

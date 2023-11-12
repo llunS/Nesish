@@ -8,7 +8,7 @@
 #include "nesish/nesish.h"
 #include "nhbase/path.hpp"
 
-#include "nhbase/vc_intrinsics.h"
+#include "nhbase/vc_intrinsics.hpp"
 NB_VC_WARNING_PUSH
 NB_VC_WARNING_DISABLE(6385)
 #include "fmt/core.h"
@@ -30,8 +30,7 @@ pv_log(NHLogLevel level, const char *msg, void *user)
 }
 
 #define LOG_(i_logger, i_level, ...)                                           \
-    if ((i_logger) && (i_logger)->active >= (i_level))                         \
-    {                                                                          \
+    if ((i_logger) && (i_logger)->active >= (i_level)) {                       \
         std::string s = fmt::format(__VA_ARGS__);                              \
         (i_logger)->log((i_level), s.c_str(), (i_logger)->user);               \
     }
@@ -39,7 +38,8 @@ pv_log(NHLogLevel level, const char *msg, void *user)
 #define LOG_ERROR(i_logger, ...) LOG_(i_logger, NH_LOG_ERROR, __VA_ARGS__)
 #define LOG_TRACE(i_logger, ...) LOG_(i_logger, NH_LOG_TRACE, __VA_ARGS__)
 
-class cpu_test : public ::testing::Test {
+class cpu_test : public ::testing::Test
+{
   protected:
     void
     SetUp() override
@@ -50,8 +50,7 @@ class cpu_test : public ::testing::Test {
     void
     TearDown() override
     {
-        if (NH_VALID(console))
-        {
+        if (NH_VALID(console)) {
             nh_release_console(console);
         }
     }
@@ -80,8 +79,7 @@ TEST_F(cpu_test, nestest)
     bool init_log = true;
     std::unordered_set<NHByte> opcode_set;
     std::size_t i_instr = 0;
-    while (i_instr < 8990)
-    {
+    while (i_instr < 8990) {
         auto cmp_log = [&]() {
             constexpr NHCycle CYC_BASE = 7;
             // log the process
@@ -104,21 +102,18 @@ TEST_F(cpu_test, nestest)
             opcode_set.insert(bytes[0]);
 
             if (!pv_compare_log_line(&log_file, cpu, i_instr, CYC_BASE,
-                                     &logger))
-            {
+                                     &logger)) {
                 ASSERT_TRUE(false);
             }
         };
 
-        if (init_log)
-        {
+        if (init_log) {
             cmp_log();
             init_log = false;
         }
         int cpu_instr_done = false;
         nh_tick(console, &cpu_instr_done);
-        if (cpu_instr_done)
-        {
+        if (cpu_instr_done) {
             ++i_instr;
             cmp_log();
         }
@@ -142,8 +137,7 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
 {
     std::string line;
     std::getline(*io_file, line);
-    if (line.empty())
-    {
+    if (line.empty()) {
         LOG_ERROR(i_logger, "Empty log line");
         return false;
     }
@@ -161,8 +155,7 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
         // [0, 14)
         std::string expected = line.substr(0, 14);
 
-        if (actual != expected)
-        {
+        if (actual != expected) {
             LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}]",
                       i_instr + 1, actual);
             return false;
@@ -178,8 +171,7 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
         // [48, 73)
         std::string expected = line.substr(48, 73 - 48);
 
-        if (actual != expected)
-        {
+        if (actual != expected) {
             LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}]",
                       i_instr + 1, actual);
             return false;
@@ -191,8 +183,7 @@ pv_compare_log_line(std::ifstream *io_file, NHCPU i_cpu, std::size_t i_instr,
             std::to_string(i_base_cycle + nh_test_cpu_cycle(i_cpu));
         std::string expected = line.substr(line.rfind("CYC:") + 4);
         expected.pop_back(); // '\r'
-        if (actual != expected)
-        {
+        if (actual != expected) {
             LOG_ERROR(i_logger, "Diff failed at Instruction {}: [{}] cycles",
                       i_instr + 1, expected);
             return false;

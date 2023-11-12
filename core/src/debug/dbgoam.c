@@ -3,8 +3,7 @@
 void
 dbgoam_Init(dbgoam_s *self)
 {
-    for (int i = 0; i < NHD_OAM_SPRITES; ++i)
-    {
+    for (int i = 0; i < NHD_OAM_SPRITES; ++i) {
         dbgspr_Init(&self->sprs_[i]);
     }
 }

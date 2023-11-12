@@ -33,24 +33,20 @@ mmc1_Init(mmc1_s *self, const inesromaccessor_s *accessor, mmc1var_e var)
 
     usize prgRomSize;
     inesromaccessor_GetPrgRom(self->base_.romaccessor, NULL, &prgRomSize);
-    if (prgRomSize == 32 * 1024)
-    {
+    if (prgRomSize == 32 * 1024) {
         usize ramsize = inesromaccessor_GetPrgRamSize(self->base_.romaccessor);
         // NES 2.0 format may be required to detect this, because
         // "ramsize" may very well be 0 for iNES format.
-        if (ramsize == 0)
-        {
+        if (ramsize == 0) {
             // Don't forbid banking for this.
             // 0 for iNES format.
         }
         // SIROM
-        else if (ramsize == 8 * 1024)
-        {
+        else if (ramsize == 8 * 1024) {
         }
         // Other no PRG banking 32KB boards
         // SEROM, SHROM, and SH1ROM
-        else
-        {
+        else {
             self->noprgbanking32K_ = true;
         }
     }
@@ -77,24 +73,15 @@ resetPrgBnkMode(mmc1_s *self)
 u8 *
 regOfAddr(mmc1_s *self, addr_t addr)
 {
-    if (0x8000 <= addr && addr <= 0x9FFF)
-    {
+    if (0x8000 <= addr && addr <= 0x9FFF) {
         return &self->ctrl_;
-    }
-    else if (0xA000 <= addr && addr <= 0xBFFF)
-    {
+    } else if (0xA000 <= addr && addr <= 0xBFFF) {
         return &self->ch0bnk_;
-    }
-    else if (0xC000 <= addr && addr <= 0xDFFF)
-    {
+    } else if (0xC000 <= addr && addr <= 0xDFFF) {
         return &self->ch1bnk_;
-    }
-    else if (0xE000 <= addr && addr <= 0xFFFF)
-    {
+    } else if (0xE000 <= addr && addr <= 0xFFFF) {
         return &self->prgbnk_;
-    }
-    else
-    {
+    } else {
         // Invalid branch
         return &self->ctrl_;
     }
@@ -103,17 +90,14 @@ regOfAddr(mmc1_s *self, addr_t addr)
 bool
 prgRamEnabled(const mmc1_s *self)
 {
-    switch (self->var_)
-    {
-        case MMC1B:
-        {
-            return !(self->prgbnk_ & 0x10);
-        }
-        break;
+    switch (self->var_) {
+    case MMC1B: {
+        return !(self->prgbnk_ & 0x10);
+    } break;
 
-        default:
-            return true;
-            break;
+    default:
+        return true;
+        break;
     }
 }
 
@@ -122,8 +106,7 @@ mmc1_Validate(const void *me)
 {
     const mmc1_s *self = (const mmc1_s *)(me);
 
-    if (self->var_ != MMC1B)
-    {
+    if (self->var_ != MMC1B) {
         return NH_ERR_UNIMPLEMENTED;
     }
 
@@ -146,20 +129,15 @@ mmc1_Powerup(void *me)
     self->ch0bnk_ = 0;
     self->ch1bnk_ = 0;
 
-    switch (self->var_)
-    {
-        case MMC1B:
-        {
-            // PRG RAM is enabled by default
-            self->prgbnk_ &= 0xEF;
-        }
-        break;
+    switch (self->var_) {
+    case MMC1B: {
+        // PRG RAM is enabled by default
+        self->prgbnk_ &= 0xEF;
+    } break;
 
-        default:
-        {
-            self->prgbnk_ = 0;
-        }
-        break;
+    default: {
+        self->prgbnk_ = 0;
+    } break;
     }
 }
 
@@ -176,72 +154,60 @@ prgRomGet(const mementry_s *entry, addr_t addr, u8 *val)
 
     addr_t memidx = 0;
     u8 prgRomBankMode = (self->ctrl_ >> 2) & 0x03;
-    switch (prgRomBankMode)
-    {
-        // 32KB
-        case 0:
-        case 1:
-        {
-            u8 bank = (self->prgbnk_ >> 1) & 0x07;
-            // 32KB window
-            addr_t prgRomStart = bank * 32 * 1024;
+    switch (prgRomBankMode) {
+    // 32KB
+    case 0:
+    case 1: {
+        u8 bank = (self->prgbnk_ >> 1) & 0x07;
+        // 32KB window
+        addr_t prgRomStart = bank * 32 * 1024;
+        addr_t addrbase = entry->Begin;
+        memidx = prgRomStart + (addr - addrbase);
+    } break;
+
+    // fix first bank at $8000 and switch 16 KB bank at $C000
+    case 2:
+    // fix last bank at $C000 and switch 16 KB bank at $8000
+    case 3: {
+        if (self->noprgbanking32K_) {
+            addr_t prgRomStart = 0;
             addr_t addrbase = entry->Begin;
             memidx = prgRomStart + (addr - addrbase);
-        }
-        break;
+        } else {
+            u8 bank = 0;
+            addr_t addrbase = entry->Begin;
 
-        // fix first bank at $8000 and switch 16 KB bank at $C000
-        case 2:
-        // fix last bank at $C000 and switch 16 KB bank at $8000
-        case 3:
-        {
-            if (self->noprgbanking32K_)
-            {
-                addr_t prgRomStart = 0;
-                addr_t addrbase = entry->Begin;
-                memidx = prgRomStart + (addr - addrbase);
-            }
-            else
-            {
-                u8 bank = 0;
-                addr_t addrbase = entry->Begin;
-
-                bool lowerPrgRomArea = (addr & 0xC000) == 0x8000;
-                addr_t fixedCpuAddrStart = (addr_t)(prgRomBankMode) << 14;
-                // 0x4000 half the size of the PRG ROM area
-                // inclusive range
-                addr_t fixedCpuAddrEnd = fixedCpuAddrStart + (0x4000 - 1);
-                if (fixedCpuAddrStart <= addr && addr <= fixedCpuAddrEnd)
-                {
-                    // Max bank count is 512KB / 16KB = 32, which
-                    // fits in a u8;
-                    typedef u8 BankCount_t;
-                    BankCount_t bankCnt =
-                        (BankCount_t)(self->prgromctx_.Size / (16 * 1024));
-                    if (bankCnt <= 0)
-                    {
-                        return NH_ERR_PROGRAMMING; // or corrupted rom
-                    }
-                    BankCount_t lastBank = bankCnt - 1;
-
-                    bank = lowerPrgRomArea ? 0 : lastBank;
-                    addrbase = fixedCpuAddrStart;
+            bool lowerPrgRomArea = (addr & 0xC000) == 0x8000;
+            addr_t fixedCpuAddrStart = (addr_t)(prgRomBankMode) << 14;
+            // 0x4000 half the size of the PRG ROM area
+            // inclusive range
+            addr_t fixedCpuAddrEnd = fixedCpuAddrStart + (0x4000 - 1);
+            if (fixedCpuAddrStart <= addr && addr <= fixedCpuAddrEnd) {
+                // Max bank count is 512KB / 16KB = 32, which
+                // fits in a u8;
+                typedef u8 BankCount_t;
+                BankCount_t bankCnt =
+                    (BankCount_t)(self->prgromctx_.Size / (16 * 1024));
+                if (bankCnt <= 0) {
+                    return NH_ERR_PROGRAMMING; // or corrupted rom
                 }
-                else
-                {
-                    bank = self->prgbnk_ & 0x0F;
-                    addrbase = lowerPrgRomArea ? 0x8000 : 0xC000;
-                }
+                BankCount_t lastBank = bankCnt - 1;
 
-                addr_t prgRomStart = bank * 16 * 1024;
-                memidx = prgRomStart + (addr - addrbase);
+                bank = lowerPrgRomArea ? 0 : lastBank;
+                addrbase = fixedCpuAddrStart;
+            } else {
+                bank = self->prgbnk_ & 0x0F;
+                addrbase = lowerPrgRomArea ? 0x8000 : 0xC000;
             }
-        }
-        break;
 
-        default:
-            return NH_ERR_PROGRAMMING;
-            break;
+            addr_t prgRomStart = bank * 16 * 1024;
+            memidx = prgRomStart + (addr - addrbase);
+        }
+    } break;
+
+    default:
+        return NH_ERR_PROGRAMMING;
+        break;
     }
 
     // Mirror as necessary in case things go wrong.
@@ -259,13 +225,10 @@ prgRomSet(const mementry_s *entry, addr_t addr, u8 val)
 {
     mmc1_s *self = (mmc1_s *)entry->Opaque;
 
-    if (val & 0x80)
-    {
+    if (val & 0x80) {
         clearShift(self);
         resetPrgBnkMode(self);
-    }
-    else
-    {
+    } else {
         // @TODO: When the serial port is written to on consecutive
         // cycles, it ignores every write after the first. In practice,
         // this only happens when the CPU executes read-modify-write
@@ -286,8 +249,7 @@ prgRomSet(const mementry_s *entry, addr_t addr, u8 val)
         bool lastWrite = self->shift_ & 0x01;
         self->shift_ >>= 1;
         self->shift_ = (self->shift_ & 0xEF) | ((val & 0x01) << 4);
-        if (lastWrite)
-        {
+        if (lastWrite) {
             *regOfAddr(self, addr) = self->shift_ & 0x1F;
             clearShift(self);
         }
@@ -301,8 +263,7 @@ prgRamDecode(const mementry_s *entry, addr_t addr, u8 **ptr)
 {
     mmc1_s *self = (mmc1_s *)entry->Opaque;
 
-    if (!prgRamEnabled(self))
-    {
+    if (!prgRamEnabled(self)) {
         return NH_ERR_UNAVAILABLE;
     }
 
@@ -324,42 +285,34 @@ chrDecode(const mementry_s *entry, addr_t addr, u8 **ptr)
     mmc1_s *self = (mmc1_s *)entry->Opaque;
 
     addr_t memidx = 0;
-    switch ((self->ctrl_ >> 4) & 0x01)
-    {
-        // switch 8 KB at a time
-        case 0:
-        {
-            u8 bank = (self->ch0bnk_ >> 1) & 0x0F;
-            // CHR pattern area is of 8KB size
-            addr_t addrbase = entry->Begin;
-            addr_t prgRomStart = bank * 8 * 1024;
-            memidx = prgRomStart + (addr - addrbase);
-        }
-        break;
+    switch ((self->ctrl_ >> 4) & 0x01) {
+    // switch 8 KB at a time
+    case 0: {
+        u8 bank = (self->ch0bnk_ >> 1) & 0x0F;
+        // CHR pattern area is of 8KB size
+        addr_t addrbase = entry->Begin;
+        addr_t prgRomStart = bank * 8 * 1024;
+        memidx = prgRomStart + (addr - addrbase);
+    } break;
 
-        // switch two separate 4 KB banks
-        case 1:
-        {
-            u8 bank;
-            addr_t addrbase;
-            if (addr >= NH_PATTERN_1_ADDR_HEAD)
-            {
-                bank = self->ch1bnk_ & 0x1F;
-                addrbase = NH_PATTERN_1_ADDR_HEAD;
-            }
-            else
-            {
-                bank = self->ch0bnk_ & 0x1F;
-                addrbase = NH_PATTERN_0_ADDR_HEAD;
-            }
-            addr_t prgRomStart = bank * 4 * 1024;
-            memidx = prgRomStart + (addr - addrbase);
+    // switch two separate 4 KB banks
+    case 1: {
+        u8 bank;
+        addr_t addrbase;
+        if (addr >= NH_PATTERN_1_ADDR_HEAD) {
+            bank = self->ch1bnk_ & 0x1F;
+            addrbase = NH_PATTERN_1_ADDR_HEAD;
+        } else {
+            bank = self->ch0bnk_ & 0x1F;
+            addrbase = NH_PATTERN_0_ADDR_HEAD;
         }
-        break;
+        addr_t prgRomStart = bank * 4 * 1024;
+        memidx = prgRomStart + (addr - addrbase);
+    } break;
 
-        default:
-            // Impossible
-            break;
+    default:
+        // Impossible
+        break;
     }
 
     // Mirror as necessary in case things go wrong.
@@ -376,25 +329,24 @@ dynMirror(void *opaque)
 {
     mmc1_s *self = (mmc1_s *)opaque;
 
-    switch (self->ctrl_ & 0x03)
-    {
-        case 0:
-            return MM_1LOW;
-            break;
-        case 1:
-            return MM_1HIGH;
-            break;
-        case 2:
-            return MM_V;
-            break;
-        case 3:
-            return MM_H;
-            break;
+    switch (self->ctrl_ & 0x03) {
+    case 0:
+        return MM_1LOW;
+        break;
+    case 1:
+        return MM_1HIGH;
+        break;
+    case 2:
+        return MM_V;
+        break;
+    case 3:
+        return MM_H;
+        break;
 
-        default:
-            // Impossible branch
-            return MM_1LOW;
-            break;
+    default:
+        // Impossible branch
+        return MM_1LOW;
+        break;
     }
 }
 
@@ -425,13 +377,10 @@ mmc1_MapMemory(void *me, mmem_s *mmem, vmem_s *vmem)
     // CHR ROM/RAM
     {
         bool nousechrrom = !inesromaccessor_UseChrRam(self->base_.romaccessor);
-        if (nousechrrom)
-        {
+        if (nousechrrom) {
             inesromaccessor_GetChrRom(self->base_.romaccessor,
                                       &self->chrctx_.Base, &self->chrctx_.Size);
-        }
-        else
-        {
+        } else {
             self->chrctx_.Base = self->chrram_;
             _Static_assert(sizeof(self->chrram_) % sizeof(u8) == 0,
                            "Incorrect CHR RAM size");

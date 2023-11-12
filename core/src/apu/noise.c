@@ -20,12 +20,10 @@ noise_Init(noise_s *self, NHLogger *logger)
 u8
 noise_Amp(const noise_s *self)
 {
-    if (self->shift_ & 0x0001)
-    {
+    if (self->shift_ & 0x0001) {
         return 0;
     }
-    if (!lenctr_Val(&self->len_))
-    {
+    if (!lenctr_Val(&self->len_)) {
         return 0;
     }
     return envelope_Volume(&self->envel_);
@@ -34,8 +32,7 @@ noise_Amp(const noise_s *self)
 void
 noise_TickTimer(noise_s *self)
 {
-    if (divider_Tick(&self->timer_))
-    {
+    if (divider_Tick(&self->timer_)) {
         bool otherbit =
             self->mode_ ? self->shift_ & 0x0040 : self->shift_ & 0x0002;
         u16 feedback = (self->shift_ ^ (u16)otherbit) & 0x0001;
@@ -69,8 +66,7 @@ noise_SetTimerReload(noise_s *self, u8 index)
                                      202, 254, 380, 508, 762, 1016, 2034, 4068};
     // static_assert(lookup[0x0F], "Missing elements");
 
-    if (index >= 0x10)
-    {
+    if (index >= 0x10) {
         ASSERT_FATAL(self->logger_, "Invalid noise timer reload index: " U8FMT,
                      index);
         return;

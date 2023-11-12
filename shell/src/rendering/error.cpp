@@ -4,14 +4,14 @@
 
 #include <cstdio>
 
-namespace sh {
+namespace sh
+{
 
 bool
 checkGLError()
 {
     GLenum errorCode;
-    if ((errorCode = glGetError()) != GL_NO_ERROR)
-    {
+    if ((errorCode = glGetError()) != GL_NO_ERROR) {
         std::fprintf(stderr, "GL Error: %u\n", errorCode);
         return true;
     }

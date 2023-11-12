@@ -5,8 +5,7 @@
 #include <stdio.h>
 
 #define LOG_(logger, level, ...)                                               \
-    if ((logger) && (logger)->active >= (level))                               \
-    {                                                                          \
+    if ((logger) && (logger)->active >= (level)) {                             \
         char msg[64]; /* 64 should be enough */                                \
         (void)snprintf(msg, sizeof(msg), __VA_ARGS__);                         \
         (logger)->log((level), msg, (logger)->user);                           \

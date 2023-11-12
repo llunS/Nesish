@@ -5,7 +5,8 @@
 #include "nesish/nesish.h"
 #include "misc/glfunc.hpp"
 
-namespace sh {
+namespace sh
+{
 
 /// @brief OpenGL texture wrapper
 struct Texture {

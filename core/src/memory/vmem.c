@@ -18,8 +18,7 @@ palDecode(const mementry_s *entry, addr_t addr, u8 **ptr)
     addr_t addrval = (addr & NH_PALETTE_ADDR_MASK) | entry->Begin;
     // Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of
     // $3F00/$3F04/$3F08/$3F0C.
-    if ((addrval & NH_PALETTE_ADDR_MIRROR_MASK) == 0)
-    {
+    if ((addrval & NH_PALETTE_ADDR_MIRROR_MASK) == 0) {
         addrval &= NH_PALETTE_ADDR_BG_MASK;
     }
 
@@ -43,8 +42,7 @@ bool
 vmem_Init(vmem_s *self, NHLogger *logger)
 {
     if (!membase_Init(&self->Base, NH_ADDRESSABLE_SIZE, VMP_SIZE, VMP_NAH,
-                      logger))
-    {
+                      logger)) {
         return false;
     }
 
@@ -105,62 +103,51 @@ mirrorDynDecode(const mementry_s *entry, addr_t addr, u8 **ptr)
                    "Wrong internal ram size");
 
     mirmode_e mode = self->mirDynDecode_(self->mirOpaque_);
-    switch (mode)
-    {
-        case MM_H:
-        {
-            // 0x2400 -> 0x2000
-            // 0x2C00 -> 0x2800
-            addr_t addrval = addr & NH_NT_H_MIRROR_ADDR_MASK;
-            addr_t index = addrval - entry->Begin -
-                           (addrval >= NH_NT_2_ADDR_HEAD ? NH_NT_ONE_SIZE : 0);
-            *ptr = &self->ram_[index];
-            return NH_ERR_OK;
-        }
-        break;
+    switch (mode) {
+    case MM_H: {
+        // 0x2400 -> 0x2000
+        // 0x2C00 -> 0x2800
+        addr_t addrval = addr & NH_NT_H_MIRROR_ADDR_MASK;
+        addr_t index = addrval - entry->Begin -
+                       (addrval >= NH_NT_2_ADDR_HEAD ? NH_NT_ONE_SIZE : 0);
+        *ptr = &self->ram_[index];
+        return NH_ERR_OK;
+    } break;
 
-        case MM_V:
-        {
-            // 0x2800 -> 0x2000
-            // 0x2C00 -> 0x2400
-            addr_t addrval = addr & NH_NT_V_MIRROR_ADDR_MASK;
-            addr_t index = addrval - entry->Begin;
-            *ptr = &self->ram_[index];
-            return NH_ERR_OK;
-        }
-        break;
+    case MM_V: {
+        // 0x2800 -> 0x2000
+        // 0x2C00 -> 0x2400
+        addr_t addrval = addr & NH_NT_V_MIRROR_ADDR_MASK;
+        addr_t index = addrval - entry->Begin;
+        *ptr = &self->ram_[index];
+        return NH_ERR_OK;
+    } break;
 
-        case MM_1LOW:
-        {
-            // 0x2400 -> 0x2000
-            // 0x2800 -> 0x2000
-            // 0x2C00 -> 0x2000
-            addr_t addrval = addr & NH_NT_1_MIRROR_ADDR_MASK;
-            addr_t index = addrval - entry->Begin;
-            *ptr = &self->ram_[index];
-            return NH_ERR_OK;
-        }
-        break;
+    case MM_1LOW: {
+        // 0x2400 -> 0x2000
+        // 0x2800 -> 0x2000
+        // 0x2C00 -> 0x2000
+        addr_t addrval = addr & NH_NT_1_MIRROR_ADDR_MASK;
+        addr_t index = addrval - entry->Begin;
+        *ptr = &self->ram_[index];
+        return NH_ERR_OK;
+    } break;
 
-        case MM_1HIGH:
-        {
-            // 0x2400 -> 0x2000
-            // 0x2800 -> 0x2000
-            // 0x2C00 -> 0x2000
-            addr_t addrval = addr & NH_NT_1_MIRROR_ADDR_MASK;
-            addr_t index = addrval - entry->Begin + NH_NT_ONE_SIZE;
-            *ptr = &self->ram_[index];
-            return NH_ERR_OK;
-        }
-        break;
+    case MM_1HIGH: {
+        // 0x2400 -> 0x2000
+        // 0x2800 -> 0x2000
+        // 0x2C00 -> 0x2000
+        addr_t addrval = addr & NH_NT_1_MIRROR_ADDR_MASK;
+        addr_t index = addrval - entry->Begin + NH_NT_ONE_SIZE;
+        *ptr = &self->ram_[index];
+        return NH_ERR_OK;
+    } break;
 
-        default:
-        {
-            // Impossible
-            *ptr = &self->ram_[0];
-            return NH_ERR_OK;
-        }
-        break;
+    default: {
+        // Impossible
+        *ptr = &self->ram_[0];
+        return NH_ERR_OK;
+    } break;
     }
 }
 
@@ -186,8 +173,7 @@ vmem_GetB(const vmem_s *self, addr_t addr, u8 *val)
 {
     // https://www.nesdev.org/wiki/Open_bus_behavior#PPU_open_bus
     NHErr err = membase_GetB(&self->Base, addr, val);
-    if (err == NH_ERR_UNAVAILABLE)
-    {
+    if (err == NH_ERR_UNAVAILABLE) {
         *val = addr & 0x00FF;
         err = NH_ERR_OK;
     }

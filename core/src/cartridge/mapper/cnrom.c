@@ -27,13 +27,11 @@ cnrom_Validate(const void *me)
     usize prgRomSize;
     inesromaccessor_GetPrgRom(self->base_.romaccessor, NULL, &prgRomSize);
     if (!(prgRomSize == NH_128_PRG_RAM_SIZE ||
-          prgRomSize == NH_256_PRG_RAM_SIZE))
-    {
+          prgRomSize == NH_256_PRG_RAM_SIZE)) {
         return NH_ERR_CORRUPTED;
     }
     // @TEST: Right not to support CHR RAM?
-    if (inesromaccessor_UseChrRam(self->base_.romaccessor))
-    {
+    if (inesromaccessor_UseChrRam(self->base_.romaccessor)) {
         return NH_ERR_CORRUPTED;
     }
 
@@ -61,8 +59,7 @@ prgRomDecode(const mementry_s *entry, addr_t addr, u8 **ptr)
 
     // address mirroring
     addr_t reladdr = (addr - entry->Begin);
-    if (self->prgromctx_.Size == NH_128_PRG_RAM_SIZE)
-    {
+    if (self->prgromctx_.Size == NH_128_PRG_RAM_SIZE) {
         // @TEST: If this behaves like NROM of 16KB?
         // 16K mask, to map second 16KB to the first.
         reladdr &= 0x3FFF;

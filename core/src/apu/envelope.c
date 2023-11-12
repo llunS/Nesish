@@ -16,12 +16,9 @@ envelope_Init(envelope_s *self)
 u8
 envelope_Volume(const envelope_s *self)
 {
-    if (self->const_)
-    {
+    if (self->const_) {
         return self->constvol_;
-    }
-    else
-    {
+    } else {
         return self->decaylv_;
     }
 }
@@ -29,29 +26,19 @@ envelope_Volume(const envelope_s *self)
 void
 envelope_Tick(envelope_s *self)
 {
-    if (!self->start_)
-    {
-        if (divider_Tick(&self->divider_))
-        {
-            if (self->decaylv_)
-            {
+    if (!self->start_) {
+        if (divider_Tick(&self->divider_)) {
+            if (self->decaylv_) {
                 --self->decaylv_;
-            }
-            else
-            {
-                if (self->loop_)
-                {
+            } else {
+                if (self->loop_) {
                     self->decaylv_ = 15;
-                }
-                else
-                {
+                } else {
                     // stay at 0.
                 }
             }
         }
-    }
-    else
-    {
+    } else {
         self->start_ = false;
         self->decaylv_ = 15;
         divider_Reload(&self->divider_);

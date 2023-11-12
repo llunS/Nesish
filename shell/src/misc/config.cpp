@@ -2,7 +2,7 @@
 
 #include "nhbase/path.hpp"
 #include "nhbase/filesystem.hpp"
-#include "nhbase/vc_intrinsics.h"
+#include "nhbase/vc_intrinsics.hpp"
 #include "misc/exception.hpp"
 
 NB_VC_WARNING_PUSH
@@ -17,7 +17,8 @@ NB_VC_WARNING_POP
 #include "misc/web_utils.hpp"
 #endif
 
-namespace sh {
+namespace sh
+{
 
 #ifndef SH_TGT_WEB
 #define CONFIG_PREFIX_DIR "config/"
@@ -58,13 +59,11 @@ bool
 load_key_config(KeyMapping &o_p1, KeyMapping &o_p2, Logger *i_logger)
 {
     std::string input_cfg = pv_get_or_init_key_cfg(i_logger);
-    if (input_cfg.empty())
-    {
+    if (input_cfg.empty()) {
         return false;
     }
 
-    if (!pv_load_key_cfg(input_cfg, o_p1, o_p2, i_logger))
-    {
+    if (!pv_load_key_cfg(input_cfg, o_p1, o_p2, i_logger)) {
         return false;
     }
 
@@ -77,8 +76,7 @@ save_key_config(NHCtrlPort i_port, NHKey i_key, VirtualKey i_vkey,
                 Logger *i_logger)
 {
     std::string input_cfg = pv_get_or_init_key_cfg(i_logger);
-    if (!nb::file_exists(input_cfg))
-    {
+    if (!nb::file_exists(input_cfg)) {
         SH_LOG_ERROR(i_logger, "Input config doesn't exist: {}", input_cfg);
         return false;
     }
@@ -90,8 +88,7 @@ save_key_config(NHCtrlPort i_port, NHKey i_key, VirtualKey i_vkey,
     NB_VC_WARNING_POP
     // Seek to the line and modify the data
     {
-        if (!fp)
-        {
+        if (!fp) {
             SH_LOG_ERROR(i_logger, "Failed to open input config to save: {}",
                          input_cfg);
             err = 1;
@@ -99,16 +96,14 @@ save_key_config(NHCtrlPort i_port, NHKey i_key, VirtualKey i_vkey,
         }
         constexpr long LINE_BYTES = sizeof(VirtualKey) + sizeof(char);
         long index = i_port * NH_KEYS + i_key;
-        if (std::fseek(fp, index * LINE_BYTES, SEEK_SET))
-        {
+        if (std::fseek(fp, index * LINE_BYTES, SEEK_SET)) {
             SH_LOG_ERROR(i_logger, "Failed to seek to save position: {} {}",
                          input_cfg, index);
             err = 1;
             goto l_end;
         }
         auto written = std::fwrite(&i_vkey, sizeof(i_vkey), 1, fp);
-        if (written < 1)
-        {
+        if (written < 1) {
             SH_LOG_ERROR(i_logger,
                          "Failed to save to input config: {} {} {} {}",
                          input_cfg, index, i_vkey, written);
@@ -118,12 +113,10 @@ save_key_config(NHCtrlPort i_port, NHKey i_key, VirtualKey i_vkey,
     }
 
 l_end:
-    if (fp)
-    {
+    if (fp) {
         std::fclose(fp);
     }
-    if (!err)
-    {
+    if (!err) {
 #ifdef SH_TGT_WEB
         web_sync_fs_async();
 #endif
@@ -143,19 +136,16 @@ reset_default_key_config(KeyMapping *o_p1, KeyMapping *o_p2, Logger *i_logger)
         NB_VC_WARNING_DISABLE(4996) // false positive
         fp = std::fopen(input_cfg.c_str(), "wb");
         NB_VC_WARNING_POP
-        if (!fp)
-        {
+        if (!fp) {
             SH_LOG_ERROR(i_logger, "Failed to open input config: {}",
                          input_cfg);
             err = 1;
             goto l_end;
         }
-        for (NHKey i = 0; i < NH_KEYS * 2; ++i)
-        {
+        for (NHKey i = 0; i < NH_KEYS * 2; ++i) {
             auto written =
                 std::fwrite(&g_key_config[i], sizeof(g_key_config[i]), 1, fp);
-            if (written < 1)
-            {
+            if (written < 1) {
                 SH_LOG_ERROR(i_logger,
                              "Failed to write to input config: {} {} {} {}",
                              input_cfg, i, g_key_config[i], written);
@@ -165,8 +155,7 @@ reset_default_key_config(KeyMapping *o_p1, KeyMapping *o_p2, Logger *i_logger)
 
             constexpr char lf = '\n';
             written = std::fwrite(&lf, sizeof(lf), 1, fp);
-            if (written < 1)
-            {
+            if (written < 1) {
                 SH_LOG_ERROR(i_logger,
                              "Failed to write LF to input config: {} {} {} {}",
                              input_cfg, i, g_key_config[i], written);
@@ -174,30 +163,23 @@ reset_default_key_config(KeyMapping *o_p1, KeyMapping *o_p2, Logger *i_logger)
                 goto l_end;
             }
 
-            if (i < NH_KEYS)
-            {
+            if (i < NH_KEYS) {
                 p1[i] = g_key_config[i];
-            }
-            else
-            {
+            } else {
                 p2[i - NH_KEYS] = g_key_config[i];
             }
         }
     }
 
 l_end:
-    if (fp)
-    {
+    if (fp) {
         std::fclose(fp);
     }
-    if (!err)
-    {
-        if (o_p1)
-        {
+    if (!err) {
+        if (o_p1) {
             *o_p1 = p1;
         }
-        if (o_p2)
-        {
+        if (o_p2) {
             *o_p2 = p2;
         }
 #ifdef SH_TGT_WEB
@@ -212,8 +194,7 @@ pv_get_or_init_key_cfg(Logger *i_logger)
 {
     // Check if exists
     std::string input_cfg = nb::resolve_exe_dir(CONFIG_PREFIX_DIR "input.ini");
-    if (nb::file_exists(input_cfg))
-    {
+    if (nb::file_exists(input_cfg)) {
         return input_cfg;
     }
 
@@ -226,8 +207,7 @@ bool
 pv_load_key_cfg(const std::string &i_config_file, KeyMapping &o_p1,
                 KeyMapping &o_p2, Logger *i_logger)
 {
-    if (!nb::file_exists(i_config_file))
-    {
+    if (!nb::file_exists(i_config_file)) {
         SH_LOG_ERROR(i_logger, "Input config doesn't exist: {}", i_config_file);
         return false;
     }
@@ -237,40 +217,32 @@ pv_load_key_cfg(const std::string &i_config_file, KeyMapping &o_p1,
     NB_VC_WARNING_DISABLE(4996) // false positive
     std::FILE *fp = std::fopen(i_config_file.c_str(), "rb");
     NB_VC_WARNING_POP
-    if (!fp)
-    {
+    if (!fp) {
         SH_LOG_ERROR(i_logger, "Failed to read input config {}", i_config_file);
         err = 1;
         goto l_end;
     }
-    for (NHKey i = 0; i < NH_KEYS * 2; ++i)
-    {
+    for (NHKey i = 0; i < NH_KEYS * 2; ++i) {
         VirtualKey vkey;
         auto got = std::fread(&vkey, sizeof(vkey), 1, fp);
-        if (got < 1)
-        {
+        if (got < 1) {
             SH_LOG_ERROR(i_logger, "Virtual key corrupted: {} {}", i, got);
             err = 1;
             goto l_end;
         }
-        if (i < NH_KEYS)
-        {
+        if (i < NH_KEYS) {
             o_p1[i] = vkey;
-        }
-        else
-        {
+        } else {
             o_p2[i - NH_KEYS] = vkey;
         }
         char lf;
         got = std::fread(&lf, sizeof(lf), 1, fp);
-        if (got < 1)
-        {
+        if (got < 1) {
             SH_LOG_ERROR(i_logger, "Failed to read LF: {} {}", i, got);
             err = 1;
             goto l_end;
         }
-        if (lf != '\n')
-        {
+        if (lf != '\n') {
             SH_LOG_ERROR(i_logger, "Non-LF encountered: {} {:02X}", i, lf);
             err = 1;
             goto l_end;
@@ -278,8 +250,7 @@ pv_load_key_cfg(const std::string &i_config_file, KeyMapping &o_p1,
     }
 
 l_end:
-    if (fp)
-    {
+    if (fp) {
         std::fclose(fp);
     }
     return !err;
@@ -292,24 +263,20 @@ load_single_bool(bool &o_val, const char *i_section, const char *i_key)
     {
         std::string user_cfg =
             nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
-        if (!nb::file_exists(user_cfg))
-        {
+        if (!nb::file_exists(user_cfg)) {
             return false;
         }
 
         mINI::INIFile inifile(user_cfg);
         mINI::INIStructure ini;
-        if (!inifile.read(ini))
-        {
+        if (!inifile.read(ini)) {
             return false;
         }
 
-        if (!ini.has(i_section))
-        {
+        if (!ini.has(i_section)) {
             return false;
         }
-        if (!ini[i_section].has(i_key))
-        {
+        if (!ini[i_section].has(i_key)) {
             return false;
         }
 
@@ -355,29 +322,24 @@ load_log_level(NHLogLevel &o_val)
     {
         std::string user_cfg =
             nb::resolve_exe_dir(CONFIG_PREFIX_DIR "nesish.ini");
-        if (!nb::file_exists(user_cfg))
-        {
+        if (!nb::file_exists(user_cfg)) {
             return false;
         }
 
         mINI::INIFile inifile(user_cfg);
         mINI::INIStructure ini;
-        if (!inifile.read(ini))
-        {
+        if (!inifile.read(ini)) {
             return false;
         }
 
-        if (!ini.has("Debug"))
-        {
+        if (!ini.has("Debug")) {
             return false;
         }
-        if (!ini["Debug"].has("LogLevel"))
-        {
+        if (!ini["Debug"].has("LogLevel")) {
             return false;
         }
         auto val = static_cast<NHLogLevel>(std::stoi(ini["Debug"]["LogLevel"]));
-        if (val < NH_LOG_OFF || val > NH_LOG_TRACE)
-        {
+        if (val < NH_LOG_OFF || val > NH_LOG_TRACE) {
             return false;
         }
 

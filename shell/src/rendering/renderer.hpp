@@ -8,7 +8,8 @@
 #include "misc/glfunc.hpp"
 #include "rendering/texture.hpp"
 
-namespace sh {
+namespace sh
+{
 
 /// @brief A fullscreen rect renderer for emulator frame buffer
 struct Renderer {

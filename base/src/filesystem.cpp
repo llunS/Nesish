@@ -2,16 +2,15 @@
 
 #include <cstdio>
 
-namespace nb {
+namespace nb
+{
 
 bool
 file_rename(const std::string &from, const std::string &to, bool force)
 {
-    if (force && file_exists(to))
-    {
+    if (force && file_exists(to)) {
         auto err = std::remove(to.c_str());
-        if (err)
-        {
+        if (err) {
             return false;
         }
     }

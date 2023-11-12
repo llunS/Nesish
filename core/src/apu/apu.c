@@ -90,8 +90,7 @@ apu_Powerup(apu_s *self)
     // $00 from 9 to 12 clocks before first instruction begins.
     // Pick 10 to tick
     frmctr_ResetTimer(&self->fc_);
-    for (int i = 0; i < 10; ++i)
-    {
+    for (int i = 0; i < 10; ++i) {
         frmctr_Tick(&self->fc_);
     }
 }
@@ -137,8 +136,7 @@ apu_Tick(apu_s *self)
     lenctr_FlushLoadSet(noise_LenCtr(&self->noise_));
 
     // Every other CPU cycle
-    if (apuclock_Odd(self->clock_))
-    {
+    if (apuclock_Odd(self->clock_)) {
         pulse_TickTimer(&self->pulse1_);
         pulse_TickTimer(&self->pulse2_);
         noise_TickTimer(&self->noise_);
@@ -190,33 +188,30 @@ mix(u8 pulse1, u8 pulse2, u8 triangle, u8 noise, u8 dmc)
 NHErr
 apu_ReadReg(apu_s *self, apureg_e reg, u8 *val)
 {
-    switch (reg)
-    {
-        case AR_CTRL_STAT:
-        {
-            // @TODO: If an interrupt flag was set at the same moment of the
-            // read, it will read back as 1 but it will not be cleared.
-            // However, it seems to contradict with "sync_apu" in test source,
-            // not sure how we should do this.
+    switch (reg) {
+    case AR_CTRL_STAT: {
+        // @TODO: If an interrupt flag was set at the same moment of the
+        // read, it will read back as 1 but it will not be cleared.
+        // However, it seems to contradict with "sync_apu" in test source,
+        // not sure how we should do this.
 
-            bool p1 = lenctr_Val(pulse_LenCtr(&self->pulse1_)) > 0;
-            bool p2 = lenctr_Val(pulse_LenCtr(&self->pulse2_)) > 0;
-            bool tri = lenctr_Val(tri_LenCtr(&self->tri_)) > 0;
-            bool noise = lenctr_Val(noise_LenCtr(&self->noise_)) > 0;
-            bool D = dmc_BytesRemained(&self->dmc_);
-            bool F = frmctr_Irq(&self->fc_);
-            frmctr_ClearIrq(&self->fc_);
-            bool I = dmc_Irq(&self->dmc_);
+        bool p1 = lenctr_Val(pulse_LenCtr(&self->pulse1_)) > 0;
+        bool p2 = lenctr_Val(pulse_LenCtr(&self->pulse2_)) > 0;
+        bool tri = lenctr_Val(tri_LenCtr(&self->tri_)) > 0;
+        bool noise = lenctr_Val(noise_LenCtr(&self->noise_)) > 0;
+        bool D = dmc_BytesRemained(&self->dmc_);
+        bool F = frmctr_Irq(&self->fc_);
+        frmctr_ClearIrq(&self->fc_);
+        bool I = dmc_Irq(&self->dmc_);
 
-            *val = (I << 7) | (F << 6) | (D << 4) | (noise << 3) | (tri << 2) |
-                   (p2 << 1) | (p1 << 0);
-            return NH_ERR_OK;
-        }
+        *val = (I << 7) | (F << 6) | (D << 4) | (noise << 3) | (tri << 2) |
+               (p2 << 1) | (p1 << 0);
+        return NH_ERR_OK;
+    } break;
+
+    default:
+        return NH_ERR_WRITE_ONLY;
         break;
-
-        default:
-            return NH_ERR_WRITE_ONLY;
-            break;
     }
 }
 
@@ -225,190 +220,147 @@ apu_WriteReg(apu_s *self, apureg_e reg, u8 val)
 {
     self->regs_[reg] = val;
 
-    switch (reg)
-    {
-        case AR_PULSE1_DUTY:
-        case AR_PULSE2_DUTY:
-        {
-            pulse_s *pulse =
-                AR_PULSE1_DUTY == reg ? &self->pulse1_ : &self->pulse2_;
-            seq_SetDuty(pulse_Seq(pulse), val >> 6);
-            envelope_SetLoop(pulse_Envelope(pulse), val & 0x20);
-            lenctr_PostSetHalt(pulse_LenCtr(pulse), val & 0x20);
-            envelope_SetConst(pulse_Envelope(pulse), val & 0x10);
-            envelope_SetDividerReload(pulse_Envelope(pulse), val & 0x0F);
-            envelope_SetConstVol(pulse_Envelope(pulse), val & 0x0F);
-        }
+    switch (reg) {
+    case AR_PULSE1_DUTY:
+    case AR_PULSE2_DUTY: {
+        pulse_s *pulse =
+            AR_PULSE1_DUTY == reg ? &self->pulse1_ : &self->pulse2_;
+        seq_SetDuty(pulse_Seq(pulse), val >> 6);
+        envelope_SetLoop(pulse_Envelope(pulse), val & 0x20);
+        lenctr_PostSetHalt(pulse_LenCtr(pulse), val & 0x20);
+        envelope_SetConst(pulse_Envelope(pulse), val & 0x10);
+        envelope_SetDividerReload(pulse_Envelope(pulse), val & 0x0F);
+        envelope_SetConstVol(pulse_Envelope(pulse), val & 0x0F);
+    } break;
+
+    case AR_PULSE1_SWEEP:
+    case AR_PULSE2_SWEEP: {
+        pulse_s *pulse =
+            AR_PULSE1_SWEEP == reg ? &self->pulse1_ : &self->pulse2_;
+        sweep_SetEnabled(pulse_Sweep(pulse), val & 0x80);
+        sweep_SetDividerReload(pulse_Sweep(pulse), (val >> 4) & 0x07);
+        sweep_SetNegate(pulse_Sweep(pulse), val & 0x08);
+        sweep_SetShiftCount(pulse_Sweep(pulse), val & 0x07);
+
+        sweep_Reload(pulse_Sweep(pulse));
+    } break;
+
+    case AR_PULSE1_TIMER_LOW:
+    case AR_PULSE2_TIMER_LOW: {
+        pulse_s *pulse =
+            AR_PULSE1_TIMER_LOW == reg ? &self->pulse1_ : &self->pulse2_;
+        u8 timerhigh = AR_PULSE1_TIMER_LOW == reg
+                         ? (self->regs_[AR_PULSE1_LEN] & 0x07)
+                         : (self->regs_[AR_PULSE2_LEN] & 0x07);
+        u16 timer = (timerhigh << 8) | val;
+        divider_SetReload(pulse_Timer(pulse), timer);
+    } break;
+
+    case AR_PULSE1_LEN:
+    case AR_PULSE2_LEN: {
+        pulse_s *pulse = AR_PULSE1_LEN == reg ? &self->pulse1_ : &self->pulse2_;
+        u8 timerlow = AR_PULSE1_LEN == reg ? self->regs_[AR_PULSE1_TIMER_LOW]
+                                           : self->regs_[AR_PULSE2_TIMER_LOW];
+        u16 timer = ((val & 0x07) << 8) | timerlow;
+        divider_SetReload(pulse_Timer(pulse), timer);
+        lenctr_PostSetLoad(pulse_LenCtr(pulse), val >> 3);
+
+        seq_Reset(pulse_Seq(pulse));
+        envelope_Restart(pulse_Envelope(pulse));
+    } break;
+
+    case AR_TRI_LINEAR: {
+        linctr_SetCtrl(tri_LinCtr(&self->tri_), val & 0x80);
+        // This bit is also the length counter halt flag
+        lenctr_PostSetHalt(tri_LenCtr(&self->tri_), val & 0x80);
+        linctr_SetReloadVal(tri_LinCtr(&self->tri_), val & 0x7F);
+    } break;
+
+    case AR_TRI_TIMER_LOW: {
+        u16 timer = ((self->regs_[AR_TRI_LEN] & 0x07) << 8) | val;
+        divider_SetReload(tri_Timer(&self->tri_), timer);
+    } break;
+
+    case AR_TRI_LEN: {
+        u16 timer = ((val & 0x07) << 8) | self->regs_[AR_TRI_TIMER_LOW];
+        divider_SetReload(tri_Timer(&self->tri_), timer);
+        lenctr_PostSetLoad(tri_LenCtr(&self->tri_), val >> 3);
+
+        linctr_SetReload(tri_LinCtr(&self->tri_));
+    } break;
+
+    case AR_NOISE_ENVELOPE: {
+        envelope_SetLoop(noise_Envelope(&self->noise_), val & 0x20);
+        lenctr_PostSetHalt(noise_LenCtr(&self->noise_), val & 0x20);
+        envelope_SetConst(noise_Envelope(&self->noise_), val & 0x10);
+        envelope_SetDividerReload(noise_Envelope(&self->noise_), val & 0x0F);
+        envelope_SetConstVol(noise_Envelope(&self->noise_), val & 0x0F);
+    } break;
+
+    case AR_NOISE_PERIOD: {
+        noise_SetMode(&self->noise_, val & 0x80);
+        noise_SetTimerReload(&self->noise_, val & 0x0F);
+    } break;
+
+    case AR_NOISE_LEN: {
+        lenctr_PostSetLoad(noise_LenCtr(&self->noise_), val >> 3);
+
+        envelope_Restart(noise_Envelope(&self->noise_));
+    } break;
+
+    case AR_DMC_FREQ: {
+        dmc_SetIrqEnabled(&self->dmc_, val & 0x80);
+        dmc_SetLoop(&self->dmc_, val & 0x40);
+        dmc_SetTimerReload(&self->dmc_, val & 0x0F);
+    } break;
+
+    case AR_DMC_LOAD: {
+        dmc_Load(&self->dmc_, val & 0x7F);
+    } break;
+
+    case AR_DMC_SPADDR: {
+        dmc_SetSampleAddr(&self->dmc_, val);
+    } break;
+
+    case AR_DMC_SPLEN: {
+        dmc_SetSampleLen(&self->dmc_, val);
+    } break;
+
+    case AR_CTRL_STAT: {
+        lenctr_SetEnabled(pulse_LenCtr(&self->pulse1_), val & 0x01);
+        lenctr_SetEnabled(pulse_LenCtr(&self->pulse2_), val & 0x02);
+        lenctr_SetEnabled(tri_LenCtr(&self->tri_), val & 0x04);
+        lenctr_SetEnabled(noise_LenCtr(&self->noise_), val & 0x08);
+        dmc_SetEnabled(&self->dmc_, val & 0x10);
+
+        dmc_ClearIrq(&self->dmc_);
+    } break;
+
+    case AR_FC: {
+        // The theory that delay one when written on even cycle is backed by
+        // https://www.nesdev.org/wiki/APU_Frame_Counter and test
+        // cpu_interrupts_v2/4-irq_and_dma.nes
+        bool delay1 = apuclock_Even(self->clock_); // current tick is even
+        frmctr_DelaySetMode(&self->fc_, val & 0x80, delay1);
+        frmctr_SetIrqInhibit(&self->fc_, val & 0x40);
+    } break;
+
+    default:
         break;
-
-        case AR_PULSE1_SWEEP:
-        case AR_PULSE2_SWEEP:
-        {
-            pulse_s *pulse =
-                AR_PULSE1_SWEEP == reg ? &self->pulse1_ : &self->pulse2_;
-            sweep_SetEnabled(pulse_Sweep(pulse), val & 0x80);
-            sweep_SetDividerReload(pulse_Sweep(pulse), (val >> 4) & 0x07);
-            sweep_SetNegate(pulse_Sweep(pulse), val & 0x08);
-            sweep_SetShiftCount(pulse_Sweep(pulse), val & 0x07);
-
-            sweep_Reload(pulse_Sweep(pulse));
-        }
-        break;
-
-        case AR_PULSE1_TIMER_LOW:
-        case AR_PULSE2_TIMER_LOW:
-        {
-            pulse_s *pulse =
-                AR_PULSE1_TIMER_LOW == reg ? &self->pulse1_ : &self->pulse2_;
-            u8 timerhigh = AR_PULSE1_TIMER_LOW == reg
-                               ? (self->regs_[AR_PULSE1_LEN] & 0x07)
-                               : (self->regs_[AR_PULSE2_LEN] & 0x07);
-            u16 timer = (timerhigh << 8) | val;
-            divider_SetReload(pulse_Timer(pulse), timer);
-        }
-        break;
-
-        case AR_PULSE1_LEN:
-        case AR_PULSE2_LEN:
-        {
-            pulse_s *pulse =
-                AR_PULSE1_LEN == reg ? &self->pulse1_ : &self->pulse2_;
-            u8 timerlow = AR_PULSE1_LEN == reg
-                              ? self->regs_[AR_PULSE1_TIMER_LOW]
-                              : self->regs_[AR_PULSE2_TIMER_LOW];
-            u16 timer = ((val & 0x07) << 8) | timerlow;
-            divider_SetReload(pulse_Timer(pulse), timer);
-            lenctr_PostSetLoad(pulse_LenCtr(pulse), val >> 3);
-
-            seq_Reset(pulse_Seq(pulse));
-            envelope_Restart(pulse_Envelope(pulse));
-        }
-        break;
-
-        case AR_TRI_LINEAR:
-        {
-            linctr_SetCtrl(tri_LinCtr(&self->tri_), val & 0x80);
-            // This bit is also the length counter halt flag
-            lenctr_PostSetHalt(tri_LenCtr(&self->tri_), val & 0x80);
-            linctr_SetReloadVal(tri_LinCtr(&self->tri_), val & 0x7F);
-        }
-        break;
-
-        case AR_TRI_TIMER_LOW:
-        {
-            u16 timer = ((self->regs_[AR_TRI_LEN] & 0x07) << 8) | val;
-            divider_SetReload(tri_Timer(&self->tri_), timer);
-        }
-        break;
-
-        case AR_TRI_LEN:
-        {
-            u16 timer = ((val & 0x07) << 8) | self->regs_[AR_TRI_TIMER_LOW];
-            divider_SetReload(tri_Timer(&self->tri_), timer);
-            lenctr_PostSetLoad(tri_LenCtr(&self->tri_), val >> 3);
-
-            linctr_SetReload(tri_LinCtr(&self->tri_));
-        }
-        break;
-
-        case AR_NOISE_ENVELOPE:
-        {
-            envelope_SetLoop(noise_Envelope(&self->noise_), val & 0x20);
-            lenctr_PostSetHalt(noise_LenCtr(&self->noise_), val & 0x20);
-            envelope_SetConst(noise_Envelope(&self->noise_), val & 0x10);
-            envelope_SetDividerReload(noise_Envelope(&self->noise_),
-                                      val & 0x0F);
-            envelope_SetConstVol(noise_Envelope(&self->noise_), val & 0x0F);
-        }
-        break;
-
-        case AR_NOISE_PERIOD:
-        {
-            noise_SetMode(&self->noise_, val & 0x80);
-            noise_SetTimerReload(&self->noise_, val & 0x0F);
-        }
-        break;
-
-        case AR_NOISE_LEN:
-        {
-            lenctr_PostSetLoad(noise_LenCtr(&self->noise_), val >> 3);
-
-            envelope_Restart(noise_Envelope(&self->noise_));
-        }
-        break;
-
-        case AR_DMC_FREQ:
-        {
-            dmc_SetIrqEnabled(&self->dmc_, val & 0x80);
-            dmc_SetLoop(&self->dmc_, val & 0x40);
-            dmc_SetTimerReload(&self->dmc_, val & 0x0F);
-        }
-        break;
-
-        case AR_DMC_LOAD:
-        {
-            dmc_Load(&self->dmc_, val & 0x7F);
-        }
-        break;
-
-        case AR_DMC_SPADDR:
-        {
-            dmc_SetSampleAddr(&self->dmc_, val);
-        }
-        break;
-
-        case AR_DMC_SPLEN:
-        {
-            dmc_SetSampleLen(&self->dmc_, val);
-        }
-        break;
-
-        case AR_CTRL_STAT:
-        {
-            lenctr_SetEnabled(pulse_LenCtr(&self->pulse1_), val & 0x01);
-            lenctr_SetEnabled(pulse_LenCtr(&self->pulse2_), val & 0x02);
-            lenctr_SetEnabled(tri_LenCtr(&self->tri_), val & 0x04);
-            lenctr_SetEnabled(noise_LenCtr(&self->noise_), val & 0x08);
-            dmc_SetEnabled(&self->dmc_, val & 0x10);
-
-            dmc_ClearIrq(&self->dmc_);
-        }
-        break;
-
-        case AR_FC:
-        {
-            // The theory that delay one when written on even cycle is backed by
-            // https://www.nesdev.org/wiki/APU_Frame_Counter and test
-            // cpu_interrupts_v2/4-irq_and_dma.nes
-            bool delay1 = apuclock_Even(self->clock_); // current tick is even
-            frmctr_DelaySetMode(&self->fc_, val & 0x80, delay1);
-            frmctr_SetIrqInhibit(&self->fc_, val & 0x40);
-        }
-        break;
-
-        default:
-            break;
     }
 }
 
 apureg_e
 apu_Addr2Reg(addr_t addr)
 {
-    if (NH_APU_FC_ADDR == addr)
-    {
+    if (NH_APU_FC_ADDR == addr) {
         return AR_FC;
-    }
-    else if (NH_APU_STATUS_ADDR == addr)
-    {
+    } else if (NH_APU_STATUS_ADDR == addr) {
         return AR_CTRL_STAT;
-    }
-    else if (NH_APU_PULSE1_DUTY_ADDR <= addr &&
-             addr <= NH_APU_DMC_SAMPLE_LENGTH_ADDR)
-    {
+    } else if (NH_APU_PULSE1_DUTY_ADDR <= addr &&
+               addr <= NH_APU_DMC_SAMPLE_LENGTH_ADDR) {
         return (apureg_e)(addr - NH_APU_PULSE1_DUTY_ADDR + AR_PULSE1_DUTY);
-    }
-    else
-    {
+    } else {
         return AR_SIZE;
     }
 }
@@ -417,16 +369,13 @@ void
 initMixerLut(void)
 {
     static bool inited = false;
-    if (!inited)
-    {
+    if (!inited) {
         gMixerlut.Pulse[0] = 0.0;
-        for (int i = 1; i < 31; ++i)
-        {
+        for (int i = 1; i < 31; ++i) {
             gMixerlut.Pulse[i] = 95.52 / (8128.0 / i + 100.0);
         }
         gMixerlut.Tnd[0] = 0.0;
-        for (int i = 1; i < 203; ++i)
-        {
+        for (int i = 1; i < 203; ++i) {
             gMixerlut.Tnd[i] = 163.67 / (24329.0 / i + 100.0);
         }
 

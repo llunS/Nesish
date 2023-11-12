@@ -15,16 +15,13 @@ pulse_Init(pulse_s *self, bool mode1, NHLogger *logger)
 u8
 pulse_Amp(const pulse_s *self)
 {
-    if (!seq_Val(&self->seq_))
-    {
+    if (!seq_Val(&self->seq_)) {
         return 0;
     }
-    if (sweep_Muted(&self->sweep_, NULL))
-    {
+    if (sweep_Muted(&self->sweep_, NULL)) {
         return 0;
     }
-    if (!lenctr_Val(&self->len_))
-    {
+    if (!lenctr_Val(&self->len_)) {
         return 0;
     }
     return envelope_Volume(&self->envel_);
@@ -33,8 +30,7 @@ pulse_Amp(const pulse_s *self)
 void
 pulse_TickTimer(pulse_s *self)
 {
-    if (divider_Tick(&self->timer_))
-    {
+    if (divider_Tick(&self->timer_)) {
         seq_Tick(&self->seq_);
     }
 }

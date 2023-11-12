@@ -22,13 +22,11 @@ sweep_Init(sweep_s *self, divider_s *chtimer, bool mode1)
 bool
 sweep_Muted(const sweep_s *self, u16 *target)
 {
-    if (divider_GetReload(self->chtimer_) < 8)
-    {
+    if (divider_GetReload(self->chtimer_) < 8) {
         return true;
     }
     u16 val = target ? *target : target_reload(self);
-    if (val > 0x07FF)
-    {
+    if (val > 0x07FF) {
         return true;
     }
     return false;
@@ -43,21 +41,17 @@ sweep_Tick(sweep_s *self)
     // https://archive.nes.science/nesdev-forums/f3/t11083.xhtml
     // https://archive.nes.science/nesdev-forums/f2/t19285.xhtml
 
-    if (divider_Tick(&self->divider_))
-    {
-        if (self->enabled_ && self->shift_)
-        {
+    if (divider_Tick(&self->divider_)) {
+        if (self->enabled_ && self->shift_) {
             u16 target = target_reload(self);
-            if (!sweep_Muted(self, &target))
-            {
+            if (!sweep_Muted(self, &target)) {
                 // update the channel's period.
                 divider_SetReload(self->chtimer_, target);
             }
         }
     }
 
-    if (self->reload_)
-    {
+    if (self->reload_) {
         // Do this even if it may have been reloaded already in the above
         // tick(), for it doesn't matter.
         divider_Reload(&self->divider_);
@@ -100,12 +94,9 @@ target_reload(const sweep_s *self)
 {
     u16 curr = divider_GetReload(self->chtimer_);
     u16 delta = curr >> self->shift_;
-    if (self->mode1_)
-    {
+    if (self->mode1_) {
         delta = -delta - 1;
-    }
-    else
-    {
+    } else {
         delta = -delta;
     }
     u16 target = curr + delta;

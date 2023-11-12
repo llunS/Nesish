@@ -27,14 +27,10 @@ spevalfetchsl_Tick(spevalfetchsl_s *self, cycle_t col)
     // [1, 320] for visible line
     // [257, 320] for pre-render line
 
-    if (1 <= col && col <= 64)
-    {
+    if (1 <= col && col <= 64) {
         secOamClear(col - 1, self->accessor_);
-    }
-    else if (65 <= col && col <= 256)
-    {
-        if (65 == col)
-        {
+    } else if (65 <= col && col <= 256) {
+        if (65 == col) {
             u8 oamaddr = placcessor_GetReg(self->accessor_, PR_OAMADDR);
             self->ctx_.SecOamWriteIdx = 0;
             self->ctx_.CopyCtr = 0;
@@ -49,11 +45,8 @@ spevalfetchsl_Tick(spevalfetchsl_s *self, cycle_t col)
         }
 
         spEval(col - 65, self->accessor_, &self->ctx_);
-    }
-    else if (257 <= col && col <= 320)
-    {
-        if (257 == col)
-        {
+    } else if (257 <= col && col <= 320) {
+        if (257 == col) {
             // Sprite evaluation is done already at tick 257
 
             // Pass out the flag at fetch stage (not eval stage), in case the
@@ -68,18 +61,15 @@ spevalfetchsl_Tick(spevalfetchsl_s *self, cycle_t col)
             self->ctx_.SecOamReadIdx = 0;
         }
 
-        if (placcessor_RenderingEnabled(self->accessor_))
-        {
+        if (placcessor_RenderingEnabled(self->accessor_)) {
             spFetchReload((col - 257) % 8, self->accessor_, &self->ctx_);
         }
 
 #ifndef NDEBUG
         /* do some checks */
-        if (320 == col)
-        {
+        if (320 == col) {
             if (placcessor_RenderingEnabled(self->accessor_) &&
-                self->ctx_.SecOamReadIdx != NH_SEC_OAM_SIZE)
-            {
+                self->ctx_.SecOamReadIdx != NH_SEC_OAM_SIZE) {
                 ASSERT_ERROR(placcessor_GetLogger(self->accessor_),
                              "Wrong secondary OAM read index: " U8FMT,
                              self->ctx_.SecOamReadIdx);
@@ -100,12 +90,9 @@ secOamClear(cycle_t step, placcessor_s *accessor)
 {
     // step: [0, 64)
 
-    if (step % 2 == 0)
-    {
+    if (step % 2 == 0) {
         // read from OAMDATA, we don't emulate it.
-    }
-    else
-    {
+    } else {
         placcessor_GetCtx(accessor)->SecOam[step / 2] = 0xFF;
     }
 }
@@ -127,22 +114,18 @@ addRead(placcessor_s *accessor, spevalfetchctx_s *slctx, bool incN, bool incM,
         bool carry)
 {
     bool carryN = false;
-    if (incM)
-    {
+    if (incM) {
         ++slctx->M;
-        if (slctx->M >= NH_OAM_SP_SIZE)
-        {
+        if (slctx->M >= NH_OAM_SP_SIZE) {
             slctx->M = 0;
 
-            if (carry)
-            {
+            if (carry) {
                 carryN = true;
             }
         }
     }
     slctx->N += (int)(incN) + (int)(carryN);
-    if (slctx->N >= NH_MAX_SP_NUM)
-    {
+    if (slctx->N >= NH_MAX_SP_NUM) {
         slctx->N %= NH_MAX_SP_NUM;
 
         // all 64 are checked
@@ -157,20 +140,17 @@ addRead(placcessor_s *accessor, spevalfetchctx_s *slctx, bool incN, bool incM,
 static void
 writeSecOam(placcessor_s *accessor, spevalfetchctx_s *slctx, u8 val, bool ince)
 {
-    if (writeDisabled(slctx))
-    {
+    if (writeDisabled(slctx)) {
         return;
     }
 
     placcessor_GetCtx(accessor)->SecOam[slctx->SecOamWriteIdx] = val;
     slctx->SecOamWritten = true;
-    if (ince)
-    {
+    if (ince) {
         ++slctx->SecOamWriteIdx;
 
         // got 1 sprite
-        if (slctx->SecOamWriteIdx % NH_OAM_SP_SIZE == 0)
-        {
+        if (slctx->SecOamWriteIdx % NH_OAM_SP_SIZE == 0) {
             ++slctx->SpGot;
         }
     }
@@ -179,8 +159,7 @@ writeSecOam(placcessor_s *accessor, spevalfetchctx_s *slctx, u8 val, bool ince)
 static void
 incWrite(spevalfetchctx_s *slctx)
 {
-    if (writeDisabled(slctx))
-    {
+    if (writeDisabled(slctx)) {
         return;
     }
 
@@ -202,20 +181,16 @@ spEval(cycle_t step, placcessor_s *accessor, spevalfetchctx_s *slctx)
     // be halted immediately."
     // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Rendering_disable_or_enable_during_active_scanline
     // test: sprite_overflow_tests/5.Emulator.nes failure #4
-    if (placcessor_RenderingEnabled(accessor))
-    {
+    if (placcessor_RenderingEnabled(accessor)) {
         // read cycle
-        if (step % 2 == 0)
-        {
+        if (step % 2 == 0) {
             u8 oamaddr = placcessor_GetReg(accessor, PR_OAMADDR);
             slctx->SpEvalBus = placcessor_GetOamByte(accessor, oamaddr);
         }
         // write cycle
-        else
-        {
+        else {
             // Y
-            if (!slctx->CopyCtr)
-            {
+            if (!slctx->CopyCtr) {
                 u8 y = slctx->SpEvalBus;
 
                 // Test this before "writeSecOam()"
@@ -223,49 +198,38 @@ spEval(cycle_t step, placcessor_s *accessor, spevalfetchctx_s *slctx)
                 // copy Y to secondary OAM
                 writeSecOam(accessor, slctx, y, false);
 
-                if (slctx->NOverflow || slctx->SpOverflow)
-                {
+                if (slctx->NOverflow || slctx->SpOverflow) {
                     // try next Y
                     addRead(accessor, slctx, true, false, true);
-                }
-                else
-                {
+                } else {
                     _Static_assert(NH_PATTERN_TILE_HEIGHT == 8,
                                    "Invalid NH_PATTERN_TILE_HEIGHT");
                     u8 spH = placcessor_Is8x16(accessor)
-                                 ? NH_PATTERN_TILE_HEIGHT * 2
-                                 : NH_PATTERN_TILE_HEIGHT;
+                               ? NH_PATTERN_TILE_HEIGHT * 2
+                               : NH_PATTERN_TILE_HEIGHT;
                     bool inRange =
                         (y <= placcessor_GetCtx(accessor)->ScanlineNo &&
                          placcessor_GetCtx(accessor)->ScanlineNo < y + spH);
-                    if (inRange)
-                    {
+                    if (inRange) {
                         // copy the rest
                         incWrite(slctx);
                         slctx->CopyCtr = NH_OAM_SP_SIZE - 1;
 
                         addRead(accessor, slctx, false, true, true);
 
-                        if (sp0)
-                        {
+                        if (sp0) {
                             slctx->Sp0InRange = true;
                         }
-                        if (got8sp(slctx))
-                        {
+                        if (got8sp(slctx)) {
                             // set sprite overflow flag
                             slctx->SpOverflow = true;
                             *placcessor_RegOf(accessor, PR_PPUSTATUS) |= 0x20;
                         }
-                    }
-                    else
-                    {
+                    } else {
                         // try next Y
-                        if (!got8sp(slctx))
-                        {
+                        if (!got8sp(slctx)) {
                             addRead(accessor, slctx, true, false, true);
-                        }
-                        else
-                        {
+                        } else {
                             // @QUIRK: Sprite overflow bug
                             // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Sprite_overflow_bug
                             addRead(accessor, slctx, true, true, false);
@@ -274,14 +238,11 @@ spEval(cycle_t step, placcessor_s *accessor, spevalfetchctx_s *slctx)
                 }
             }
             // rest 3
-            else
-            {
+            else {
                 bool prevGot8 = got8sp(slctx);
                 writeSecOam(accessor, slctx, slctx->SpEvalBus, true);
-                if (prevGot8 != got8sp(slctx))
-                {
-                    if (!got8sp(slctx) || slctx->CopyCtr != 1)
-                    {
+                if (prevGot8 != got8sp(slctx)) {
+                    if (!got8sp(slctx) || slctx->CopyCtr != 1) {
                         ASSERT_FATAL(placcessor_GetLogger(accessor),
                                      "Wrong sprite evaluation timing in "
                                      "copying rest: %d",
@@ -310,8 +271,7 @@ getPatSliver(placcessor_s *accessor, spevalfetchctx_s *slctx, u8 spidx,
 {
     // https://www.nesdev.org/wiki/PPU_rendering#Cycles_257-320
     // We don't emulate dummy fetch to 0xFF
-    if (spidx >= slctx->SpGot)
-    {
+    if (spidx >= slctx->SpGot) {
         // Transparent values for left-over sprites
         return 0x00;
     }
@@ -330,8 +290,7 @@ getPatSliver(placcessor_s *accessor, spevalfetchctx_s *slctx, u8 spidx,
     _Static_assert(NH_PATTERN_TILE_HEIGHT == 8,
                    "Invalid NH_PATTERN_TILE_HEIGHT");
     u8 fineY = yInSp % NH_PATTERN_TILE_HEIGHT;
-    if (flipY)
-    {
+    if (flipY) {
         fineY = (NH_PATTERN_TILE_HEIGHT - 1) - fineY;
     }
 
@@ -340,8 +299,7 @@ getPatSliver(placcessor_s *accessor, spevalfetchctx_s *slctx, u8 spidx,
     {
         NHErr err =
             vmem_GetB(placcessor_GetVmem(accessor), sliverAddr, &ptnByte);
-        if (NH_FAILED(err))
-        {
+        if (NH_FAILED(err)) {
             ASSERT_FATAL(placcessor_GetLogger(accessor),
                          "Failed to fetch pattern byte for sp: " ADDRFMT ", %d",
                          sliverAddr, upper);
@@ -351,8 +309,7 @@ getPatSliver(placcessor_s *accessor, spevalfetchctx_s *slctx, u8 spidx,
 
     // Reverse the bits to implement horizontal flipping.
     bool flipX = slctx->SpAttrByte & 0x40;
-    if (flipX)
-    {
+    if (flipX) {
         ReverseByte(&ptnByte);
     }
 
@@ -364,45 +321,36 @@ spFetchReload(cycle_t step, placcessor_s *accessor, spevalfetchctx_s *slctx)
 {
     // step: [0, 8)
 
-    switch (step)
-    {
-        // The first 2 ticks seem to be unspecified in the nesdev
-        // forum, we are just guessing here.
-        case 0:
-        {
-            // Mark down the current processing sprite index at first
-            // tick. Do this before "readSecOam()" since it modifies
-            // "SecOamReadIdx".
-            slctx->SpIdxReload = slctx->SecOamReadIdx / NH_OAM_SP_SIZE;
+    switch (step) {
+    // The first 2 ticks seem to be unspecified in the nesdev
+    // forum, we are just guessing here.
+    case 0: {
+        // Mark down the current processing sprite index at first
+        // tick. Do this before "readSecOam()" since it modifies
+        // "SecOamReadIdx".
+        slctx->SpIdxReload = slctx->SecOamReadIdx / NH_OAM_SP_SIZE;
 
-            // Read Y.
-            slctx->SpPosY = readSecOam(accessor, slctx);
-        }
-        break;
+        // Read Y.
+        slctx->SpPosY = readSecOam(accessor, slctx);
+    } break;
 
-        case 1:
-        {
-            // Read tile.
-            slctx->SpTileByte = readSecOam(accessor, slctx);
-        }
-        break;
+    case 1: {
+        // Read tile.
+        slctx->SpTileByte = readSecOam(accessor, slctx);
+    } break;
 
-        case 2:
-        {
-            // Read attribute.
-            u8 attr = readSecOam(accessor, slctx);
-            slctx->SpAttrByte = attr;
-            placcessor_GetCtx(accessor)->SpAttr[slctx->SpIdxReload] = attr;
-        }
-        break;
+    case 2: {
+        // Read attribute.
+        u8 attr = readSecOam(accessor, slctx);
+        slctx->SpAttrByte = attr;
+        placcessor_GetCtx(accessor)->SpAttr[slctx->SpIdxReload] = attr;
+    } break;
 
-        case 3:
-        {
-            // Read X.
-            u8 x = readSecOam(accessor, slctx);
-            placcessor_GetCtx(accessor)->SpPosX[slctx->SpIdxReload] = x;
-        }
-        break;
+    case 3: {
+        // Read X.
+        u8 x = readSecOam(accessor, slctx);
+        placcessor_GetCtx(accessor)->SpPosX[slctx->SpIdxReload] = x;
+    } break;
 
 #if 1
 // https://www.nesdev.org/wiki/PPU_sprite_evaluation#Details
@@ -410,22 +358,18 @@ spFetchReload(cycle_t step, placcessor_s *accessor, spevalfetchctx_s *slctx)
 // We don't emulate this.
 #endif
 
-        case 5:
-        {
-            placcessor_GetCtx(accessor)->SfSpPatLower[slctx->SpIdxReload] =
-                getPatSliver(accessor, slctx, slctx->SpIdxReload, false);
-        }
-        break;
+    case 5: {
+        placcessor_GetCtx(accessor)->SfSpPatLower[slctx->SpIdxReload] =
+            getPatSliver(accessor, slctx, slctx->SpIdxReload, false);
+    } break;
 
-        case 7:
-        {
-            placcessor_GetCtx(accessor)->SfSpPatUpper[slctx->SpIdxReload] =
-                getPatSliver(accessor, slctx, slctx->SpIdxReload, true);
-        }
-        break;
+    case 7: {
+        placcessor_GetCtx(accessor)->SfSpPatUpper[slctx->SpIdxReload] =
+            getPatSliver(accessor, slctx, slctx->SpIdxReload, true);
+    } break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     // OAMADDR is set to 0 during each of ticks 257-320 (the sprite tile loading

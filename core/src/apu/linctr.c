@@ -22,20 +22,15 @@ linctr_Val(const linctr_s *self)
 void
 linctr_Tick(linctr_s *self)
 {
-    if (self->reload_)
-    {
+    if (self->reload_) {
         self->counter_ = self->reloadval_;
-    }
-    else
-    {
-        if (self->counter_ > 0)
-        {
+    } else {
+        if (self->counter_ > 0) {
             --self->counter_;
         }
     }
 
-    if (!self->control_)
-    {
+    if (!self->control_) {
         self->reload_ = false;
     }
 }

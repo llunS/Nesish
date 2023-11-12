@@ -1,4 +1,5 @@
-namespace sh {
+namespace sh
+{
 
 template <typename T, unsigned int N>
 Channel<T, N>::Channel()
@@ -18,8 +19,7 @@ Channel<T, N>::try_send(const value_t &i_val)
 {
     value_t *end = m_end.load(std::memory_order_relaxed);
     value_t *next = end + 1 >= m_buffer + array_size() ? m_buffer : end + 1;
-    if (next == m_begin.load(std::memory_order_acquire))
-    {
+    if (next == m_begin.load(std::memory_order_acquire)) {
         return false;
     }
 
@@ -33,8 +33,7 @@ bool
 Channel<T, N>::try_receive(value_t &o_val)
 {
     value_t *begin = m_begin.load(std::memory_order_relaxed);
-    if (begin == m_end.load(std::memory_order_acquire))
-    {
+    if (begin == m_end.load(std::memory_order_acquire)) {
         return false;
     }
 

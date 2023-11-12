@@ -97,8 +97,7 @@ placcessor_GetColorByte(placcessor_s *self, int idx)
 {
     u8 byte = vmem_GetPalByte(placcessor_GetVmem(self), idx);
     // grayscale
-    if (placcessor_GetReg(self, PR_PPUMASK) & 0x01)
-    {
+    if (placcessor_GetReg(self, PR_PPUMASK) & 0x01) {
         byte &= 0x30;
     }
     return byte;
@@ -150,16 +149,13 @@ void
 placcessor_FinishFrame(placcessor_s *self)
 {
     // Do these the same time as we swap the buffer to synchronize with it.
-    if (capturePalOn(self))
-    {
+    if (capturePalOn(self)) {
         capturePalette(self);
     }
-    if (captureOamOn(self))
-    {
+    if (captureOamOn(self)) {
         captureOam(self);
     }
-    if (capturePtnTblsOn(self))
-    {
+    if (capturePtnTblsOn(self)) {
         capturePtnTbls(self);
     }
 
@@ -195,14 +191,11 @@ void
 placcessor_ResolveSpTile(u8 tilebyte, bool is8x16, bool flipy, u8 fineySp,
                          u8 *tileidx)
 {
-    if (is8x16)
-    {
+    if (is8x16) {
         u8 topTile = ((tilebyte >> 1) & 0x7F) << 1;
         bool topHalf = 0 <= fineySp && fineySp < 8;
         *tileidx = (topHalf ^ !flipy) ? topTile + 1 : topTile;
-    }
-    else
-    {
+    } else {
         *tileidx = tilebyte;
     }
 }
@@ -216,8 +209,7 @@ capturePalOn(placcessor_s *self)
 void
 capturePalette(placcessor_s *self)
 {
-    for (int i = 0; i < NHD_PALETTE_COLORS; ++i)
-    {
+    for (int i = 0; i < NHD_PALETTE_COLORS; ++i) {
         _Static_assert(NHD_PALETTE_COLORS == 32, "Might overflow below");
         u8 clrbyte = placcessor_GetColorByte(self, i);
         color_s clr = placcessor_GetPal(self)->ToRgb((palettecolor_s){clrbyte});
@@ -234,8 +226,7 @@ captureOamOn(placcessor_s *self)
 void
 captureOam(placcessor_s *self)
 {
-    for (int i = 0; i < NHD_OAM_SPRITES; ++i)
-    {
+    for (int i = 0; i < NHD_OAM_SPRITES; ++i) {
         updateOamSpr(self, dbgoam_SprOf(&self->ppu_->oamsnap_, i), i);
     }
 }
@@ -269,10 +260,8 @@ updateOamSpr(placcessor_s *self, dbgspr_s *spr, int idx)
     bool tblR;
     placcessor_ResolveSpPtnTbl(
         tile, mode8x16, placcessor_GetReg(self, PR_PPUCTRL) & 0x08, &tblR);
-    for (u8 yInSp = 0; yInSp < 16; ++yInSp)
-    {
-        if (!mode8x16 && yInSp >= 8)
-        {
+    for (u8 yInSp = 0; yInSp < 16; ++yInSp) {
+        if (!mode8x16 && yInSp >= 8) {
             break;
         }
 
@@ -282,8 +271,7 @@ updateOamSpr(placcessor_s *self, dbgspr_s *spr, int idx)
         _Static_assert(NH_PATTERN_TILE_HEIGHT == 8,
                        "Invalid NH_PATTERN_TILE_HEIGHT");
         u8 finey = yInSp % NH_PATTERN_TILE_HEIGHT;
-        if (flipy)
-        {
+        if (flipy) {
             finey = (NH_PATTERN_TILE_HEIGHT - 1) - finey;
         }
 
@@ -291,8 +279,7 @@ updateOamSpr(placcessor_s *self, dbgspr_s *spr, int idx)
         {
             NHErr err = placcessor_GetPtnSliver(tblR, tileidx, false, finey,
                                                 self->ppu_->vmem_, &ptnbit0B);
-            if (NH_FAILED(err))
-            {
+            if (NH_FAILED(err)) {
                 ptnbit0B = 0xFF; // set to apparent value.
             }
         }
@@ -300,22 +287,19 @@ updateOamSpr(placcessor_s *self, dbgspr_s *spr, int idx)
         {
             NHErr err = placcessor_GetPtnSliver(tblR, tileidx, true, finey,
                                                 self->ppu_->vmem_, &ptnbit1B);
-            if (NH_FAILED(err))
-            {
+            if (NH_FAILED(err)) {
                 ptnbit1B = 0xFF; // set to apparent value.
             }
         }
 
         // Reverse the bits to implement horizontal flipping.
-        if (flipx)
-        {
+        if (flipx) {
             ReverseByte(&ptnbit0B);
             ReverseByte(&ptnbit1B);
         }
 
         /* Now that we have a row of data available */
-        for (int fineX = 0; fineX < 8; ++fineX)
-        {
+        for (int fineX = 0; fineX < 8; ++fineX) {
             int addrPalSetOffset = attr & 0x03; // 4-color palette
             int ptn = ((bool)(ptnbit1B & (0x80 >> fineX)) << 1) |
                       ((bool)(ptnbit0B & (0x80 >> fineX)) << 0);
@@ -339,11 +323,9 @@ captureTable(placcessor_s *self, bool right, dbgpattbl_s *tbl)
     _Static_assert(DBGPATTBL_TILES == 16 * 16, "Incorrect loop count");
     // static_assert(std::numeric_limits<int>::max() >= 16 * 16,
     //               "Type of loop variable too small");
-    for (int tileidx = 0; tileidx < DBGPATTBL_TILES; ++tileidx)
-    {
+    for (int tileidx = 0; tileidx < DBGPATTBL_TILES; ++tileidx) {
         _Static_assert(DBGPATTBL_TILE_H == 8, "Incorrect loop count");
-        for (u8 fineY = 0; fineY < DBGPATTBL_TILE_H; ++fineY)
-        {
+        for (u8 fineY = 0; fineY < DBGPATTBL_TILE_H; ++fineY) {
             // static_assert(std::numeric_limits<u8>::max() >= 16 * 16 - 1,
             //               "Type of tile index incompatible for use of "
             //               "\"get_ptn_sliver\"");
@@ -352,8 +334,7 @@ captureTable(placcessor_s *self, bool right, dbgpattbl_s *tbl)
                 NHErr err =
                     placcessor_GetPtnSliver(right, (u8)tileidx, false, fineY,
                                             self->ppu_->vmem_, &ptnbit0B);
-                if (NH_FAILED(err))
-                {
+                if (NH_FAILED(err)) {
                     ptnbit0B = 0xFF; // set to apparent value.
                 }
             }
@@ -362,16 +343,14 @@ captureTable(placcessor_s *self, bool right, dbgpattbl_s *tbl)
                 NHErr err =
                     placcessor_GetPtnSliver(right, (u8)tileidx, true, fineY,
                                             self->ppu_->vmem_, &ptnbit1B);
-                if (NH_FAILED(err))
-                {
+                if (NH_FAILED(err)) {
                     ptnbit1B = 0xFF; // set to apparent value.
                 }
             }
 
             /* Now that we have a row of data available */
             _Static_assert(DBGPATTBL_TILE_W == 8, "Incorrect loop count");
-            for (int fineX = 0; fineX < DBGPATTBL_TILE_W; ++fineX)
-            {
+            for (int fineX = 0; fineX < DBGPATTBL_TILE_W; ++fineX) {
                 int ptn = ((bool)(ptnbit1B & (0x80 >> fineX)) << 1) |
                           ((bool)(ptnbit0B & (0x80 >> fineX)) << 0);
                 _Static_assert(NH_PALETTE_SIZE == 32,

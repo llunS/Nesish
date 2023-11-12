@@ -6,7 +6,8 @@
 
 #include "nhbase/klass.hpp"
 
-namespace sh {
+namespace sh
+{
 
 struct Messager;
 
@@ -19,7 +20,9 @@ struct Window {
         , m_open(false)
     {
     }
-    virtual ~Window() {}
+    virtual ~Window()
+    {
+    }
 
     NB_KLZ_DELETE_COPY_MOVE(Window);
 

@@ -42,33 +42,24 @@ pl_Reset(pl_s *self)
 void
 pl_Tick(pl_s *self)
 {
-    if (0 <= self->currslIdx_ && self->currslIdx_ <= 239)
-    {
+    if (0 <= self->currslIdx_ && self->currslIdx_ <= 239) {
         /* Skip 1 cycle on first scanline, if current frame is odd and rendering
          * is enabled */
-        if (0 == self->currslIdx_ && 0 == self->currslCol_)
-        {
-            if (placcessor_GetCtx(self->accessor_)->SkipCycle)
-            {
+        if (0 == self->currslIdx_ && 0 == self->currslCol_) {
+            if (placcessor_GetCtx(self->accessor_)->SkipCycle) {
                 advCounter(self);
             }
         }
 
         visiblesl_Tick(&self->visiblesl_, self->currslCol_);
-    }
-    else if (241 == self->currslIdx_)
-    {
-        if (1 == self->currslCol_)
-        {
-            if (!placcessor_NoNmi(self->accessor_))
-            {
+    } else if (241 == self->currslIdx_) {
+        if (1 == self->currslCol_) {
+            if (!placcessor_NoNmi(self->accessor_)) {
                 /* Set NMI_occurred in PPU to true */
                 *placcessor_RegOf(self->accessor_, PR_PPUSTATUS) |= 0x80;
             }
         }
-    }
-    else if (261 == self->currslIdx_)
-    {
+    } else if (261 == self->currslIdx_) {
         prerendersl_Tick(&self->prerendersl_, self->currslCol_);
     }
 
@@ -79,17 +70,13 @@ void
 advCounter(pl_s *self)
 {
     // Update scaline column
-    if (self->currslCol_ + 1 >= NH_SCANLINE_CYCLES)
-    {
+    if (self->currslCol_ + 1 >= NH_SCANLINE_CYCLES) {
         self->currslCol_ = 0;
 
         // Update scanline row
-        if (self->currslIdx_ + 1 >= SCANLINE_COUNT)
-        {
+        if (self->currslIdx_ + 1 >= SCANLINE_COUNT) {
             self->currslIdx_ = 0;
-        }
-        else
-        {
+        } else {
             ++self->currslIdx_;
         }
 
@@ -98,14 +85,11 @@ advCounter(pl_s *self)
         ctx->ScanlineNo =
             self->currslIdx_ + 1 >= SCANLINE_COUNT ? -1 : self->currslIdx_;
         // New frame
-        if (POSTRENDER_SL == ctx->ScanlineNo)
-        {
+        if (POSTRENDER_SL == ctx->ScanlineNo) {
             ctx->OddFrame = !ctx->OddFrame;
             ctx->SkipCycle = false;
         }
-    }
-    else
-    {
+    } else {
         ++self->currslCol_;
     }
 }

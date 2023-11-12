@@ -32,19 +32,16 @@ ines_Deinit(void *me)
 {
     ines_s *self = (ines_s *)me;
 
-    if (self->prgrom_)
-    {
+    if (self->prgrom_) {
         free(self->prgrom_);
         self->prgrom_ = NULL;
     }
-    if (self->chrrom_)
-    {
+    if (self->chrrom_) {
         free(self->chrrom_);
         self->chrrom_ = NULL;
     }
 
-    if (self->mapper_.Impl)
-    {
+    if (self->mapper_.Impl) {
         self->mapper_.Deinit(self->mapper_.Impl);
         free(self->mapper_.Impl);
         self->mapper_.Impl = NULL;
@@ -59,8 +56,7 @@ ines_resolve_(ines_s *self)
         (u8)((self->header_.MapperHigh << 4) + self->header_.MapperLow);
 
     self->mapper_ = getMapper(self->mappernum_, &self->romaccessor_);
-    if (!self->mapper_.Impl)
-    {
+    if (!self->mapper_.Impl) {
         LOG_ERROR(self->logger_, "iNES unsupported mapper " U8FMT,
                   self->mappernum_);
         return NH_ERR_UNIMPLEMENTED;
@@ -77,26 +73,22 @@ ines_Validate(const void *me)
     // 1. header metadata check
     // magic number: NES^Z
     if (!(self->header_.Magic[0] == 0x4e && self->header_.Magic[1] == 0x45 &&
-          self->header_.Magic[2] == 0x53 && self->header_.Magic[3] == 0x1a))
-    {
+          self->header_.Magic[2] == 0x53 && self->header_.Magic[3] == 0x1a)) {
         LOG_ERROR(self->logger_, "iNES invalid magic number");
         return NH_ERR_CORRUPTED;
     }
-    if (!self->prgrom_)
-    {
+    if (!self->prgrom_) {
         LOG_ERROR(self->logger_, "iNES empty PRG ROM");
         return NH_ERR_CORRUPTED;
     }
-    if (self->header_.Ines2 != 0)
-    {
+    if (self->header_.Ines2 != 0) {
         LOG_ERROR(self->logger_, "Support only iNES format for now, " UBITFMTX,
                   self->header_.Ines2);
         return NH_ERR_CORRUPTED;
     }
 
     // 2. runtime state check
-    if (!self->mapper_.Impl)
-    {
+    if (!self->mapper_.Impl) {
         LOG_ERROR(self->logger_, "iNES mapper uninitialized");
         return NH_ERR_UNINITIALIZED;
     }
@@ -104,8 +96,7 @@ ines_Validate(const void *me)
     LOG_INFO(self->logger_, "iNES mapper " U8FMT, self->mappernum_);
 
     NHErr err = self->mapper_.Validate(self->mapper_.Impl);
-    if (NH_FAILED(err))
-    {
+    if (NH_FAILED(err)) {
         return err;
     }
 
@@ -147,8 +138,7 @@ ines_UnmapMemory(void *me, mmem_s *mmem, vmem_s *vmem)
 #define ASSEMBLE_IMPL(interface, mappername, ...)                              \
     {                                                                          \
         mappername##_s *impl = malloc(sizeof(mappername##_s));                 \
-        if (impl)                                                              \
-        {                                                                      \
+        if (impl) {                                                            \
             mappername##_Init(impl, __VA_ARGS__);                              \
             interface.Deinit = mappername##_Deinit;                            \
             interface.Validate = mappername##_Validate;                        \
@@ -164,22 +154,21 @@ mapper_s
 getMapper(u8 mappernum, const inesromaccessor_s *accessor)
 {
     mapper_s interface = {.Impl = NULL};
-    switch (mappernum)
-    {
-        case 0:
-            ASSEMBLE_IMPL(interface, nrom, accessor);
-            break;
+    switch (mappernum) {
+    case 0:
+        ASSEMBLE_IMPL(interface, nrom, accessor);
+        break;
 
-        case 1:
-            ASSEMBLE_IMPL(interface, mmc1, accessor, MMC1B);
-            break;
+    case 1:
+        ASSEMBLE_IMPL(interface, mmc1, accessor, MMC1B);
+        break;
 
-        case 3:
-            ASSEMBLE_IMPL(interface, cnrom, accessor);
-            break;
+    case 3:
+        ASSEMBLE_IMPL(interface, cnrom, accessor);
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
     return interface;
 }

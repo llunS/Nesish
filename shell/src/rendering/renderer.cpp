@@ -6,7 +6,8 @@
 #include "shaders/screen_rect_frag.hpp"
 #include "rendering/error.hpp"
 
-namespace sh {
+namespace sh
+{
 
 static constexpr int VERT_COUNT = 6;
 
@@ -24,13 +25,11 @@ Renderer::~Renderer()
 void
 Renderer::cleanup()
 {
-    if (m_vbo)
-    {
+    if (m_vbo) {
         glDeleteBuffers(1, &m_vbo);
     }
     m_vbo = 0;
-    if (m_vao)
-    {
+    if (m_vao) {
         glDeleteVertexArrays(1, &m_vao);
     }
     m_vao = 0;
@@ -44,8 +43,7 @@ Renderer::setup()
     int err = 0;
 
     err = m_shader.compile(g_screen_rect_vert, g_screen_rect_frag);
-    if (err)
-    {
+    if (err) {
         goto l_end;
     }
 
@@ -55,8 +53,7 @@ Renderer::setup()
         float u, v;
     };
     glGenBuffers(1, &m_vbo);
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         err = 1;
         goto l_end;
     }
@@ -76,8 +73,7 @@ Renderer::setup()
     }
     /* VAO */
     glGenVertexArrays(1, &m_vao);
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         err = 1;
         goto l_end;
     }
@@ -107,8 +103,7 @@ Renderer::setup()
     }
 
 l_end:
-    if (err)
-    {
+    if (err) {
         cleanup();
     }
     return err;
@@ -118,8 +113,7 @@ void
 Renderer::render(NHFrame i_frame_buf)
 {
     /* update input texture with "i_frame_buf" */
-    if (!m_tex.from_frame(i_frame_buf))
-    {
+    if (!m_tex.from_frame(i_frame_buf)) {
         return;
     }
     /* draw */

@@ -5,7 +5,8 @@
 #include <string>
 #include <cstdio>
 
-namespace sh {
+namespace sh
+{
 
 struct PCMWriter {
   public:

@@ -28,13 +28,10 @@ divider_Reload(divider_s *self)
 bool
 divider_Tick(divider_s *self)
 {
-    if (!self->ctr_)
-    {
+    if (!self->ctr_) {
         divider_Reload(self);
         return true;
-    }
-    else
-    {
+    } else {
         --self->ctr_;
         return false;
     }

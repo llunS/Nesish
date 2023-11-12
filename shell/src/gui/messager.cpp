@@ -2,7 +2,8 @@
 
 #include "gui/application.hpp"
 
-namespace sh {
+namespace sh
+{
 
 bool
 Messager::running_game() const

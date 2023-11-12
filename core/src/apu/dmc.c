@@ -62,21 +62,14 @@ dmc_TickTimer(dmc_s *self)
 
     /* Output Unit */
     // i.e. playback of samples
-    if (divider_Tick(&self->timer_))
-    {
-        if (!self->silence_)
-        {
-            if (self->shift_ & 0x01)
-            {
-                if (self->level_ + 2 <= 127)
-                {
+    if (divider_Tick(&self->timer_)) {
+        if (!self->silence_) {
+            if (self->shift_ & 0x01) {
+                if (self->level_ + 2 <= 127) {
                     self->level_ += 2;
                 }
-            }
-            else
-            {
-                if (self->level_ >= 2)
-                {
+            } else {
+                if (self->level_ >= 2) {
                     self->level_ -= 2;
                 }
             }
@@ -84,24 +77,19 @@ dmc_TickTimer(dmc_s *self)
 
         self->shift_ >>= 1;
 
-        if (self->bitsleft_ <= 0)
-        {
+        if (self->bitsleft_ <= 0) {
             ASSERT_FATAL(self->logger_, "Invalid bits remaining value " U8FMT,
                          self->bitsleft_);
         }
         // let it overflow to make the bug apparent.
         --self->bitsleft_;
         /* new output cycle */
-        if (!self->bitsleft_)
-        {
+        if (!self->bitsleft_) {
             self->bitsleft_ = 8;
 
-            if (self->samplebufEmpty_)
-            {
+            if (self->samplebufEmpty_) {
                 self->silence_ = true;
-            }
-            else
-            {
+            } else {
                 self->silence_ = false;
 
                 self->shift_ = self->samplebuf_;
@@ -109,8 +97,7 @@ dmc_TickTimer(dmc_s *self)
 
                 // Check to do reload DMA
                 // No need to check "self->samplebufEmpty_" in this block
-                if (/*self->samplebufEmpty_ &&*/ self->sampleBytesLeft_ > 0)
-                {
+                if (/*self->samplebufEmpty_ &&*/ self->sampleBytesLeft_ > 0) {
                     dmcdma_Initiate(self->dmcdma_, self->samplecur_, true);
                 }
             }
@@ -122,8 +109,7 @@ void
 dmc_SetIrqEnabled(dmc_s *self, bool set)
 {
     self->irqEnabled_ = set;
-    if (!set)
-    {
+    if (!set) {
         self->irq_ = false;
     }
 }
@@ -142,8 +128,7 @@ dmc_SetTimerReload(dmc_s *self, u8 index)
         190 / 2, 160 / 2, 142 / 2, 128 / 2, 106 / 2, 84 / 2,  72 / 2,  54 / 2};
     // static_assert(periods[0x0F], "Missing elements");
 
-    if (index >= 0x10)
-    {
+    if (index >= 0x10) {
         ASSERT_FATAL(self->logger_, "Invalid dmc timer reload index: " U8FMT,
                      index);
         return;
@@ -173,21 +158,16 @@ dmc_SetSampleLen(dmc_s *self, u8 samplelen)
 void
 dmc_SetEnabled(dmc_s *self, bool set)
 {
-    if (!set)
-    {
+    if (!set) {
         self->sampleBytesLeft_ = 0;
-    }
-    else
-    {
+    } else {
         // Restart only if there's no bytes left to load
-        if (!self->sampleBytesLeft_)
-        {
+        if (!self->sampleBytesLeft_) {
             restartPlayback(self);
 
             // Load DMA only if we restarts, it looks right since
             // remaining bytes could be left to reload DMA.
-            if (self->samplebufEmpty_ && self->sampleBytesLeft_ > 0)
-            {
+            if (self->samplebufEmpty_ && self->sampleBytesLeft_ > 0) {
                 dmcdma_Initiate(self->dmcdma_, self->samplecur_, false);
             }
         }
@@ -213,38 +193,27 @@ dmc_PutSample(dmc_s *self, addr_t sampleaddr, u8 sample)
     // self->sampleBytesLeft_ == 0) after DMA has been initiated.
     // Check address as well in case it's stale request (IF there exists this
     // kind).
-    if (sampleaddr == self->samplecur_ && self->sampleBytesLeft_ > 0)
-    {
+    if (sampleaddr == self->samplecur_ && self->sampleBytesLeft_ > 0) {
         self->samplebuf_ = sample;
         self->samplebufEmpty_ = false;
 
-        if (self->samplecur_ >= 0xFFFF)
-        {
+        if (self->samplecur_ >= 0xFFFF) {
             self->samplecur_ = 0x8000;
-        }
-        else
-        {
+        } else {
             ++self->samplecur_;
         }
 
         --self->sampleBytesLeft_;
-        if (!self->sampleBytesLeft_)
-        {
-            if (self->loop_)
-            {
+        if (!self->sampleBytesLeft_) {
+            if (self->loop_) {
                 restartPlayback(self);
-            }
-            else
-            {
-                if (self->irqEnabled_)
-                {
+            } else {
+                if (self->irqEnabled_) {
                     self->irq_ = true;
                 }
             }
         }
-    }
-    else
-    {
+    } else {
         // Failed due to address mismatch (if any)
         // if (self->sampleBytesLeft_ <= 0)
         {

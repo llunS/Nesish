@@ -4,7 +4,8 @@
 
 #include <cstdio>
 
-namespace sh {
+namespace sh
+{
 
 Shader::Shader()
     : m_id(0)
@@ -13,8 +14,7 @@ Shader::Shader()
 
 Shader::~Shader()
 {
-    if (m_id)
-    {
+    if (m_id) {
         glDeleteProgram(m_id);
     }
     m_id = 0;
@@ -37,8 +37,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
 
     /* vert */
     vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         err = 1;
         goto l_cleanup;
     }
@@ -47,8 +46,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
     {
         int success = 0;
         glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
+        if (!success) {
             char infoLog[512];
             glGetShaderInfoLog(vertex_shader, 512, NULL, infoLog);
             std::fprintf(stderr,
@@ -62,8 +60,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
 
     /* frag */
     fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         err = 1;
         goto l_cleanup;
     }
@@ -72,8 +69,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
     {
         int success = 0;
         glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
+        if (!success) {
             char infoLog[512];
             glGetShaderInfoLog(fragment_shader, 512, NULL, infoLog);
             std::fprintf(stderr,
@@ -87,8 +83,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
 
     /* program */
     program = glCreateProgram();
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         err = 1;
         goto l_cleanup;
     }
@@ -98,8 +93,7 @@ Shader::compile(const char *i_vert, const char *i_frag)
     {
         int success = 0;
         glGetProgramiv(program, GL_LINK_STATUS, &success);
-        if (!success)
-        {
+        if (!success) {
             char infoLog[512];
             glGetProgramInfoLog(program, 512, NULL, infoLog);
             std::fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED: %s\n",
@@ -113,17 +107,14 @@ Shader::compile(const char *i_vert, const char *i_frag)
 l_cleanup:
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
-    if (err)
-    {
-        if (program)
-        {
+    if (err) {
+        if (program) {
             glDeleteProgram(program);
         }
         program = 0;
     }
 
-    if (program)
-    {
+    if (program) {
         m_id = program;
     }
 

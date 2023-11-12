@@ -6,7 +6,8 @@
 #include "sokol_audio.h"
 #endif
 
-namespace sh {
+namespace sh
+{
 
 #ifndef SH_USE_SOKOL_AUDIO
 

@@ -25,12 +25,9 @@ main(int, char **)
                Module['nh_db_init_failed'] = 0;
                FS.syncfs(
                    true, function(err) {
-                       if (err)
-                       {
+                       if (err) {
                            Module['nh_db_init_failed'] = 1;
-                       }
-                       else
-                       {
+                       } else {
                            Module['nh_db_inited'] = 1;
                        }
                    });
@@ -40,12 +37,10 @@ main(int, char **)
            }),
            NB_WEB_USER_DIR);
     // busy poll
-    while (!js_db_inited() && !js_db_init_failed())
-    {
+    while (!js_db_inited() && !js_db_init_failed()) {
         emscripten_sleep(100);
     }
-    if (js_db_init_failed())
-    {
+    if (js_db_init_failed()) {
         return 1;
     }
     std::printf("User directory loaded\n");
@@ -55,8 +50,7 @@ main(int, char **)
 
     // Heap allocation so that on Web we can continue to reference it.
     sh::Application *app = new sh::Application();
-    if (!app->init())
-    {
+    if (!app->init()) {
         err = 1;
         goto l_end;
     }
@@ -67,8 +61,7 @@ main(int, char **)
     app->release();
 
 l_end:
-    if (app)
-    {
+    if (app) {
         delete app;
     }
     return err;

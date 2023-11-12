@@ -3,7 +3,8 @@
 #include "gui/imgui_utils.hpp"
 #include "gui/messager.hpp"
 
-namespace sh {
+namespace sh
+{
 
 PPUDebugger::PPUDebugger(const std::string &i_name, NHConsole io_emu,
                          Messager *i_messager)
@@ -15,7 +16,9 @@ PPUDebugger::PPUDebugger(const std::string &i_name, NHConsole io_emu,
     nhd_set_ptn_table_palette(m_emu, m_ptn_tbl_palette);
 }
 
-PPUDebugger::~PPUDebugger() {}
+PPUDebugger::~PPUDebugger()
+{
+}
 
 void
 PPUDebugger::render()
@@ -24,14 +27,11 @@ PPUDebugger::render()
     nhd_turn_debug_off(m_emu, NHD_DBG_OAM);
     nhd_turn_debug_off(m_emu, NHD_DBG_PATTERN);
 
-    if (m_open)
-    {
+    if (m_open) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 12.0f));
         if (ImGui::Begin(m_name.c_str(), &m_open,
-                         ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            if (m_messager->running_game())
-            {
+                         ImGuiWindowFlags_AlwaysAutoResize)) {
+            if (m_messager->running_game()) {
                 // @TODO: Nametable viewer
 
                 draw_pattern();
@@ -44,9 +44,7 @@ PPUDebugger::render()
                 ImGui::Spacing();
                 draw_palette();
                 nhd_turn_debug_on(m_emu, NHD_DBG_PALETTE);
-            }
-            else
-            {
+            } else {
                 ImGui::Text("No game is running");
             }
         }
@@ -72,16 +70,12 @@ PPUDebugger::draw_pattern()
     char buf[64];
     (void)std::snprintf(buf, sizeof(buf), "%s###ptn_tbl_palette_trigger",
                         names[m_ptn_tbl_palette]);
-    if (ImGui::Button(buf))
-    {
+    if (ImGui::Button(buf)) {
         ImGui::OpenPopup("ptn_tbl_palette_popup");
     }
-    if (ImGui::BeginPopup("ptn_tbl_palette_popup"))
-    {
-        for (NHDPaletteSet i = 0; i < PALETTE_COUNT; i++)
-        {
-            if (ImGui::Selectable(names[i]))
-            {
+    if (ImGui::BeginPopup("ptn_tbl_palette_popup")) {
+        for (NHDPaletteSet i = 0; i < PALETTE_COUNT; i++) {
+            if (ImGui::Selectable(names[i])) {
                 m_ptn_tbl_palette = i;
                 nhd_set_ptn_table_palette(m_emu, m_ptn_tbl_palette);
             }
@@ -95,16 +89,14 @@ PPUDebugger::draw_pattern()
 
         ImGui::TextUnformatted(i_title);
 
-        if (o_tex.from_ptn_tbl(i_tbl))
-        {
+        if (o_tex.from_ptn_tbl(i_tbl)) {
             ImVec2 pos = ImGui::GetCursorScreenPos();
             constexpr float scale = 2.f;
             ImGui::Image((ImTextureID)(std::intptr_t)o_tex.texture(),
                          {nhd_ptn_table_width(i_tbl) * scale,
                           nhd_ptn_table_height(i_tbl) * scale},
                          {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
-            if (ImGui::IsItemHovered())
-            {
+            if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
 
                 auto tile_w = nhd_ptn_table_tile_width(i_tbl);
@@ -132,9 +124,7 @@ PPUDebugger::draw_pattern()
 
                 ImGui::EndTooltip();
             }
-        }
-        else
-        {
+        } else {
             ImGui::Text("[X]");
         }
 
@@ -164,24 +154,19 @@ PPUDebugger::draw_palette()
     static_assert(NHD_PALETTE_COLORS == 32, "Check fixed loop below");
     char const *const pa_rows[2] = {"Background", "Sprite"};
     float lock_x = 0.0;
-    for (int r = 0; r < 2; ++r)
-    {
+    for (int r = 0; r < 2; ++r) {
         const char *row = pa_rows[r];
 
         ImGui::PushID(row);
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(row);
         ImGui::SameLine(0.0f, 20.f);
-        if (r <= 0)
-        {
+        if (r <= 0) {
             lock_x = ImGui::GetCursorPosX();
-        }
-        else
-        {
+        } else {
             ImGui::SetCursorPosX(lock_x);
         }
-        for (int c = 0; c < 16; ++c)
-        {
+        for (int c = 0; c < 16; ++c) {
             int palette_idx = r * 16 + c;
 
             ImGui::PushID(c);
@@ -193,8 +178,7 @@ PPUDebugger::draw_palette()
             NHDColor color = nhd_palette_color(palette, palette_idx);
             ImVec4 im_color = rgb_to_imvec4(color);
 
-            if (c % 4 == 0)
-            {
+            if (c % 4 == 0) {
                 std::string s = std::to_string(c / 4);
                 ImGui::TextUnformatted(s.c_str());
                 ImGui::SameLine();
@@ -204,21 +188,16 @@ PPUDebugger::draw_palette()
                                ImGuiColorEditFlags_NoBorder |
                                    ImGuiColorEditFlags_NoAlpha |
                                    ImGuiColorEditFlags_NoTooltip);
-            if ((c + 1) % 4 != 0)
-            {
+            if ((c + 1) % 4 != 0) {
                 ImGui::SameLine(0.0f, 0.0f);
-            }
-            else
-            {
-                if (c + 1 < 16)
-                {
+            } else {
+                if (c + 1 < 16) {
                     ImGui::SameLine(0.0f, 25.f);
                 }
             }
 
             // details tooltip
-            if (ImGui::IsItemHovered())
-            {
+            if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
                 ImGui::ColorButton("##color", im_color,
                                    ImGuiColorEditFlags_NoBorder |
@@ -256,15 +235,12 @@ PPUDebugger::draw_oam()
     static_assert(NHD_OAM_SPRITES == 64, "Check fixed loop below");
     static_assert(sizeof(m_sp_tex) / sizeof(Texture) == 64,
                   "Check fixed loop below");
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = 0; j < 16; ++j)
-        {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 16; ++j) {
             int k = i * 16 + j;
 
             NHDSprite sp = nhd_oam_sprite(oam, k);
-            if (m_sp_tex[k].from_sprite(sp))
-            {
+            if (m_sp_tex[k].from_sprite(sp)) {
                 constexpr float scale = 3.f;
                 ImGui::Image((ImTextureID)(std::intptr_t)m_sp_tex[k].texture(),
                              {float(m_sp_tex[k].get_width() * scale),
@@ -272,8 +248,7 @@ PPUDebugger::draw_oam()
                              {0, 0}, {1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1});
 
                 // details tooltip
-                if (ImGui::IsItemHovered())
-                {
+                if (ImGui::IsItemHovered()) {
                     ImGui::BeginTooltip();
 
                     constexpr float scale_details = 12.f;
@@ -310,13 +285,10 @@ PPUDebugger::draw_oam()
 
                     ImGui::EndTooltip();
                 }
-            }
-            else
-            {
+            } else {
                 ImGui::Text("[X]");
             }
-            if (j + 1 < 16)
-            {
+            if (j + 1 < 16) {
                 ImGui::SameLine();
             }
         }

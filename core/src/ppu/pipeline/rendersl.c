@@ -28,8 +28,10 @@ outcolor_Sp(color_s clr, u8 pat, bool priority, bool sp0)
     return (outcolor_s){clr, pat, priority, sp0};
 }
 
-static const outcolor_s ColorEmpty = {.Color = {0x00, 0x00, 0x00},
-                                      .Pattern = 0x00};
+static const outcolor_s ColorEmpty = {
+    .Color = {0x00, 0x00, 0x00},
+    .Pattern = 0x00,
+};
 
 static outcolor_s
 bgRender(placcessor_s *accessor);
@@ -72,11 +74,9 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
     bool hasValidSpData = 0 != placcessor_GetCtx(self->accessor_)->ScanlineNo;
 
     /* reset some states */
-    if (2 == col)
-    {
+    if (2 == col) {
         // reset pixel coordinate
-        if (0 == placcessor_GetCtx(self->accessor_)->ScanlineNo)
-        {
+        if (0 == placcessor_GetCtx(self->accessor_)->ScanlineNo) {
             placcessor_GetCtx(self->accessor_)->PixelRow = 0;
         }
         placcessor_GetCtx(self->accessor_)->PixelCol = 0;
@@ -92,8 +92,7 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
         //             std::numeric_limits<
         //                 decltype(self->ctx_.ToDrawSpsFront)::value_type>::max(),
         //     "Risk of unsigned interger wrapping around");
-        for (u8 i = 0; i < spcount; ++i)
-        {
+        for (u8 i = 0; i < spcount; ++i) {
             self->ctx_.ToDrawSpsFront[i] = i;
         }
         self->ctx_.ToDrawSpsBackSz = 0;
@@ -101,16 +100,13 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
 
     /* Get active sprites */
     self->ctx_.ActiveSpsSz = 0;
-    if (self->ctx_.ToDrawSpsFrontSz)
-    {
+    if (self->ctx_.ToDrawSpsFrontSz) {
         // curX is in range [0, 256)
         u8 curX = (u8)(col - 2);
-        for (int i = 0; i < self->ctx_.ToDrawSpsFrontSz; ++i)
-        {
+        for (int i = 0; i < self->ctx_.ToDrawSpsFrontSz; ++i) {
             const u8 spIdx = self->ctx_.ToDrawSpsFront[i];
             u8 spX = placcessor_GetCtx(self->accessor_)->SpPosX[spIdx];
-            if (spX <= curX && (spX >= 256 - 8 || curX < spX + 8))
-            {
+            if (spX <= curX && (spX >= 256 - 8 || curX < spX + 8)) {
                 u8 fineX = curX - spX;
                 // sprite with lower index gets pushed first, which ensures
                 // correct priority among sprites.
@@ -118,13 +114,9 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
                     ToByte2(spIdx, fineX);
 
                 self->ctx_.ToDrawSpsBack[self->ctx_.ToDrawSpsBackSz++] = spIdx;
-            }
-            else if (spX < 256 - 8 && curX >= spX + 8)
-            {
+            } else if (spX < 256 - 8 && curX >= spX + 8) {
                 // drop this sprite
-            }
-            else
-            {
+            } else {
                 self->ctx_.ToDrawSpsBack[self->ctx_.ToDrawSpsBackSz++] = spIdx;
             }
         }
@@ -145,8 +137,7 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
         outcolor_s bgClr = bgRender(self->accessor_);
         if (!placcessor_BgEnabled(self->accessor_) ||
             (!(placcessor_GetCtx(self->accessor_)->PixelCol & ~0x07) &&
-             !(placcessor_GetReg(self->accessor_, PR_PPUMASK) & 0x02)))
-        {
+             !(placcessor_GetReg(self->accessor_, PR_PPUMASK) & 0x02))) {
             bgClr.Color = getBackdropClr(self->accessor_);
             bgClr.Pattern = 0;
         }
@@ -155,8 +146,7 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
         bool renderSp = placcessor_SpEnabled(self->accessor_) && hasValidSpData;
         if (!renderSp ||
             (!(placcessor_GetCtx(self->accessor_)->PixelCol & ~0x07) &&
-             !(placcessor_GetReg(self->accessor_, PR_PPUMASK) & 0x04)))
-        {
+             !(placcessor_GetReg(self->accessor_, PR_PPUMASK) & 0x04))) {
             spClr.Color = getBackdropClr(self->accessor_);
             spClr.Pattern = 0;
         }
@@ -164,35 +154,28 @@ rendersl_Tick(rendersl_s *self, cycle_t col)
         muxer(self->accessor_, bgClr, spClr);
 
         // Mark dirty after rendering to the last dot
-        if (col == 257 && 239 == placcessor_GetCtx(self->accessor_)->ScanlineNo)
-        {
+        if (col == 257 &&
+            239 == placcessor_GetCtx(self->accessor_)->ScanlineNo) {
             placcessor_FinishFrame(self->accessor_);
         }
     }
 
     /* pixel coordinate advance */
-    if (placcessor_GetCtx(self->accessor_)->PixelCol + 1 >= NH_NES_WIDTH)
-    {
+    if (placcessor_GetCtx(self->accessor_)->PixelCol + 1 >= NH_NES_WIDTH) {
         placcessor_GetCtx(self->accessor_)->PixelCol = 0;
-        if (placcessor_GetCtx(self->accessor_)->PixelRow + 1 >= NH_NES_HEIGHT)
-        {
+        if (placcessor_GetCtx(self->accessor_)->PixelRow + 1 >= NH_NES_HEIGHT) {
             if (placcessor_GetCtx(self->accessor_)->PixelRow + 1 >
-                NH_NES_HEIGHT)
-            {
+                NH_NES_HEIGHT) {
                 ASSERT_FATAL(placcessor_GetLogger(self->accessor_),
                              "Pixel rendering row out of bound %d",
                              placcessor_GetCtx(self->accessor_)->PixelRow);
             }
 
             placcessor_GetCtx(self->accessor_)->PixelRow = 0;
-        }
-        else
-        {
+        } else {
             ++placcessor_GetCtx(self->accessor_)->PixelRow;
         }
-    }
-    else
-    {
+    } else {
         ++placcessor_GetCtx(self->accessor_)->PixelCol;
     }
 }
@@ -202,8 +185,7 @@ bgRender(placcessor_s *accessor)
 {
     /* 1. Bit selection mask by finx X scroll */
     const u8 x = *placcessor_GetX(accessor);
-    if (x > 7)
-    {
+    if (x > 7) {
         ASSERT_FATAL(placcessor_GetLogger(accessor),
                      "Invalid background X value: " U8FMTX, x);
     }
@@ -246,8 +228,7 @@ spRender(placcessor_s *accessor, renderctx_s *slctx)
     outcolor_s color = ColorEmpty;
 
     // search for the first non-transparent pixel among activated sprites.
-    for (int idx = 0; idx < slctx->ActiveSpsSz; ++idx)
-    {
+    for (int idx = 0; idx < slctx->ActiveSpsSz; ++idx) {
         u8 i;
         u8 fineX;
         FromByte2(slctx->ActiveSps[idx], &i, &fineX);
@@ -269,8 +250,7 @@ spRender(placcessor_s *accessor, renderctx_s *slctx)
         u8 patData = ((u8)(patDataUpperBit) << 1) | (u8)(patDataLowBit);
 
         /* Skip transparent pixel */
-        if (!patData)
-        {
+        if (!patData) {
             continue;
         }
 
@@ -326,13 +306,9 @@ muxer(placcessor_s *accessor, const outcolor_s bgclr, const outcolor_s spclr)
          !(placcessor_GetCtx(accessor)->PixelCol & ~0x07)) ||
         placcessor_GetCtx(accessor)->PixelCol == 255 ||
         (!bgclr.Pattern || !spclr.Pattern)
-        /* || (placcessor_GetReg(accessor, PR_PPUSTATUS) & 0x40) */)
-    {
-    }
-    else
-    {
-        if (spclr.Sp0 && (bgclr.Pattern && spclr.Pattern))
-        {
+        /* || (placcessor_GetReg(accessor, PR_PPUSTATUS) & 0x40) */) {
+    } else {
+        if (spclr.Sp0 && (bgclr.Pattern && spclr.Pattern)) {
             // if (!(placcessor_GetReg(accessor, PR_PPUSTATUS) & 0x40))
             {
                 *placcessor_RegOf(accessor, PR_PPUSTATUS) |= 0x40;

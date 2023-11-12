@@ -28,8 +28,7 @@ membase_Init(membase_s *self, usize memsize, mp_e ptcount, mp_e invalidpt,
     self->mapentries_ = NULL;
     self->logger = logger;
 
-    if (0 == memsize || ADDRMAX < memsize - 1)
-    {
+    if (0 == memsize || ADDRMAX < memsize - 1) {
         LOG_FATAL(self->logger, "memory size is 0 or too large " USIZEFMT,
                   memsize);
         goto outerr;
@@ -37,12 +36,10 @@ membase_Init(membase_s *self, usize memsize, mp_e ptcount, mp_e invalidpt,
 
     // allocate and init self->mapreg_
     self->mapreg_ = malloc(memsize * sizeof(mp_e));
-    if (!self->mapreg_)
-    {
+    if (!self->mapreg_) {
         goto outerr;
     }
-    for (usize i = 0; i < memsize; ++i)
-    {
+    for (usize i = 0; i < memsize; ++i) {
         self->mapreg_[i] = invalidpt;
     }
     self->memsize_ = memsize;
@@ -51,8 +48,7 @@ membase_Init(membase_s *self, usize memsize, mp_e ptcount, mp_e invalidpt,
     // allocate and init self->mapentries_
     // each entry's valid is false due to calloc
     self->mapentries_ = calloc(ptcount, sizeof(entryele_s));
-    if (!self->mapentries_)
-    {
+    if (!self->mapentries_) {
         goto outerr;
     }
 
@@ -65,13 +61,11 @@ outerr:
 void
 membase_Deinit(membase_s *self)
 {
-    if (self->mapentries_)
-    {
+    if (self->mapentries_) {
         free(self->mapentries_);
         self->mapentries_ = NULL;
     }
-    if (self->mapreg_)
-    {
+    if (self->mapreg_) {
         free(self->mapreg_);
         self->mapreg_ = NULL;
     }
@@ -82,27 +76,21 @@ membase_GetB(const membase_s *self, addr_t addr, u8 *val)
 {
     entrykv_s kv = getEntryKv(self, addr);
     const mementry_s *entry = kv.V;
-    if (!entry)
-    {
+    if (!entry) {
         // No device active with this address
         return NH_ERR_UNAVAILABLE;
     }
 
-    if (entry->getbyte_)
-    {
+    if (entry->getbyte_) {
         NHErr err = entry->getbyte_(entry, addr, val);
         return err;
-    }
-    else
-    {
+    } else {
         u8 *bptr = NULL;
         NHErr err = decodeAddrImpl(self, &kv, addr, &bptr);
-        if (NH_FAILED(err))
-        {
+        if (NH_FAILED(err)) {
             return err;
         }
-        if (!bptr)
-        {
+        if (!bptr) {
             return NH_ERR_PROGRAMMING;
         }
 
@@ -116,33 +104,26 @@ membase_SetB(membase_s *self, addr_t addr, u8 val)
 {
     entrykv_s kv = getEntryKv(self, addr);
     const mementry_s *entry = kv.V;
-    if (!entry)
-    {
+    if (!entry) {
         // No device active with this address
         return NH_ERR_UNAVAILABLE;
     }
 
-    if (entry->readonly_)
-    {
+    if (entry->readonly_) {
         // Simply ignore the write to read-only memory
         return NH_ERR_READ_ONLY;
     }
 
-    if (entry->setbyte_)
-    {
+    if (entry->setbyte_) {
         NHErr err = entry->setbyte_(entry, addr, val);
         return err;
-    }
-    else
-    {
+    } else {
         u8 *bptr = NULL;
         NHErr err = decodeAddrImpl(self, &kv, addr, &bptr);
-        if (NH_FAILED(err))
-        {
+        if (NH_FAILED(err)) {
             return err;
         }
-        if (!bptr)
-        {
+        if (!bptr) {
             return NH_ERR_PROGRAMMING;
         }
         *bptr = val;
@@ -156,15 +137,13 @@ void
 membase_SetMapping(membase_s *self, mp_e pt, mementry_s entry)
 {
     // Ensure valid entry value.
-    if (entry.Begin > entry.End)
-    {
+    if (entry.Begin > entry.End) {
         LOG_ERROR(self->logger,
                   "Invalid mapping entry range: " ADDRFMT ", " ADDRFMT,
                   entry.Begin, entry.End);
         return;
     }
-    if (entry.Begin >= self->memsize_ || entry.End >= self->memsize_)
-    {
+    if (entry.Begin >= self->memsize_ || entry.End >= self->memsize_) {
         LOG_ERROR(self->logger,
                   "Invalid mapping entry range: [" ADDRFMT ", " ADDRFMT
                   "] in " USIZEFMT,
@@ -172,8 +151,7 @@ membase_SetMapping(membase_s *self, mp_e pt, mementry_s entry)
         return;
     }
     if (entry.decode_ == NULL &&
-        (entry.getbyte_ == NULL || entry.setbyte_ == NULL))
-    {
+        (entry.getbyte_ == NULL || entry.setbyte_ == NULL)) {
         LOG_ERROR(self->logger, "Empty mapping callbacks");
         return;
     }
@@ -184,8 +162,7 @@ membase_SetMapping(membase_s *self, mp_e pt, mementry_s entry)
     mp_e eidx = pt;
     self->mapentries_[eidx].Entry = entry;
     self->mapentries_[eidx].Valid = true;
-    for (usize i = entry.Begin; i <= entry.End; ++i)
-    {
+    for (usize i = entry.Begin; i <= entry.End; ++i) {
         self->mapreg_[i] = pt;
     }
 }
@@ -194,14 +171,12 @@ void
 membase_UnsetMapping(membase_s *self, mp_e pt)
 {
     mp_e eidx = pt;
-    if (!self->mapentries_[eidx].Valid)
-    {
+    if (!self->mapentries_[eidx].Valid) {
         return;
     }
 
     const mementry_s *entry = &self->mapentries_[eidx].Entry;
-    for (usize i = entry->Begin; i <= entry->End; ++i)
-    {
+    for (usize i = entry->Begin; i <= entry->End; ++i) {
         self->mapreg_[i] = self->invalidpt_;
     }
 
@@ -212,15 +187,13 @@ entrykv_s
 getEntryKv(const membase_s *self, addr_t addr)
 {
     mp_e mp = self->mapreg_[addr];
-    if (mp == self->invalidpt_)
-    {
+    if (mp == self->invalidpt_) {
         // Invalid address points to nothing.
         return (entrykv_s){self->invalidpt_, NULL};
     }
 
     mp_e eidx = mp;
-    if (!self->mapentries_[eidx].Valid)
-    {
+    if (!self->mapentries_[eidx].Valid) {
         return (entrykv_s){self->invalidpt_, NULL};
     }
 
@@ -241,20 +214,17 @@ decodeAddrImpl(const membase_s *self, const entrykv_s *kv, addr_t addr,
     const mp_e mp = kv->K;
     const mementry_s *entry = kv->V;
 
-    if (!entry)
-    {
+    if (!entry) {
         return NH_ERR_UNAVAILABLE;
     }
 
     u8 *bptr = NULL;
     NHErr err = entry->decode_(entry, addr, &bptr);
-    if (NH_FAILED(err))
-    {
+    if (NH_FAILED(err)) {
         return err;
     }
 
-    if (!bptr)
-    {
+    if (!bptr) {
         LOG_ERROR(self->logger,
                   "Registered mapping can not handle address "
                   "decoding: " ADDRFMT ", " MPFMT ", " ADDRFMT ", " ADDRFMT,

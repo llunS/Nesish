@@ -3,7 +3,8 @@
 
 #include "sokol_log.h"
 
-namespace sh {
+namespace sh
+{
 
 bool
 audio_setup(unsigned int i_sample_rate, unsigned int i_buffer_size,

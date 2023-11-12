@@ -1,6 +1,7 @@
 #include "controller.hpp"
 
-namespace sh {
+namespace sh
+{
 
 Controller::Controller(GLFWwindow *i_window,
                        const std::array<VirtualKey, NH_KEYS> &i_mapping)
@@ -15,8 +16,7 @@ Controller::strobe(bool i_on)
 {
     m_strobing = i_on;
 
-    if (!i_on)
-    {
+    if (!i_on) {
         reload_states();
         m_strobe_idx = NH_KEY_BEGIN;
         m_8_bits_read = false;
@@ -26,23 +26,16 @@ Controller::strobe(bool i_on)
 bool
 Controller::report()
 {
-    if (m_strobing)
-    {
+    if (m_strobing) {
         reload_states();
         return m_key_state[NH_KEY_A];
-    }
-    else
-    {
-        if (m_strobe_idx < NH_KEY_END)
-        {
-            if (m_strobe_idx + 1 >= NH_KEY_END)
-            {
+    } else {
+        if (m_strobe_idx < NH_KEY_END) {
+            if (m_strobe_idx + 1 >= NH_KEY_END) {
                 m_8_bits_read = true;
             }
             return m_key_state[m_strobe_idx++];
-        }
-        else
-        {
+        } else {
             // https://www.nesdev.org/wiki/Standard_controller
             // "All subsequent reads will return 1 on official Nintendo brand
             // controllers but may return 0 on third party controllers such as
@@ -61,8 +54,7 @@ Controller::reset()
 {
     m_strobing = false;
     m_strobe_idx = NH_KEY_END;
-    for (NHKey nhkey = NH_KEY_BEGIN; nhkey < NH_KEY_END; ++nhkey)
-    {
+    for (NHKey nhkey = NH_KEY_BEGIN; nhkey < NH_KEY_END; ++nhkey) {
         m_key_state[nhkey] = false;
     }
 
@@ -73,8 +65,7 @@ void
 Controller::reload_states()
 {
     // reload all bits with latest state.
-    for (NHKey nhkey = NH_KEY_BEGIN; nhkey < NH_KEY_END; ++nhkey)
-    {
+    for (NHKey nhkey = NH_KEY_BEGIN; nhkey < NH_KEY_END; ++nhkey) {
         auto vkey = map_key(nhkey);
         m_key_state[nhkey] = glfwGetKey(m_window, vkey) == GLFW_PRESS;
     }

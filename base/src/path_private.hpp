@@ -2,7 +2,8 @@
 
 #include <string>
 
-namespace nb {
+namespace nb
+{
 
 char
 path_delimiter();

@@ -5,7 +5,8 @@
 
 #include <stdexcept>
 
-namespace sh {
+namespace sh
+{
 
 Texture::Texture()
     : m_tex(0)
@@ -22,8 +23,7 @@ Texture::~Texture()
 void
 Texture::cleanup()
 {
-    if (m_tex)
-    {
+    if (m_tex) {
         glDeleteTextures(1, &m_tex);
     }
     m_tex = 0;
@@ -32,8 +32,7 @@ Texture::cleanup()
 bool
 Texture::genTexIf(int i_width, int i_height)
 {
-    if (i_width == m_width && i_height == m_height)
-    {
+    if (i_width == m_width && i_height == m_height) {
         return true;
     }
 
@@ -51,8 +50,7 @@ Texture::genTexIf(int i_width, int i_height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 #ifndef NDEBUG
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         return false;
     }
 #endif
@@ -65,8 +63,7 @@ Texture::genTexIf(int i_width, int i_height)
 bool
 Texture::from_black_frame(int i_width, int i_height)
 {
-    if (!genTexIf(i_width, i_height))
-    {
+    if (!genTexIf(i_width, i_height)) {
         return false;
     }
 
@@ -88,16 +85,14 @@ Texture::from_black_frame(int i_width, int i_height)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, i_width, i_height, GL_RGB,
                     GL_UNSIGNED_BYTE, data);
 #ifndef NDEBUG
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         err = 1;
         goto l_end;
     }
 #endif
 
 l_end:
-    if (data)
-    {
+    if (data) {
         delete[] data;
     }
     return !err;
@@ -108,8 +103,7 @@ Texture::from_frame(NHFrame i_frame)
 {
     auto width = nh_frm_width(i_frame);
     auto height = nh_frm_height(i_frame);
-    if (!genTexIf(width, height))
-    {
+    if (!genTexIf(width, height)) {
         return false;
     }
 
@@ -118,8 +112,7 @@ Texture::from_frame(NHFrame i_frame)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB,
                     GL_UNSIGNED_BYTE, nh_frm_data(i_frame));
 #ifndef NDEBUG
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         return false;
     }
 #endif
@@ -132,8 +125,7 @@ Texture::from_ptn_tbl(NHDPatternTable i_tbl)
 {
     auto w = nhd_ptn_table_width(i_tbl);
     auto h = nhd_ptn_table_height(i_tbl);
-    if (!genTexIf(w, h))
-    {
+    if (!genTexIf(w, h)) {
         return false;
     }
 
@@ -142,8 +134,7 @@ Texture::from_ptn_tbl(NHDPatternTable i_tbl)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
                     nhd_ptn_table_data(i_tbl));
 #ifndef NDEBUG
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         return false;
     }
 #endif
@@ -156,8 +147,7 @@ Texture::from_sprite(NHDSprite i_sprite)
 {
     auto w = nhd_sprite_width(i_sprite);
     auto h = nhd_sprite_height(i_sprite);
-    if (!genTexIf(w, h))
-    {
+    if (!genTexIf(w, h)) {
         return false;
     }
 
@@ -166,8 +156,7 @@ Texture::from_sprite(NHDSprite i_sprite)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE,
                     nhd_sprite_data(i_sprite));
 #ifndef NDEBUG
-    if (checkGLError())
-    {
+    if (checkGLError()) {
         return false;
     }
 #endif

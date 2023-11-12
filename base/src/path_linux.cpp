@@ -5,7 +5,8 @@
 
 #include "path_private.hpp"
 
-namespace nb {
+namespace nb
+{
 
 char
 path_delimiter()
@@ -18,8 +19,7 @@ get_exec_dir()
 {
     char path[PATH_MAX + 1];
     ssize_t size = readlink("/proc/self/exe", path, PATH_MAX);
-    if (size > 0)
-    {
+    if (size > 0) {
         path[size] = 0;
         return dirname(path);
     }

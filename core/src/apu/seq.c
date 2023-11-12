@@ -25,12 +25,9 @@ seq_Val(const seq_s *self)
 void
 seq_Tick(seq_s *self)
 {
-    if (self->seqidx_ >= 7)
-    {
+    if (self->seqidx_ >= 7) {
         self->seqidx_ = 0;
-    }
-    else
-    {
+    } else {
         ++self->seqidx_;
     }
 }
@@ -38,8 +35,7 @@ seq_Tick(seq_s *self)
 void
 seq_SetDuty(seq_s *self, int index)
 {
-    if (index > 3 || index < 0)
-    {
+    if (index > 3 || index < 0) {
         // This is a development-time error.
         ASSERT_FATAL(self->logger_, "Duty index invalid: %d", index);
         return;

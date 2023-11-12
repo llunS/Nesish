@@ -4,7 +4,8 @@
 
 #include <atomic>
 
-namespace sh {
+namespace sh
+{
 
 template <typename T, unsigned int N> struct Channel {
   public:

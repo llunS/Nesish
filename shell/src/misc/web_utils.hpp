@@ -1,6 +1,7 @@
 #pragma once
 
-namespace sh {
+namespace sh
+{
 
 void
 web_sync_fs_async();

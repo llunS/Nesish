@@ -2,7 +2,8 @@
 
 #include <sys/stat.h>
 
-namespace nb {
+namespace nb
+{
 
 bool
 file_exists(const std::string &path)

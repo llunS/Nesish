@@ -30,12 +30,10 @@ ppu_Init(ppu_s *self, vmem_s *vmem, const NHDFlag *flags, NHLogger *logger)
 
     pl_Init(&self->pl_, &self->plAccessor_);
 
-    if (!frmbuf_Init(&self->backbuf_))
-    {
+    if (!frmbuf_Init(&self->backbuf_)) {
         goto outerr;
     }
-    if (!frmbuf_Init(&self->frontbuf_))
-    {
+    if (!frmbuf_Init(&self->frontbuf_)) {
         goto outerr;
     }
 
@@ -90,8 +88,7 @@ ppu_Powerup(ppu_s *self)
         /* clang-format on */
     };
     // static_assert(colorIndices[NH_PALETTE_SIZE - 1], "Elements missing");
-    for (int i = 0; i < NH_PALETTE_SIZE; ++i)
-    {
+    for (int i = 0; i < NH_PALETTE_SIZE; ++i) {
         (void)membase_SetB(&self->vmem_->Base,
                            (addr_t)(NH_PALETTE_ADDR_HEAD + i), colorIndices[i]);
     }
@@ -159,71 +156,57 @@ ppu_Nmi(const ppu_s *self)
 u8
 ppu_ReadReg(ppu_s *self, ppureg_e reg)
 {
-    if (regWO(reg))
-    {
+    if (regWO(reg)) {
         // Open bus
         return self->iodb_;
     }
 
     u8 val = self->regs_[reg];
 
-    switch (reg)
-    {
-        case PR_PPUSTATUS:
-        {
-            // Other 5 bits open bus behavior.
-            val = (val & 0xE0) | (self->iodb_ & ~0xE0);
+    switch (reg) {
+    case PR_PPUSTATUS: {
+        // Other 5 bits open bus behavior.
+        val = (val & 0xE0) | (self->iodb_ & ~0xE0);
 
-            self->regs_[reg] &= 0x7F; // clear VBLANK flag
-            self->w_ = 0;
+        self->regs_[reg] &= 0x7F; // clear VBLANK flag
+        self->w_ = 0;
+    } break;
+
+    case PR_OAMDATA: {
+        val = self->oam_[self->regs_[PR_OAMADDR]];
+    } break;
+
+    case PR_PPUDATA: {
+        addr_t vaddr = self->v_ & NH_PPU_ADDR_MASK;
+        u8 tmpval;
+        NHErr err = vmem_GetB(self->vmem_, vaddr, &tmpval);
+        if (NH_FAILED(err)) {
+            ASSERT_FATAL(self->logger_, "Failed to read PPUDATA: " ADDRFMT,
+                         vaddr);
+            tmpval = 0xFF;
         }
-        break;
-
-        case PR_OAMDATA:
-        {
-            val = self->oam_[self->regs_[PR_OAMADDR]];
+        if (0 <= vaddr && vaddr <= NH_NT_MIRROR_ADDR_TAIL) {
+            val = self->ppudatabuf_;
+            self->ppudatabuf_ = tmpval;
+        } else {
+            u8 tmpNtVal;
+            addr_t ntaddr = vaddr & NH_NT_MIRROR_ADDR_MASK;
+            err = vmem_GetB(self->vmem_, ntaddr, &tmpNtVal);
+            if (NH_FAILED(err)) {
+                ASSERT_FATAL(self->logger_,
+                             "Failed to read PPUDATA nametable data: " ADDRFMT,
+                             ntaddr);
+                tmpNtVal = 0xFF;
+            }
+            val = tmpval;
+            self->ppudatabuf_ = tmpNtVal;
         }
+
+        incVramAddr(self);
+    } break;
+
+    default:
         break;
-
-        case PR_PPUDATA:
-        {
-            addr_t vaddr = self->v_ & NH_PPU_ADDR_MASK;
-            u8 tmpval;
-            NHErr err = vmem_GetB(self->vmem_, vaddr, &tmpval);
-            if (NH_FAILED(err))
-            {
-                ASSERT_FATAL(self->logger_, "Failed to read PPUDATA: " ADDRFMT,
-                             vaddr);
-                tmpval = 0xFF;
-            }
-            if (0 <= vaddr && vaddr <= NH_NT_MIRROR_ADDR_TAIL)
-            {
-                val = self->ppudatabuf_;
-                self->ppudatabuf_ = tmpval;
-            }
-            else
-            {
-                u8 tmpNtVal;
-                addr_t ntaddr = vaddr & NH_NT_MIRROR_ADDR_MASK;
-                err = vmem_GetB(self->vmem_, ntaddr, &tmpNtVal);
-                if (NH_FAILED(err))
-                {
-                    ASSERT_FATAL(
-                        self->logger_,
-                        "Failed to read PPUDATA nametable data: " ADDRFMT,
-                        ntaddr);
-                    tmpNtVal = 0xFF;
-                }
-                val = tmpval;
-                self->ppudatabuf_ = tmpNtVal;
-            }
-
-            incVramAddr(self);
-        }
-        break;
-
-        default:
-            break;
     }
 
     // fill the latch
@@ -237,121 +220,98 @@ ppu_WriteReg(ppu_s *self, ppureg_e reg, u8 val)
     // fill the latch
     self->iodb_ = val;
 
-    if (regRO(reg))
-    {
+    if (regRO(reg)) {
         return;
     }
 
     self->regs_[reg] = val;
 
-    switch (reg)
-    {
-        case PR_PPUCTRL:
-        {
-            self->t_ = (self->t_ & ~0x0C00) | ((u16)(val & 0x03) << 10);
+    switch (reg) {
+    case PR_PPUCTRL: {
+        self->t_ = (self->t_ & ~0x0C00) | ((u16)(val & 0x03) << 10);
+    } break;
+
+    case PR_OAMDATA: {
+        // @QUIRK: "The three unimplemented bits of each sprite's byte 2 do
+        // not exist in the PPU and always read back as 0 on PPU revisions
+        // that allow reading PPU OAM through OAMDATA ($2004). This can be
+        // emulated by ANDing byte 2 with $E3 either when writing to or when
+        // reading from OAM"
+        // https://www.nesdev.org/wiki/PPU_OAM#Byte_2
+        u8 oamaddr = self->regs_[PR_OAMADDR];
+        if ((oamaddr & 0x03) == 0x02) {
+            val &= 0xE3;
         }
-        break;
+        self->oam_[oamaddr] = val;
+        ++self->regs_[PR_OAMADDR];
 
-        case PR_OAMDATA:
-        {
-            // @QUIRK: "The three unimplemented bits of each sprite's byte 2 do
-            // not exist in the PPU and always read back as 0 on PPU revisions
-            // that allow reading PPU OAM through OAMDATA ($2004). This can be
-            // emulated by ANDing byte 2 with $E3 either when writing to or when
-            // reading from OAM"
-            // https://www.nesdev.org/wiki/PPU_OAM#Byte_2
-            u8 oamaddr = self->regs_[PR_OAMADDR];
-            if ((oamaddr & 0x03) == 0x02)
-            {
-                val &= 0xE3;
-            }
-            self->oam_[oamaddr] = val;
-            ++self->regs_[PR_OAMADDR];
+        // @TODO: Writes during rendering
+        // https://www.nesdev.org/wiki/PPU_registers#OAM_data_($2004)_%3C%3E_read/write
+        // Writes to OAMDATA during rendering (on the pre-render line and
+        // the visible lines 0-239, provided either sprite or background
+        // rendering is enabled) do not modify values in OAM, but do perform
+        // a glitchy increment of OAMADDR, bumping only the high 6 bits
+        // (i.e., it bumps the [n] value in PPU sprite evaluation - it's
+        // plausible that it could bump the low bits instead depending on
+        // the current status of sprite evaluation). This extends to DMA
+        // transfers via OAMDMA, since that uses writes to $2004. For
+        // emulation purposes, it is probably best to completely ignore
+        // writes during rendering.
+    } break;
 
-            // @TODO: Writes during rendering
-            // https://www.nesdev.org/wiki/PPU_registers#OAM_data_($2004)_%3C%3E_read/write
-            // Writes to OAMDATA during rendering (on the pre-render line and
-            // the visible lines 0-239, provided either sprite or background
-            // rendering is enabled) do not modify values in OAM, but do perform
-            // a glitchy increment of OAMADDR, bumping only the high 6 bits
-            // (i.e., it bumps the [n] value in PPU sprite evaluation - it's
-            // plausible that it could bump the low bits instead depending on
-            // the current status of sprite evaluation). This extends to DMA
-            // transfers via OAMDMA, since that uses writes to $2004. For
-            // emulation purposes, it is probably best to completely ignore
-            // writes during rendering.
+    case PR_PPUSCROLL: {
+        if (!self->w_) {
+            self->t_ = (self->t_ & ~0x001F) | (val >> 3);
+            self->x_ = val & 0x07;
+        } else {
+            self->t_ = (self->t_ & ~0x73E0) | ((u16)(val & 0x07) << 12) |
+                       ((u16)(val & 0xF8) << 2);
         }
-        break;
+        self->w_ = !self->w_;
+    } break;
 
-        case PR_PPUSCROLL:
-        {
-            if (!self->w_)
-            {
-                self->t_ = (self->t_ & ~0x001F) | (val >> 3);
-                self->x_ = val & 0x07;
-            }
-            else
-            {
-                self->t_ = (self->t_ & ~0x73E0) | ((u16)(val & 0x07) << 12) |
-                           ((u16)(val & 0xF8) << 2);
-            }
-            self->w_ = !self->w_;
+    case PR_PPUADDR: {
+        if (!self->w_) {
+            self->t_ = (self->t_ & ~0xFF00) | ((u16)(val & 0x3F) << 8);
+        } else {
+            self->t_ = (self->t_ & ~0x00FF) | (u16)(val);
+            self->v_ = self->t_;
         }
-        break;
+        self->w_ = !self->w_;
+    } break;
 
-        case PR_PPUADDR:
-        {
-            if (!self->w_)
-            {
-                self->t_ = (self->t_ & ~0xFF00) | ((u16)(val & 0x3F) << 8);
-            }
-            else
-            {
-                self->t_ = (self->t_ & ~0x00FF) | (u16)(val);
-                self->v_ = self->t_;
-            }
-            self->w_ = !self->w_;
+    case PR_PPUMASK: {
+        // @TODO: Color emphasis
+        // https://www.nesdev.org/wiki/Colour_emphasis
+    } break;
+
+    case PR_PPUDATA: {
+        addr_t vaddr = self->v_ & NH_PPU_ADDR_MASK;
+        NHErr err = membase_SetB(&self->vmem_->Base, vaddr, val);
+        if (NH_FAILED(err)) {
+            ASSERT_FATAL(self->logger_,
+                         "Failed to write PPUDATA: " ADDRFMT ", " U8FMTX, vaddr,
+                         val);
         }
+
+        incVramAddr(self);
+    } break;
+
+    default:
         break;
-
-        case PR_PPUMASK:
-        {
-            // @TODO: Color emphasis
-            // https://www.nesdev.org/wiki/Colour_emphasis
-        }
-        break;
-
-        case PR_PPUDATA:
-        {
-            addr_t vaddr = self->v_ & NH_PPU_ADDR_MASK;
-            NHErr err = membase_SetB(&self->vmem_->Base, vaddr, val);
-            if (NH_FAILED(err))
-            {
-                ASSERT_FATAL(self->logger_,
-                             "Failed to write PPUDATA: " ADDRFMT ", " U8FMTX,
-                             vaddr, val);
-            }
-
-            incVramAddr(self);
-        }
-        break;
-
-        default:
-            break;
     }
 }
 
 bool
 regRO(ppureg_e reg)
 {
-    switch (reg)
-    {
-        case PR_PPUSTATUS:
-            return true;
-            break;
+    switch (reg) {
+    case PR_PPUSTATUS:
+        return true;
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
     return false;
 }
@@ -359,18 +319,17 @@ regRO(ppureg_e reg)
 bool
 regWO(ppureg_e reg)
 {
-    switch (reg)
-    {
-        case PR_PPUCTRL:
-        case PR_PPUMASK:
-        case PR_OAMADDR:
-        case PR_PPUSCROLL:
-        case PR_PPUADDR:
-            return true;
-            break;
+    switch (reg) {
+    case PR_PPUCTRL:
+    case PR_PPUMASK:
+    case PR_OAMADDR:
+    case PR_PPUSCROLL:
+    case PR_PPUADDR:
+        return true;
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
     return false;
 }

@@ -4,7 +4,8 @@
 #include "nhbase/klass.hpp"
 #include "misc/glfunc.hpp"
 
-namespace sh {
+namespace sh
+{
 
 struct Shader {
   public:

@@ -22,10 +22,8 @@ NHConsole
 nh_new_console(NHLogger *logger)
 {
     console_s *nh_console = malloc(sizeof(console_s));
-    if (nh_console)
-    {
-        if (!console_Init(nh_console, logger))
-        {
+    if (nh_console) {
+        if (!console_Init(nh_console, logger)) {
             free(nh_console);
             return NULL;
         }
@@ -37,8 +35,7 @@ void
 nh_release_console(NHConsole console)
 {
     NH_DECL_CONSOLE(console);
-    if (nh_console)
-    {
+    if (nh_console) {
         console_Deinit(nh_console);
         free(nh_console);
     }
@@ -99,8 +96,7 @@ nh_tick(NHConsole console, int *cpu_instr)
     NH_DECL_CONSOLE(console);
     bool b1;
     bool b0 = console_Tick(nh_console, &b1);
-    if (cpu_instr)
-    {
+    if (cpu_instr) {
         *cpu_instr = b1;
     }
     return b0;

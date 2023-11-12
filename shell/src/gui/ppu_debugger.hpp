@@ -4,7 +4,8 @@
 
 #include "rendering/texture.hpp"
 
-namespace sh {
+namespace sh
+{
 
 struct PPUDebugger : public Window {
   public:

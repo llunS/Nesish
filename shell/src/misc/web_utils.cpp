@@ -2,7 +2,8 @@
 
 #include <emscripten.h>
 
-namespace sh {
+namespace sh
+{
 
 void
 web_sync_fs_async()
@@ -11,8 +12,7 @@ web_sync_fs_async()
     EM_ASM(({
                FS.syncfs(
                    false, function(err) {
-                       if (err)
-                       {
+                       if (err) {
                            console.error("Failed to sync back user directory");
                        }
                    });

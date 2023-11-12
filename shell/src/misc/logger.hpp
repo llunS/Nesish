@@ -7,7 +7,7 @@
 #define SPDLOG_NO_SOURCE_LOC
 #endif
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
-#include "nhbase/vc_intrinsics.h"
+#include "nhbase/vc_intrinsics.hpp"
 NB_VC_WARNING_PUSH
 NB_VC_WARNING_DISABLE(6385)
 #include "spdlog/spdlog.h"
@@ -28,7 +28,8 @@ NB_VC_WARNING_POP
 #define SH_LOG_FATAL(i_logger, ...)                                            \
     SPDLOG_LOGGER_CRITICAL((i_logger)->logger, __VA_ARGS__)
 
-namespace sh {
+namespace sh
+{
 
 const char *
 log_level_to_name(NHLogLevel i_level);

@@ -4,7 +4,8 @@
 
 #include "blip_buf.h"
 
-namespace sh {
+namespace sh
+{
 
 struct Resampler {
   public:

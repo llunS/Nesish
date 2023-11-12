@@ -2,7 +2,8 @@
 
 #include <Windows.h>
 
-namespace nb {
+namespace nb
+{
 
 bool
 file_exists(const std::string &path)

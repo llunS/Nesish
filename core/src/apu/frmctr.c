@@ -40,8 +40,7 @@ frmctr_Powerup(frmctr_s *self)
 static void
 checkSetIrq(frmctr_s *self)
 {
-    if (!self->mode_ && !self->irqInhibit_)
-    {
+    if (!self->mode_ && !self->irqInhibit_) {
         self->irq_ = true;
     }
 }
@@ -50,11 +49,9 @@ void
 frmctr_Tick(frmctr_s *self)
 {
     /* delay reset logic */
-    if (self->resetCtr_)
-    {
+    if (self->resetCtr_) {
         --self->resetCtr_;
-        if (!self->resetCtr_)
-        {
+        if (!self->resetCtr_) {
             self->mode_ = self->modeTmp_;
             self->timer_ = 0;
             self->firstloop_ = true;
@@ -62,78 +59,55 @@ frmctr_Tick(frmctr_s *self)
     }
 
     // Check details of the following timing in blargg_apu_2005.07.30/readme.txt
-    switch (self->timer_)
-    {
-        case 7458:
-        {
-            tickEnvelopeAndLinearCounter(self);
-        }
-        break;
+    switch (self->timer_) {
+    case 7458: {
+        tickEnvelopeAndLinearCounter(self);
+    } break;
 
-        case 14914:
-        {
+    case 14914: {
+        tickEnvelopeAndLinearCounter(self);
+        tickLengthCounterAndSweep(self);
+    } break;
+
+    case 22372: {
+        tickEnvelopeAndLinearCounter(self);
+    } break;
+
+    case 29829: {
+        checkSetIrq(self);
+    } break;
+    case 0: {
+        if (!self->mode_) {
+            if (!self->firstloop_) {
+                tickEnvelopeAndLinearCounter(self);
+                tickLengthCounterAndSweep(self);
+
+                checkSetIrq(self);
+            }
+        } else {
             tickEnvelopeAndLinearCounter(self);
             tickLengthCounterAndSweep(self);
         }
-        break;
-
-        case 22372:
-        {
-            tickEnvelopeAndLinearCounter(self);
-        }
-        break;
-
-        case 29829:
-        {
+    } break;
+    case 1: {
+        if (!self->firstloop_) {
             checkSetIrq(self);
         }
-        break;
-        case 0:
-        {
-            if (!self->mode_)
-            {
-                if (!self->firstloop_)
-                {
-                    tickEnvelopeAndLinearCounter(self);
-                    tickLengthCounterAndSweep(self);
+    } break;
 
-                    checkSetIrq(self);
-                }
-            }
-            else
-            {
-                tickEnvelopeAndLinearCounter(self);
-                tickLengthCounterAndSweep(self);
-            }
-        }
+    default:
         break;
-        case 1:
-        {
-            if (!self->firstloop_)
-            {
-                checkSetIrq(self);
-            }
-        }
-        break;
-
-        default:
-            break;
     }
 
     // Update timer to next value
     ++self->timer_;
-    if (!self->mode_)
-    {
-        if (self->timer_ >= 29830)
-        {
+    if (!self->mode_) {
+        if (self->timer_ >= 29830) {
             self->timer_ = 0;
             self->firstloop_ = false;
         }
-    }
-    else
-    {
-        if (self->timer_ >= 37282)
-        {
+    } else {
+        if (self->timer_ >= 37282) {
             self->timer_ = 0;
             self->firstloop_ = false;
         }
@@ -156,8 +130,7 @@ void
 frmctr_SetIrqInhibit(frmctr_s *self, bool set)
 {
     self->irqInhibit_ = set;
-    if (set)
-    {
+    if (set) {
         self->irq_ = false;
     }
 }

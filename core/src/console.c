@@ -29,17 +29,14 @@ console_Init(console_s *self, NHLogger *logger)
     self->cart_.Impl = NULL;
 
     cpu_Init(&self->cpu_, &self->mmem_, logger);
-    if (!mmem_Init(&self->mmem_, logger))
-    {
+    if (!mmem_Init(&self->mmem_, logger)) {
         goto outerr;
     }
-    if (!ppu_Init(&self->ppu_, &self->vmem_, &self->debugflags_, logger))
-    {
+    if (!ppu_Init(&self->ppu_, &self->vmem_, &self->debugflags_, logger)) {
         goto outerr;
     }
     oamdma_Init(&self->oamdma_, &self->apuclock_, &self->mmem_, &self->ppu_);
-    if (!vmem_Init(&self->vmem_, logger))
-    {
+    if (!vmem_Init(&self->vmem_, logger)) {
         goto outerr;
     }
     apuclock_Init(&self->apuclock_);
@@ -101,13 +98,11 @@ aocRegGet(const mementry_s *entry, addr_t addr, u8 *val)
     console_s *self = (console_s *)entry->Opaque;
 
     // OAM DMA
-    if (NH_OAMDMA_ADDR == addr)
-    {
+    if (NH_OAMDMA_ADDR == addr) {
         return NH_ERR_WRITE_ONLY;
     }
     // Controller registers.
-    else if (NH_CTRL1_REG_ADDR == addr || NH_CTRL2_REG_ADDR == addr)
-    {
+    else if (NH_CTRL1_REG_ADDR == addr || NH_CTRL2_REG_ADDR == addr) {
         u8 b = readCtrlReg(self, NH_CTRL1_REG_ADDR == addr ? CR_4016 : CR_4017);
         // Partial open bus
         // https://www.nesdev.org/wiki/Open_bus_behavior#CPU_open_bus
@@ -115,11 +110,9 @@ aocRegGet(const mementry_s *entry, addr_t addr, u8 *val)
         return NH_ERR_OK;
     }
     // Left with APU registers
-    else
-    {
+    else {
         apureg_e reg = apu_Addr2Reg(addr);
-        if (AR_SIZE == reg)
-        {
+        if (AR_SIZE == reg) {
             *val = 0xFF;
             return NH_ERR_PROGRAMMING;
         }
@@ -128,8 +121,7 @@ aocRegGet(const mementry_s *entry, addr_t addr, u8 *val)
         // cpu_exec_space/test_cpu_exec_space_apu.nes
         u8 b;
         NHErr err = apu_ReadReg(&self->apu_, reg, &b);
-        if (NH_FAILED(err))
-        {
+        if (NH_FAILED(err)) {
             return err;
         }
         *val = b;
@@ -142,22 +134,16 @@ aocRegSet(const mementry_s *entry, addr_t addr, u8 val)
 {
     console_s *self = (console_s *)entry->Opaque;
 
-    if (NH_OAMDMA_ADDR == addr)
-    {
+    if (NH_OAMDMA_ADDR == addr) {
         // OAM DMA high address (this port is located on the CPU)
         oamdma_Initiate(&self->oamdma_, val);
         return NH_ERR_OK;
-    }
-    else if (NH_CTRL1_REG_ADDR == addr)
-    {
+    } else if (NH_CTRL1_REG_ADDR == addr) {
         writeCtrlReg(self, CR_4016, val);
         return NH_ERR_OK;
-    }
-    else
-    {
+    } else {
         apureg_e reg = apu_Addr2Reg(addr);
-        if (AR_SIZE == reg)
-        {
+        if (AR_SIZE == reg) {
             return NH_ERR_PROGRAMMING;
         }
         apu_WriteReg(&self->apu_, reg, val);
@@ -189,43 +175,34 @@ readCtrlReg(console_s *self, ctrlreg_e reg)
 {
     u8 val = self->ctrlregs_[reg];
 
-    switch (reg)
-    {
-        case CR_4016:
-        case CR_4017:
-        {
-            int index = reg - CR_4016;
-            _Static_assert(CONSOLE_CTRLSIZE == CR_SIZE,
-                           "Controller index mismatch");
-            if (index < 0 || index >= CONSOLE_CTRLSIZE)
-            {
-                ASSERT_FATAL(self->logger_,
-                             "Implementation error for controller register: %d",
-                             index);
+    switch (reg) {
+    case CR_4016:
+    case CR_4017: {
+        int index = reg - CR_4016;
+        _Static_assert(CONSOLE_CTRLSIZE == CR_SIZE,
+                       "Controller index mismatch");
+        if (index < 0 || index >= CONSOLE_CTRLSIZE) {
+            ASSERT_FATAL(self->logger_,
+                         "Implementation error for controller register: %d",
+                         index);
+        } else {
+            NHController *ctrl = self->ctrls_[index];
+            // @TODO: Other control bits
+            bool primaryBit = 0;
+            if (!ctrl) {
+                // Report 0 for unconnected controller.
+                // https://www.nesdev.org/wiki/Standard_controller#Output_($4016/$4017_read)
+                primaryBit = 0;
+            } else {
+                primaryBit = (bool)ctrl->report(ctrl->user);
             }
-            else
-            {
-                NHController *ctrl = self->ctrls_[index];
-                // @TODO: Other control bits
-                bool primaryBit = 0;
-                if (!ctrl)
-                {
-                    // Report 0 for unconnected controller.
-                    // https://www.nesdev.org/wiki/Standard_controller#Output_($4016/$4017_read)
-                    primaryBit = 0;
-                }
-                else
-                {
-                    primaryBit = (bool)ctrl->report(ctrl->user);
-                }
-                // Other bits are 0 as initialized.
-                val = (val & 0xFE) | (u8)primaryBit;
-            }
+            // Other bits are 0 as initialized.
+            val = (val & 0xFE) | (u8)primaryBit;
         }
-        break;
+    } break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     return val;
@@ -236,26 +213,21 @@ writeCtrlReg(console_s *self, ctrlreg_e reg, u8 val)
 {
     self->ctrlregs_[reg] = val;
 
-    switch (reg)
-    {
-        case CR_4016:
-        {
-            bool strobeOn = val & 0x01;
-            for (NHCtrlPort i = 0; i < CONSOLE_CTRLSIZE; ++i)
-            {
-                NHController *ctrl = self->ctrls_[i];
-                if (!ctrl)
-                {
-                    continue;
-                }
-
-                ctrl->strobe(strobeOn, ctrl->user);
+    switch (reg) {
+    case CR_4016: {
+        bool strobeOn = val & 0x01;
+        for (NHCtrlPort i = 0; i < CONSOLE_CTRLSIZE; ++i) {
+            NHController *ctrl = self->ctrls_[i];
+            if (!ctrl) {
+                continue;
             }
-        }
-        break;
 
-        default:
-            break;
+            ctrl->strobe(strobeOn, ctrl->user);
+        }
+    } break;
+
+    default:
+        break;
     }
 }
 
@@ -281,13 +253,11 @@ console_InsertCart(console_s *self, const char *rompath)
     cart_s cart;
     cart.Impl = NULL;
     err = cartld_LoadCart(rompath, CK_INES, &cart, self->logger_);
-    if (NH_FAILED(err))
-    {
+    if (NH_FAILED(err)) {
         goto outend;
     }
     err = cart.Validate(cart.Impl);
-    if (NH_FAILED(err))
-    {
+    if (NH_FAILED(err)) {
         goto outend;
     }
 
@@ -296,19 +266,15 @@ console_InsertCart(console_s *self, const char *rompath)
     cart.MapMemory(cart.Impl, &self->mmem_, &self->vmem_);
 
 outend:
-    if (NH_FAILED(err))
-    {
-        if (cart.Impl)
-        {
+    if (NH_FAILED(err)) {
+        if (cart.Impl) {
             cart.UnmapMemory(cart.Impl, &self->mmem_, &self->vmem_);
 
             cart.Deinit(cart.Impl);
             free(cart.Impl);
             cart.Impl = NULL;
         }
-    }
-    else
-    {
+    } else {
         releaseCart(self);
         self->cart_ = cart;
     }
@@ -325,8 +291,7 @@ console_RemoveCart(console_s *self)
 void
 releaseCart(console_s *self)
 {
-    if (self->cart_.Impl)
-    {
+    if (self->cart_.Impl) {
         self->cart_.UnmapMemory(self->cart_.Impl, &self->mmem_, &self->vmem_);
 
         self->cart_.Deinit(self->cart_.Impl);
@@ -338,8 +303,7 @@ releaseCart(console_s *self)
 void
 console_Powerup(console_s *self)
 {
-    if (!self->cart_.Impl)
-    {
+    if (!self->cart_.Impl) {
         LOG_ERROR(self->logger_, "Power up without cartridge inserted");
         return;
     }
@@ -367,8 +331,7 @@ console_Powerup(console_s *self)
 void
 console_Reset(console_s *self)
 {
-    if (!self->cart_.Impl)
-    {
+    if (!self->cart_.Impl) {
         LOG_ERROR(self->logger_, "Reset without cartridge inserted");
         return;
     }
@@ -390,14 +353,11 @@ console_Reset(console_s *self)
 void
 resetTrivial(console_s *self)
 {
-    for (ctrlreg_e i = 0; i < CR_SIZE; ++i)
-    {
+    for (ctrlreg_e i = 0; i < CR_SIZE; ++i) {
         self->ctrlregs_[i] = 0;
     }
-    for (NHCtrlPort i = 0; i < CONSOLE_CTRLSIZE; ++i)
-    {
-        if (self->ctrls_[i])
-        {
+    for (NHCtrlPort i = 0; i < CONSOLE_CTRLSIZE; ++i) {
+        if (self->ctrls_[i]) {
             self->ctrls_[i]->reset(self->ctrls_[i]->user);
         }
     }
@@ -444,8 +404,7 @@ console_Tick(console_s *self, bool *cpuInstr)
     bool instrDone = cpu_PreTick(
         &self->cpu_, dmcdma_Rdy(&self->dmcdma_) || oamdma_Rdy(&self->oamdma_),
         dmcDmaGet || oamDmaOp, &read2002);
-    if (cpuInstr)
-    {
+    if (cpuInstr) {
         *cpuInstr = instrDone;
     }
 

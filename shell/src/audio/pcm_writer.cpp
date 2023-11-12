@@ -1,8 +1,9 @@
 #include "pcm_writer.hpp"
 
-#include "nhbase/vc_intrinsics.h"
+#include "nhbase/vc_intrinsics.hpp"
 
-namespace sh {
+namespace sh
+{
 
 PCMWriter::PCMWriter()
     : m_file(nullptr)
@@ -18,12 +19,10 @@ PCMWriter::~PCMWriter()
 int
 PCMWriter::open(const std::string &i_path)
 {
-    if (i_path.empty())
-    {
+    if (i_path.empty()) {
         return 1;
     }
-    if (is_open())
-    {
+    if (is_open()) {
         return 1;
     }
 
@@ -31,8 +30,7 @@ PCMWriter::open(const std::string &i_path)
     NB_VC_WARNING_DISABLE(4996)
     FILE *fp = std::fopen(i_path.c_str(), "wb");
     NB_VC_WARNING_POP
-    if (!fp)
-    {
+    if (!fp) {
         return 1;
     }
     m_file = fp;
@@ -44,19 +42,15 @@ int
 PCMWriter::close()
 {
     int err = 0;
-    if (m_file)
-    {
+    if (m_file) {
         // flush remaining if any
-        if (m_buf_pos)
-        {
+        if (m_buf_pos) {
             (void)std::fwrite(m_buf, 1, m_buf_pos, m_file);
         }
 
         err = std::fclose(m_file);
         m_file = nullptr;
-    }
-    else
-    {
+    } else {
         err = 1;
     }
     return err;
@@ -71,20 +65,17 @@ PCMWriter::is_open() const
 bool
 PCMWriter::write_byte(unsigned char i_val)
 {
-    if (m_buf_pos >= BUF_SIZE)
-    {
+    if (m_buf_pos >= BUF_SIZE) {
         // 256 can fit in int
         int written = (int)std::fwrite(m_buf, 1, BUF_SIZE, m_file);
         m_buf_pos -= written;
     }
-    if (m_buf_pos >= BUF_SIZE)
-    {
+    if (m_buf_pos >= BUF_SIZE) {
         return false;
     }
 
     m_buf[m_buf_pos++] = i_val;
-    if (m_buf_pos >= BUF_SIZE)
-    {
+    if (m_buf_pos >= BUF_SIZE) {
         // 256 can fit in int
         int written = (int)std::fwrite(m_buf, 1, BUF_SIZE, m_file);
         m_buf_pos -= written;
@@ -95,12 +86,10 @@ PCMWriter::write_byte(unsigned char i_val)
 int
 PCMWriter::write_s16le(short i_val)
 {
-    if (!write_byte((unsigned char)(i_val)))
-    {
+    if (!write_byte((unsigned char)(i_val))) {
         return 0;
     }
-    if (!write_byte((unsigned char)(i_val >> 8)))
-    {
+    if (!write_byte((unsigned char)(i_val >> 8))) {
         return 1;
     }
     return 2;

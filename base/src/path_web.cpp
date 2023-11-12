@@ -4,7 +4,8 @@
 
 #include "path_private.hpp"
 
-namespace nb {
+namespace nb
+{
 
 char
 path_delimiter()

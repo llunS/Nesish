@@ -4,7 +4,8 @@
 
 #include "nhbase/api.h"
 
-namespace nb {
+namespace nb
+{
 
 NB_API
 bool

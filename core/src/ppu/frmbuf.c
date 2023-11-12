@@ -6,8 +6,7 @@ bool
 frmbuf_Init(frmbuf_s *self)
 {
     self->buf_ = calloc(FRMBUF_WIDTH * FRMBUF_HEIGHT, sizeof(color_s));
-    if (!self->buf_)
-    {
+    if (!self->buf_) {
         return false;
     }
     return true;
@@ -16,8 +15,7 @@ frmbuf_Init(frmbuf_s *self)
 void
 frmbuf_Deinit(frmbuf_s *self)
 {
-    if (self->buf_)
-    {
+    if (self->buf_) {
         free(self->buf_);
         self->buf_ = NULL;
     }

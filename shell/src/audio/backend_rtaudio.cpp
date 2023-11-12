@@ -2,7 +2,8 @@
 
 #include "misc/exception.hpp"
 
-namespace sh {
+namespace sh
+{
 
 static RtAudio *g_rta;
 
@@ -21,8 +22,7 @@ audio_setup(unsigned int i_sample_rate, unsigned int i_buffer_size,
             return false;
         }
 
-        if (g_rta->getDeviceCount() < 1)
-        {
+        if (g_rta->getDeviceCount() < 1) {
             delete g_rta;
             g_rta = nullptr;
             return false;
@@ -31,8 +31,7 @@ audio_setup(unsigned int i_sample_rate, unsigned int i_buffer_size,
 
     /* Open */
     {
-        if (!i_callback)
-        {
+        if (!i_callback) {
             return false;
         }
 
@@ -59,8 +58,7 @@ audio_setup(unsigned int i_sample_rate, unsigned int i_buffer_size,
 bool
 audio_start()
 {
-    if (!g_rta)
-    {
+    if (!g_rta) {
         return false;
     }
 
@@ -78,27 +76,25 @@ audio_start()
 void
 audio_stop()
 {
-    if (g_rta)
-    {
+    if (g_rta) {
         SH_TRY
         {
-            if (g_rta->isStreamRunning())
-            {
+            if (g_rta->isStreamRunning()) {
                 g_rta->stopStream();
             }
         }
-        SH_CATCH(RtAudioError &) {}
+        SH_CATCH(RtAudioError &)
+        {
+        }
     }
 }
 
 void
 audio_shutdown()
 {
-    if (g_rta)
-    {
+    if (g_rta) {
         /* Close */
-        if (g_rta->isStreamOpen())
-        {
+        if (g_rta->isStreamOpen()) {
             g_rta->closeStream();
         }
 

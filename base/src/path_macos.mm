@@ -7,7 +7,8 @@
 
 #include "path_private.hpp"
 
-namespace nb {
+namespace nb
+{
 
 char
 path_delimiter()
@@ -20,13 +21,11 @@ get_exec_dir()
 {
     char path[PATH_MAX + 1];
     uint32_t size = sizeof path;
-    if (_NSGetExecutablePath(path, &size) == 0)
-    {
+    if (_NSGetExecutablePath(path, &size) == 0) {
         // The realpath() function resolves all symbolic links, extra ``/''
         // charac-ters, characters, and references to /./ and /../ in file_name
         char abs_path[PATH_MAX + 1];
-        if (realpath(path, abs_path))
-        {
+        if (realpath(path, abs_path)) {
             return dirname(abs_path);
         }
     }

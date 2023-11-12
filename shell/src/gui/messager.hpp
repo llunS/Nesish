@@ -2,7 +2,8 @@
 
 #include "input/controller.hpp"
 
-namespace sh {
+namespace sh
+{
 
 struct Application;
 struct Logger;

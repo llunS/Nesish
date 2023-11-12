@@ -9,7 +9,8 @@
 
 #include <unordered_map>
 
-namespace sh {
+namespace sh
+{
 
 static constexpr ImVec2 KEY_BUTTON_SIZE =
     ImVec2(4.5f, 4.5f); // Enough for at most 6 letters
@@ -31,19 +32,19 @@ CustomKey::CustomKey(const std::string &i_name, NHConsole io_emu,
 {
 }
 
-CustomKey::~CustomKey() {}
+CustomKey::~CustomKey()
+{
+}
 
 void
 CustomKey::render()
 {
-    if (m_open)
-    {
+    if (m_open) {
         ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_Once);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 14.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
                             ImVec2(ImGui::GetStyle().ItemSpacing.x, 10.0f));
-        if (ImGui::Begin(m_name.c_str(), &m_open, ImGuiWindowFlags_NoResize))
-        {
+        if (ImGui::Begin(m_name.c_str(), &m_open, ImGuiWindowFlags_NoResize)) {
             draw_key_config(NH_CTRL_P1, "Player 1");
 
             ImGui::Spacing();
@@ -54,26 +55,20 @@ CustomKey::render()
                 auto content_w = ImGui::GetContentRegionAvail().x;
                 auto text_w = ImGui::CalcTextSize("Reset Both To Default").x;
                 ImGui::SetCursorPosX((content_w - text_w) * 0.5f);
-                if (ImGui::Button("Reset Both To Default"))
-                {
+                if (ImGui::Button("Reset Both To Default")) {
                     KeyMapping p1, p2;
                     if (reset_default_key_config(&p1, &p2,
-                                                 m_messager->get_logger()))
-                    {
+                                                 m_messager->get_logger())) {
                         m_messager->reset_key_mapping(p1, p2);
                     }
                 }
             }
-        }
-        else
-        {
+        } else {
             m_recording = false;
         }
         ImGui::End();
         ImGui::PopStyleVar(2);
-    }
-    else
-    {
+    } else {
         m_recording = false;
     }
 }
@@ -109,8 +104,7 @@ CustomKey::draw_key_config(NHCtrlPort i_port, const char *i_port_name)
         {5, 2, 2, NH_KEY_B, "B"},           {6, 2, 2, NH_KEY_A, "A"},
     };
     ImGui::Spacing();
-    for (NHKey i = NH_KEY_BEGIN; i != NH_KEY_END; ++i)
-    {
+    for (NHKey i = NH_KEY_BEGIN; i != NH_KEY_END; ++i) {
         ImGui::SetCursorPos(cursor_start +
                             ImVec2(cell_w_with_spacing * KEY_BUTTONS[i].x +
                                        group_spacing_x * KEY_BUTTONS[i].y,
@@ -122,12 +116,10 @@ CustomKey::draw_key_config(NHCtrlPort i_port, const char *i_port_name)
                 ? pv_vkey_to_keyname(mapping[KEY_BUTTONS[i].nhkey])
                 : "...",
             KEY_BUTTONS[i].id);
-        if (ImGui::Button(key_label, key_cell_size))
-        {
+        if (ImGui::Button(key_label, key_cell_size)) {
             on_key_clicked(i_port, KEY_BUTTONS[i].nhkey);
         }
-        if (ImGui::IsItemHovered())
-        {
+        if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
             ImGui::TextUnformatted(KEY_BUTTONS[i].id);
             ImGui::EndTooltip();
@@ -149,19 +141,15 @@ CustomKey::on_key_clicked(NHCtrlPort i_port, NHKey i_key)
 bool
 CustomKey::on_key_released(VirtualKey i_vkey, NHCtrlPort &o_port, NHKey &o_key)
 {
-    if (m_recording)
-    {
-        if (i_vkey == GLFW_KEY_ESCAPE)
-        {
+    if (m_recording) {
+        if (i_vkey == GLFW_KEY_ESCAPE) {
             m_recording = false;
             return false;
         }
 
-        if (pv_is_key_valid(i_vkey))
-        {
+        if (pv_is_key_valid(i_vkey)) {
             if (save_key_config(m_recording_port, m_recording_key, i_vkey,
-                                m_messager->get_logger()))
-            {
+                                m_messager->get_logger())) {
                 m_recording = false;
 
                 o_port = m_recording_port;
@@ -267,8 +255,7 @@ const char *
 pv_vkey_to_keyname(VirtualKey i_vkey)
 {
     auto it = g_vkey_to_keyname.find(i_vkey);
-    if (it != g_vkey_to_keyname.cend())
-    {
+    if (it != g_vkey_to_keyname.cend()) {
         return it->second;
     }
     return "";

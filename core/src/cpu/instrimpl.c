@@ -61,87 +61,67 @@ cpu_frm_brk(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
-            if (!cpu->irqPcNoInc_)
-            {
-                ++cpu->pc_;
-            }
+    switch (idx) {
+    default:
+    case 0: {
+        throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
+        if (!cpu->irqPcNoInc_) {
+            ++cpu->pc_;
         }
-        break;
+    } break;
 
-        case 1:
-        {
-            cpu_pushByte_(cpu, gethigh(cpu->pc_));
+    case 1: {
+        cpu_pushByte_(cpu, gethigh(cpu->pc_));
+    } break;
+
+    case 2: {
+        cpu_pushByte_(cpu, getlow(cpu->pc_));
+    } break;
+
+    case 3: {
+        // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
+        // Push B flag differently
+        u8 pushed = cpu->p_;
+        if (cpu_inHwIrq_(cpu)) {
+            pushed &= (u8)(~CS_B);
+        } else {
+            pushed |= (u8)(CS_B);
         }
-        break;
+        cpu_pushByte_(cpu, pushed);
 
-        case 2:
-        {
-            cpu_pushByte_(cpu, getlow(cpu->pc_));
+        // Interrupt hijacking
+        // Determine vector address at this cycle
+        // Priority: RESET(?)>NMI>IRQ>BRK
+        // Check using the current signal status, instead of what
+        // initiates the interrupt sequence.
+        // The hijacking doesn't lose the B flag
+        // RESET
+        if (cpu->resetSig_) {
+            cpu->addrbus_ = NH_RESET_VECTOR_ADDR;
         }
-        break;
-
-        case 3:
-        {
-            // https://wiki.nesdev.org/w/index.php?title=Status_flags#The_B_flag
-            // Push B flag differently
-            u8 pushed = cpu->p_;
-            if (cpu_inHwIrq_(cpu))
-            {
-                pushed &= (u8)(~CS_B);
-            }
-            else
-            {
-                pushed |= (u8)(CS_B);
-            }
-            cpu_pushByte_(cpu, pushed);
-
-            // Interrupt hijacking
-            // Determine vector address at this cycle
-            // Priority: RESET(?)>NMI>IRQ>BRK
-            // Check using the current signal status, instead of what
-            // initiates the interrupt sequence.
-            // The hijacking doesn't lose the B flag
-            // RESET
-            if (cpu->resetSig_)
-            {
-                cpu->addrbus_ = NH_RESET_VECTOR_ADDR;
-            }
-            // NMI
-            else if (cpu->nmiSig_)
-            {
-                cpu->addrbus_ = NH_NMI_VECTOR_ADDR;
-            }
-            // Since IRQ and BRK use the same vector, don't bother to check
-            else
-            {
-                cpu->addrbus_ = NH_IRQ_VECTOR_ADDR;
-            }
+        // NMI
+        else if (cpu->nmiSig_) {
+            cpu->addrbus_ = NH_NMI_VECTOR_ADDR;
         }
-        break;
-
-        case 4:
-        {
-            setlow(&cpu->pc_, cpu_getb_(cpu, cpu->addrbus_));
-            // Set I flag at this cycle according to doc:
-            // https://www.nesdev.org/wiki/CPU_interrupts#Interrupt_hijacking
-            cpu_setFlag_(cpu, CS_I);
+        // Since IRQ and BRK use the same vector, don't bother to check
+        else {
+            cpu->addrbus_ = NH_IRQ_VECTOR_ADDR;
         }
-        break;
+    } break;
 
-        case 5:
-        {
-            ++cpu->addrbus_;
-            sethigh(&cpu->pc_, cpu_getb_(cpu, cpu->addrbus_));
+    case 4: {
+        setlow(&cpu->pc_, cpu_getb_(cpu, cpu->addrbus_));
+        // Set I flag at this cycle according to doc:
+        // https://www.nesdev.org/wiki/CPU_interrupts#Interrupt_hijacking
+        cpu_setFlag_(cpu, CS_I);
+    } break;
 
-            *done = true;
-        }
-        break;
+    case 5: {
+        ++cpu->addrbus_;
+        sethigh(&cpu->pc_, cpu_getb_(cpu, cpu->addrbus_));
+
+        *done = true;
+    } break;
     }
 }
 
@@ -150,44 +130,33 @@ cpu_frm_rti(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
+    } break;
 
-        case 1:
-        {
-            cpu_prePopByte_(cpu);
-        }
-        break;
+    case 1: {
+        cpu_prePopByte_(cpu);
+    } break;
 
-        case 2:
-        {
-            // Disregards bits 5 and 4 when reading flags from the stack
-            // https://www.nesdev.org/wiki/Status_flags#The_B_flag
-            ignoreub(cpu_postPopByte_(cpu), &cpu->p_);
-            cpu_prePopByte_(cpu);
-        }
-        break;
+    case 2: {
+        // Disregards bits 5 and 4 when reading flags from the stack
+        // https://www.nesdev.org/wiki/Status_flags#The_B_flag
+        ignoreub(cpu_postPopByte_(cpu), &cpu->p_);
+        cpu_prePopByte_(cpu);
+    } break;
 
-        case 3:
-        {
-            setlow(&cpu->pc_, cpu_postPopByte_(cpu));
-            cpu_prePopByte_(cpu);
-        }
-        break;
+    case 3: {
+        setlow(&cpu->pc_, cpu_postPopByte_(cpu));
+        cpu_prePopByte_(cpu);
+    } break;
 
-        case 4:
-        {
-            sethigh(&cpu->pc_, cpu_postPopByte_(cpu));
+    case 4: {
+        sethigh(&cpu->pc_, cpu_postPopByte_(cpu));
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -196,41 +165,30 @@ cpu_frm_rts(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
+    } break;
 
-        case 1:
-        {
-            cpu_prePopByte_(cpu);
-        }
-        break;
+    case 1: {
+        cpu_prePopByte_(cpu);
+    } break;
 
-        case 2:
-        {
-            setlow(&cpu->pc_, cpu_postPopByte_(cpu));
-            cpu_prePopByte_(cpu);
-        }
-        break;
+    case 2: {
+        setlow(&cpu->pc_, cpu_postPopByte_(cpu));
+        cpu_prePopByte_(cpu);
+    } break;
 
-        case 3:
-        {
-            sethigh(&cpu->pc_, cpu_postPopByte_(cpu));
-        }
-        break;
+    case 3: {
+        sethigh(&cpu->pc_, cpu_postPopByte_(cpu));
+    } break;
 
-        case 4:
-        {
-            ++cpu->pc_;
+    case 4: {
+        ++cpu->pc_;
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -239,22 +197,17 @@ frm_phr_impl(int idx, cpu_s *cpu, instrcore_f core, bool *done, u8 val)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
+    } break;
 
-        case 1:
-        {
-            cpu_pushByte_(cpu, val);
+    case 1: {
+        cpu_pushByte_(cpu, val);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -277,28 +230,21 @@ frm_plr_impl(int idx, cpu_s *cpu, instrcore_f core, bool *done, u8 *val)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
+    } break;
 
-        case 1:
-        {
-            cpu_prePopByte_(cpu);
-        }
-        break;
+    case 1: {
+        cpu_prePopByte_(cpu);
+    } break;
 
-        case 2:
-        {
-            *val = cpu_postPopByte_(cpu);
+    case 2: {
+        *val = cpu_postPopByte_(cpu);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -307,8 +253,7 @@ cpu_frm_pla(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     u8 val;
     frm_plr_impl(idx, cpu, core, done, &val);
-    if (*done)
-    {
+    if (*done) {
         cpu->a_ = val;
 
         testN(cpu, cpu->a_);
@@ -321,8 +266,7 @@ cpu_frm_plp(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     u8 val;
     frm_plr_impl(idx, cpu, core, done, &val);
-    if (*done)
-    {
+    if (*done) {
         // Disregards bits 5 and 4 when reading flags from the stack
         // https://www.nesdev.org/wiki/Status_flags#The_B_flag
         ignoreub(val, &cpu->p_);
@@ -334,43 +278,32 @@ cpu_frm_jsr(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->pc_++);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->pc_++);
+    } break;
 
-        case 1:
-        {
-            // Unclear as to what internal operation is done at this cycle.
-        }
-        break;
+    case 1: {
+        // Unclear as to what internal operation is done at this cycle.
+    } break;
 
-        case 2:
-        {
-            cpu_pushByte_(cpu, gethigh(cpu->pc_));
-        }
-        break;
+    case 2: {
+        cpu_pushByte_(cpu, gethigh(cpu->pc_));
+    } break;
 
-        case 3:
-        {
-            cpu_pushByte_(cpu, getlow(cpu->pc_));
-        }
-        break;
+    case 3: {
+        cpu_pushByte_(cpu, getlow(cpu->pc_));
+    } break;
 
-        case 4:
-        {
-            // Fetch high address byte before mutating PC
-            u8 high = cpu_getb_(cpu, cpu->pc_);
-            setlow(&cpu->pc_, cpu->databus_);
-            sethigh(&cpu->pc_, high);
+    case 4: {
+        // Fetch high address byte before mutating PC
+        u8 high = cpu_getb_(cpu, cpu->pc_);
+        setlow(&cpu->pc_, cpu->databus_);
+        sethigh(&cpu->pc_, high);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -387,38 +320,32 @@ cpu_frm_imp(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 void
 cpu_frm_acc(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
+    switch (idx) {
+    default:
+    case 0: {
+        throwaway(cpu, cpu_getb_(cpu, cpu->pc_));
 
-            // @TODO: Pipelining
-            core(cpu, cpu->a_, &cpu->a_);
+        // @TODO: Pipelining
+        core(cpu, cpu->a_, &cpu->a_);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_imm(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            // @TODO: Pipelining
-            u8 out;
-            core(cpu, cpu_getb_(cpu, cpu->pc_++), &out);
-            (void)(out);
+    switch (idx) {
+    default:
+    case 0: {
+        // @TODO: Pipelining
+        u8 out;
+        core(cpu, cpu_getb_(cpu, cpu->pc_++), &out);
+        (void)(out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -427,292 +354,230 @@ cpu_frm_abs_jmp(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->pc_++);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->pc_++);
+    } break;
 
-        case 1:
-        {
-            // Fetch high address byte before mutating PC
-            u8 high = cpu_getb_(cpu, cpu->pc_);
-            setlow(&cpu->pc_, cpu->databus_);
-            sethigh(&cpu->pc_, high);
+    case 1: {
+        // Fetch high address byte before mutating PC
+        u8 high = cpu_getb_(cpu, cpu->pc_);
+        setlow(&cpu->pc_, cpu->databus_);
+        sethigh(&cpu->pc_, high);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 frm_abs_pre(int idx, cpu_s *cpu)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            setlow(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        setlow(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            sethigh(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    case 1: {
+        sethigh(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
+    } break;
     }
 }
 
 void
 cpu_frm_abs_r(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_abs_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_abs_pre(idx, cpu);
+    } break;
 
-        case 2:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
-            (void)(out);
+    case 2: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+        (void)(out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_abs_rmw(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_abs_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_abs_pre(idx, cpu);
+    } break;
 
-        case 2:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 2: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 3:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu->databus_, &out);
-            cpu->databus_ = out;
-        }
-        break;
+    case 3: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu->databus_, &out);
+        cpu->databus_ = out;
+    } break;
 
-        case 4:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+    case 4: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_abs_w(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_abs_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_abs_pre(idx, cpu);
+    } break;
 
-        case 2:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, 0, &out);
-            cpu_setb_(cpu, cpu->addrbus_, out);
+    case 2: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, 0, &out);
+        cpu_setb_(cpu, cpu->addrbus_, out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 frm_abi_pre(int idx, cpu_s *cpu, u8 val)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            setlow(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        setlow(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            sethigh(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
-            addr_t newaddr = getlow(cpu->addrbus_) + val;
-            cpu->pageoffset_ = !!(newaddr & 0xFF00);
-            setlow(&cpu->addrbus_, getlow(newaddr));
-        }
-        break;
+    case 1: {
+        sethigh(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
+        addr_t newaddr = getlow(cpu->addrbus_) + val;
+        cpu->pageoffset_ = !!(newaddr & 0xFF00);
+        setlow(&cpu->addrbus_, getlow(newaddr));
+    } break;
     }
 }
 
 void
 frm_abi_r(int idx, cpu_s *cpu, instrcore_f core, bool *done, u8 val)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_abi_pre(idx, cpu, val);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_abi_pre(idx, cpu, val);
+    } break;
 
-        case 2:
-        {
-            // The read must be done regardlessly.
-            u8 in = cpu_getb_(cpu, cpu->addrbus_);
-            if (cpu->pageoffset_)
-            {
-                cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
-            }
-            else
-            {
-                cpu->iEffAddr_ = cpu->addrbus_;
-                u8 out;
-                core(cpu, in, &out);
-                (void)(out);
-
-                *done = true;
-            }
-        }
-        break;
-
-        case 3:
-        {
+    case 2: {
+        // The read must be done regardlessly.
+        u8 in = cpu_getb_(cpu, cpu->addrbus_);
+        if (cpu->pageoffset_) {
+            cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
+        } else {
             cpu->iEffAddr_ = cpu->addrbus_;
             u8 out;
-            core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+            core(cpu, in, &out);
             (void)(out);
 
             *done = true;
         }
-        break;
+    } break;
+
+    case 3: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+        (void)(out);
+
+        *done = true;
+    } break;
     }
 }
 
 void
 frm_abi_w(int idx, cpu_s *cpu, instrcore_f core, bool *done, u8 val)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_abi_pre(idx, cpu, val);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_abi_pre(idx, cpu, val);
+    } break;
 
-        case 2:
+    case 2: {
+        // Read from possibly smaller address first.
+        (void)(cpu_getb_(cpu, cpu->addrbus_));
+        // if (cpu->pageoffset_)
         {
-            // Read from possibly smaller address first.
-            (void)(cpu_getb_(cpu, cpu->addrbus_));
-            // if (cpu->pageoffset_)
-            {
-                cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
-            }
+            cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
         }
-        break;
+    } break;
 
-        case 3:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, 0, &out);
-            cpu_setb_(cpu, cpu->addrbus_, out);
+    case 3: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, 0, &out);
+        cpu_setb_(cpu, cpu->addrbus_, out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 frm_abi_rmw(int idx, cpu_s *cpu, instrcore_f core, bool *done, u8 val)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_abi_pre(idx, cpu, val);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_abi_pre(idx, cpu, val);
+    } break;
 
-        case 2:
+    case 2: {
+        // Read from possibly smaller address first.
+        (void)(cpu_getb_(cpu, cpu->addrbus_));
+        // if (cpu->pageoffset_)
         {
-            // Read from possibly smaller address first.
-            (void)(cpu_getb_(cpu, cpu->addrbus_));
-            // if (cpu->pageoffset_)
-            {
-                cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
-            }
+            cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
         }
-        break;
+    } break;
 
-        case 3:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 3: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 4:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu->databus_, &out);
-            cpu->databus_ = out;
-        }
-        break;
+    case 4: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu->databus_, &out);
+        cpu->databus_ = out;
+    } break;
 
-        case 5:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+    case 5: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -755,161 +620,127 @@ cpu_frm_aby_w(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 void
 cpu_frm_zp_r(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
-            (void)(out);
+    case 1: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+        (void)(out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_zp_rmw(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 1: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 2:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu->databus_, &out);
-            cpu->databus_ = out;
-        }
-        break;
+    case 2: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu->databus_, &out);
+        cpu->databus_ = out;
+    } break;
 
-        case 3:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+    case 3: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_zp_w(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, 0, &out);
-            cpu_setb_(cpu, cpu->addrbus_, out);
+    case 1: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, 0, &out);
+        cpu_setb_(cpu, cpu->addrbus_, out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 frm_zpi_pre(int idx, cpu_s *cpu, u8 val)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            (void)(cpu_getb_(cpu, cpu->addrbus_));
-            cpu->addrbus_ = (cpu->addrbus_ + val) & 0x00FF;
-        }
-        break;
+    case 1: {
+        (void)(cpu_getb_(cpu, cpu->addrbus_));
+        cpu->addrbus_ = (cpu->addrbus_ + val) & 0x00FF;
+    } break;
     }
 }
 
 void
 frm_zpi_r(int idx, cpu_s *cpu, instrcore_f core, bool *done, u8 val)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_zpi_pre(idx, cpu, val);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_zpi_pre(idx, cpu, val);
+    } break;
 
-        case 2:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
-            (void)(out);
+    case 2: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+        (void)(out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 frm_zpi_w(int idx, cpu_s *cpu, instrcore_f core, bool *done, u8 val)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_zpi_pre(idx, cpu, val);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_zpi_pre(idx, cpu, val);
+    } break;
 
-        case 2:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, 0, &out);
-            cpu_setb_(cpu, cpu->addrbus_, out);
+    case 2: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, 0, &out);
+        cpu_setb_(cpu, cpu->addrbus_, out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -922,39 +753,30 @@ cpu_frm_zpx_r(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 void
 cpu_frm_zpx_rmw(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        {
-            frm_zpi_pre(idx, cpu, cpu->x_);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1: {
+        frm_zpi_pre(idx, cpu, cpu->x_);
+    } break;
 
-        case 2:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 2: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 3:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu->databus_, &out);
-            cpu->databus_ = out;
-        }
-        break;
+    case 3: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu->databus_, &out);
+        cpu->databus_ = out;
+    } break;
 
-        case 4:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+    case 4: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -979,371 +801,298 @@ cpu_frm_zpy_w(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 void
 cpu_frm_rel(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->pc_++);
-            u8 out;
-            core(cpu, 0, &out);
-            bool branchTaken = out;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->pc_++);
+        u8 out;
+        core(cpu, 0, &out);
+        bool branchTaken = out;
 
-            if (!branchTaken)
-            {
-                *done = true;
-            }
-            // This is polled regardless of branching or not
-            cpu_pollInterrupt_(cpu);
-            // Even if interrupt is detected, it is delayed until this
-            // instruction is complete, or else the taken branch could be missed
-            // after the handler returns.
-            // So it's fine we poll in the middle of an instruction.
-        }
-        break;
-
-        case 1:
-        {
-            // Branch is taken at this point
-
-            u8 opcode = cpu_getb_(cpu, cpu->pc_);
-            (void)(opcode);
-
-            // Set PCL and calculate PCH offset, using larger type.
-            // The conversion to i8 is needed, so that higher bits be
-            // padded with sign bit when converted to larger unsigned type.
-            i8 offset = (i8)(cpu->databus_);
-            addr_t newpc = cpu->pc_ + offset;
-            // Before PC is mutated
-            // cpu->pageoffset_ is of u8, the same as gethigh()
-            cpu->pageoffset_ = gethigh(newpc) - gethigh(cpu->pc_);
-            setlow(&cpu->pc_, getlow(newpc));
-
-            if (!cpu->pageoffset_)
-            {
-                *done = true;
-            }
-            // A taken non-page-crossing doesn't poll so it may delay the
-            // interrupt by one instruction.
-        }
-        break;
-
-        case 2:
-        {
-            // Branch occurs to different page at this point
-
-            // The high byte of Program Counter (PCH) is invalid at this time,
-            // i.e. it may be smaller or bigger by $0100.
-            u8 opcode = cpu_getb_(cpu, cpu->pc_);
-            (void)(opcode);
-
-            // Fix PCH
-            // if (cpu->pageoffset_)
-            {
-                cpu->pc_ += ((addr_t)(cpu->pageoffset_) << 8);
-            }
-
+        if (!branchTaken) {
             *done = true;
-            cpu_pollInterrupt_(cpu);
         }
-        break;
+        // This is polled regardless of branching or not
+        cpu_pollInterrupt_(cpu);
+        // Even if interrupt is detected, it is delayed until this
+        // instruction is complete, or else the taken branch could be missed
+        // after the handler returns.
+        // So it's fine we poll in the middle of an instruction.
+    } break;
+
+    case 1: {
+        // Branch is taken at this point
+
+        u8 opcode = cpu_getb_(cpu, cpu->pc_);
+        (void)(opcode);
+
+        // Set PCL and calculate PCH offset, using larger type.
+        // The conversion to i8 is needed, so that higher bits be
+        // padded with sign bit when converted to larger unsigned type.
+        i8 offset = (i8)(cpu->databus_);
+        addr_t newpc = cpu->pc_ + offset;
+        // Before PC is mutated
+        // cpu->pageoffset_ is of u8, the same as gethigh()
+        cpu->pageoffset_ = gethigh(newpc) - gethigh(cpu->pc_);
+        setlow(&cpu->pc_, getlow(newpc));
+
+        if (!cpu->pageoffset_) {
+            *done = true;
+        }
+        // A taken non-page-crossing doesn't poll so it may delay the
+        // interrupt by one instruction.
+    } break;
+
+    case 2: {
+        // Branch occurs to different page at this point
+
+        // The high byte of Program Counter (PCH) is invalid at this time,
+        // i.e. it may be smaller or bigger by $0100.
+        u8 opcode = cpu_getb_(cpu, cpu->pc_);
+        (void)(opcode);
+
+        // Fix PCH
+        // if (cpu->pageoffset_)
+        {
+            cpu->pc_ += ((addr_t)(cpu->pageoffset_) << 8);
+        }
+
+        *done = true;
+        cpu_pollInterrupt_(cpu);
+    } break;
     }
 }
 
 void
 frm_izx_pre(int idx, cpu_s *cpu)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            (void)(cpu_getb_(cpu, cpu->addrbus_));
-            cpu->addrbus_ = (cpu->addrbus_ + cpu->x_) & 0x00FF;
-        }
-        break;
+    case 1: {
+        (void)(cpu_getb_(cpu, cpu->addrbus_));
+        cpu->addrbus_ = (cpu->addrbus_ + cpu->x_) & 0x00FF;
+    } break;
 
-        case 2:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 2: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 3:
-        {
-            u8 high = cpu_getb_(cpu, (cpu->addrbus_ + 1) & 0x00FF);
-            cpu->addrbus_ = ToByte2(high, cpu->databus_);
-        }
-        break;
+    case 3: {
+        u8 high = cpu_getb_(cpu, (cpu->addrbus_ + 1) & 0x00FF);
+        cpu->addrbus_ = ToByte2(high, cpu->databus_);
+    } break;
     }
 }
 
 void
 cpu_frm_izx_r(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        {
-            frm_izx_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1:
+    case 2:
+    case 3: {
+        frm_izx_pre(idx, cpu);
+    } break;
 
-        case 4:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
-            (void)(out);
+    case 4: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+        (void)(out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_izx_rmw(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        {
-            frm_izx_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1:
+    case 2:
+    case 3: {
+        frm_izx_pre(idx, cpu);
+    } break;
 
-        case 4:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 4: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 5:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu->databus_, &out);
-            cpu->databus_ = out;
-        }
-        break;
+    case 5: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu->databus_, &out);
+        cpu->databus_ = out;
+    } break;
 
-        case 6:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+    case 6: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_izx_w(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        {
-            frm_izx_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1:
+    case 2:
+    case 3: {
+        frm_izx_pre(idx, cpu);
+    } break;
 
-        case 4:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, 0, &out);
-            cpu_setb_(cpu, cpu->addrbus_, out);
+    case 4: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, 0, &out);
+        cpu_setb_(cpu, cpu->addrbus_, out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 frm_izy_pre(int idx, cpu_s *cpu)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        cpu->addrbus_ = (addr_t)(cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 1: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 2:
-        {
-            sethigh(&cpu->addrbus_,
-                    cpu_getb_(cpu, (cpu->addrbus_ + 1) & 0x00FF));
-            addr_t sumaddr = (addr_t)(cpu->databus_) + cpu->y_;
-            cpu->pageoffset_ = !!(sumaddr & 0xFF00);
-            setlow(&cpu->addrbus_, getlow(sumaddr));
-        }
-        break;
+    case 2: {
+        sethigh(&cpu->addrbus_, cpu_getb_(cpu, (cpu->addrbus_ + 1) & 0x00FF));
+        addr_t sumaddr = (addr_t)(cpu->databus_) + cpu->y_;
+        cpu->pageoffset_ = !!(sumaddr & 0xFF00);
+        setlow(&cpu->addrbus_, getlow(sumaddr));
+    } break;
     }
 }
 
 void
 cpu_frm_izy_r(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        case 2:
-        {
-            frm_izy_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1:
+    case 2: {
+        frm_izy_pre(idx, cpu);
+    } break;
 
-        case 3:
-        {
-            // The read must be done regardlessly.
-            u8 in = cpu_getb_(cpu, cpu->addrbus_);
-            if (cpu->pageoffset_)
-            {
-                cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
-            }
-            else
-            {
-                cpu->iEffAddr_ = cpu->addrbus_;
-                u8 out;
-                core(cpu, in, &out);
-                (void)(out);
-
-                *done = true;
-            }
-        }
-        break;
-
-        case 4:
-        {
+    case 3: {
+        // The read must be done regardlessly.
+        u8 in = cpu_getb_(cpu, cpu->addrbus_);
+        if (cpu->pageoffset_) {
+            cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
+        } else {
             cpu->iEffAddr_ = cpu->addrbus_;
             u8 out;
-            core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+            core(cpu, in, &out);
             (void)(out);
 
             *done = true;
         }
-        break;
+    } break;
+
+    case 4: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu_getb_(cpu, cpu->addrbus_), &out);
+        (void)(out);
+
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_izy_rmw(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        case 2:
-        {
-            frm_izy_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1:
+    case 2: {
+        frm_izy_pre(idx, cpu);
+    } break;
 
-        case 3:
+    case 3: {
+        // Read from possibly smaller address first.
+        (void)(cpu_getb_(cpu, cpu->addrbus_));
+        // if (cpu->pageoffset_)
         {
-            // Read from possibly smaller address first.
-            (void)(cpu_getb_(cpu, cpu->addrbus_));
-            // if (cpu->pageoffset_)
-            {
-                cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
-            }
+            cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
         }
-        break;
+    } break;
 
-        case 4:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 4: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 5:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, cpu->databus_, &out);
-            cpu->databus_ = out;
-        }
-        break;
+    case 5: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, cpu->databus_, &out);
+        cpu->databus_ = out;
+    } break;
 
-        case 6:
-        {
-            cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
+    case 6: {
+        cpu_setb_(cpu, cpu->addrbus_, cpu->databus_);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
 void
 cpu_frm_izy_w(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
-    switch (idx)
-    {
-        default:
-        case 0:
-        case 1:
-        case 2:
-        {
-            frm_izy_pre(idx, cpu);
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0:
+    case 1:
+    case 2: {
+        frm_izy_pre(idx, cpu);
+    } break;
 
-        case 3:
+    case 3: {
+        // Read from possibly smaller address first.
+        (void)(cpu_getb_(cpu, cpu->addrbus_));
+        // if (cpu->pageoffset_)
         {
-            // Read from possibly smaller address first.
-            (void)(cpu_getb_(cpu, cpu->addrbus_));
-            // if (cpu->pageoffset_)
-            {
-                cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
-            }
+            cpu->addrbus_ += ((addr_t)(cpu->pageoffset_) << 8);
         }
-        break;
+    } break;
 
-        case 4:
-        {
-            cpu->iEffAddr_ = cpu->addrbus_;
-            u8 out;
-            core(cpu, 0, &out);
-            cpu_setb_(cpu, cpu->addrbus_, out);
+    case 4: {
+        cpu->iEffAddr_ = cpu->addrbus_;
+        u8 out;
+        core(cpu, 0, &out);
+        cpu_setb_(cpu, cpu->addrbus_, out);
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 
@@ -1352,40 +1101,31 @@ cpu_frm_ind_jmp(int idx, cpu_s *cpu, instrcore_f core, bool *done)
 {
     (void)(core);
 
-    switch (idx)
-    {
-        default:
-        case 0:
-        {
-            setlow(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    switch (idx) {
+    default:
+    case 0: {
+        setlow(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 1:
-        {
-            sethigh(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
-        }
-        break;
+    case 1: {
+        sethigh(&cpu->addrbus_, cpu_getb_(cpu, cpu->pc_++));
+    } break;
 
-        case 2:
-        {
-            cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
-        }
-        break;
+    case 2: {
+        cpu->databus_ = cpu_getb_(cpu, cpu->addrbus_);
+    } break;
 
-        case 3:
-        {
-            // Set PCL at this cycle, according to the doc
-            setlow(&cpu->pc_, cpu->databus_);
+    case 3: {
+        // Set PCL at this cycle, according to the doc
+        setlow(&cpu->pc_, cpu->databus_);
 
-            // addr_t bytes are fetched from the same page
-            cpu->addrbus_ =
-                ToByte2(gethigh(cpu->addrbus_), getlow(cpu->addrbus_ + 1));
-            sethigh(&cpu->pc_, cpu_getb_(cpu, cpu->addrbus_));
+        // addr_t bytes are fetched from the same page
+        cpu->addrbus_ =
+            ToByte2(gethigh(cpu->addrbus_), getlow(cpu->addrbus_ + 1));
+        sethigh(&cpu->pc_, cpu_getb_(cpu, cpu->addrbus_));
 
-            *done = true;
-        }
-        break;
+        *done = true;
+    } break;
     }
 }
 

@@ -40,8 +40,7 @@ oamdma_Tick(oamdma_s *self, bool cpuDmaHalt, bool dmcDmaGet)
 {
     bool opCycle = false;
 
-    if (self->swap_)
-    {
+    if (self->swap_) {
         self->rdy_ = false;
         self->working_ = true;
         self->addrcurr_ = self->addrtmp_;
@@ -50,27 +49,19 @@ oamdma_Tick(oamdma_s *self, bool cpuDmaHalt, bool dmcDmaGet)
         self->swap_ = false;
     }
 
-    if (self->working_)
-    {
+    if (self->working_) {
         self->rdy_ = true;
         // Wait until CPU is halted on read cycle
-        if (!cpuDmaHalt)
-        {
-        }
-        else
-        {
+        if (!cpuDmaHalt) {
+        } else {
             // Get cycle
-            if (apuclock_Get(self->clock_))
-            {
+            if (apuclock_Get(self->clock_)) {
                 // Back away for DMC DMA. This results in one extra alignment
                 // cycle.
-                if (dmcDmaGet)
-                {
+                if (dmcDmaGet) {
                     // "self->got_" remaining false means extra alignment
                     // cycles.
-                }
-                else
-                {
+                } else {
                     self->bus_ = 0xFF;
                     (void)mmem_GetB(self->mmem_, self->addrcurr_, &self->bus_);
                     self->got_ = true;
@@ -80,30 +71,24 @@ oamdma_Tick(oamdma_s *self, bool cpuDmaHalt, bool dmcDmaGet)
                 }
             }
             // Put cycle
-            else
-            {
+            else {
                 // Alignment cycle
-                if (!self->got_)
-                {
+                if (!self->got_) {
                 }
                 // Write cycle
-                else
-                {
+                else {
                     ppu_WriteReg(self->ppu_, PR_OAMDATA, self->bus_);
                     self->got_ = false;
 
                     opCycle = true;
                     // Check if it's done after a write.
-                    if (!(self->addrcurr_ & 0x00FF))
-                    {
+                    if (!(self->addrcurr_ & 0x00FF)) {
                         self->working_ = false;
                     }
                 }
             }
         }
-    }
-    else
-    {
+    } else {
         // Delay the RDY disable by 1 cycle since DMA is ticked before
         // CPU and we want the CPU to keep halting on the DMA's last cycle.
         // No risk of another DMA initiation inbetween the two adjacent cycles.

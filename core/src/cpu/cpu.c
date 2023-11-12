@@ -94,11 +94,9 @@ pretickDeferRet(cpu_s *self)
 static void
 pretickChkToFlagHalt(cpu_s *self)
 {
-    if (!self->dmahalt_)
-    {
+    if (!self->dmahalt_) {
         // Can only halt on read cycle
-        if (self->rdytmp_ && !self->writeTickTmp_)
-        {
+        if (self->rdytmp_ && !self->writeTickTmp_) {
             self->dmahalt_ = true;
         }
     }
@@ -111,18 +109,15 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
     self->ppustatReadTmp_ = false;
     self->read2002tmp_ = read2002;
 
-    if (self->instrhalt_)
-    {
+    if (self->instrhalt_) {
         // Don't inc "self->cycle_"?
         pretickDeferRet(self);
         return false;
     }
 
     // check to unset halt flag
-    if (self->dmahalt_)
-    {
-        if (!rdy)
-        {
+    if (self->dmahalt_) {
+        if (!rdy) {
             self->dmahalt_ = false;
         }
     }
@@ -141,25 +136,21 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
 
     bool instrdone = false;
     // Fetch opcode
-    if (!self->instrctx_.Instr)
-    {
+    if (!self->instrctx_.Instr) {
         // default to read tick so we only need to mark write operations.
         // i.e. each cycle is read cycle unless marked otherwise.
         self->writeTickTmp_ = false;
         u8 opcode = cpu_getb_(self, self->pc_);
         pretickChkToFlagHalt(self);
 
-        if (!self->dmahalt_)
-        {
+        if (!self->dmahalt_) {
             // IRQ/RESET/NMI/BRK all use the same behavior.
-            if (cpu_inHwIrq_(self))
-            {
+            if (cpu_inHwIrq_(self)) {
                 // Force the instruction register to $00 and discard the fetch
                 // opcode
                 opcode = NH_BRK_OPCODE;
             }
-            if (!self->irqPcNoInc_)
-            {
+            if (!self->irqPcNoInc_) {
                 ++self->pc_;
             }
 
@@ -169,8 +160,7 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
         }
     }
     // Rest cycles of the instruction
-    else
-    {
+    else {
         /* Backup states that may be altered after one instruction cycle and may
          * be used as input of the cycle themselves */
         // Registers
@@ -189,14 +179,12 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
                                    self->instrctx_.Instr->Core, &instrdone);
         pretickChkToFlagHalt(self);
 
-        if (!self->dmahalt_)
-        {
+        if (!self->dmahalt_) {
             ++self->instrctx_.CyclePlus1;
         }
         // Restore changes, so that repeat cycles get the same result, excluding
         // possible multiple side effects.
-        else
-        {
+        else {
             self->a_ = prevA;
             self->x_ = prevX;
             self->y_ = prevY;
@@ -208,20 +196,16 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
             self->databus_ = prevDataBus;
             // no need for "self->pageoffset_" and "self->iEffAddr_"
         }
-        if (instrdone)
-        {
+        if (instrdone) {
             // ------ Current
-            if (!self->dmahalt_)
-            {
+            if (!self->dmahalt_) {
                 // Use inReset() before updating relevant flags
-                if (inReset(self))
-                {
+                if (inReset(self)) {
                     // Indicating RESET is handled.
                     self->resetSig_ = false;
                 }
                 // Use inNmi() before updating relevant flags
-                if (inNmi(self))
-                {
+                if (inNmi(self)) {
                     // Indicating NMI is handled.
                     // @TEST: Right to do this at last cycle?
                     self->nmiSig_ = false;
@@ -234,8 +218,7 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
             // Most instructions poll interrupts at the last cycle.
             // Special cases are listed and handled on thier own.
             if (self->instrctx_.Opcode == NH_BRK_OPCODE ||
-                self->instrctx_.Instr->Addrmode == AM_REL)
-            {
+                self->instrctx_.Instr->Addrmode == AM_REL) {
                 // The interrupt sequences themselves do not perform
                 // interrupt polling, meaning at least one instruction from
                 // the interrupt handler will execute before another
@@ -247,15 +230,12 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
                 // Branch instructions are also special, we handle it
                 // in its implementation. They are identified by address
                 // mode.
-            }
-            else
-            {
+            } else {
                 // Poll interrupts at the last cycle
                 cpu_pollInterrupt_(self);
             }
 
-            if (!self->dmahalt_)
-            {
+            if (!self->dmahalt_) {
                 // Swap at the end of instruction, setup states for next
                 // instruction
                 {
@@ -285,8 +265,7 @@ cpu_PreTick(cpu_s *self, bool rdy, bool dmaOpCycle, bool *read2002)
 void
 cpu_PostTick(cpu_s *self, bool nmi, bool apuirq)
 {
-    if (self->instrhalt_)
-    {
+    if (self->instrhalt_) {
         return;
     }
 
@@ -296,18 +275,15 @@ cpu_PostTick(cpu_s *self, bool nmi, bool apuirq)
     // Edge/Level detector polls lines during φ2 of each CPU cycle.
     // So this sets up signals for NEXT cycle.
     // --- NMI
-    if (!self->nmiAsserted_ && nmi)
-    {
+    if (!self->nmiAsserted_ && nmi) {
         self->nmiSig_ = true; // raise an internal signal
     }
     self->nmiAsserted_ = nmi;
     // --- IRQ
     self->irqSig_ = false; // inactive unless keep asserting.
-    if (apuirq)
-    {
+    if (apuirq) {
         // The cause of delayed IRQ response for some instructions.
-        if (!cpu_checkFlag_(self, CS_I))
-        {
+        if (!cpu_checkFlag_(self, CS_I)) {
             self->irqSig_ = true; // raise an internal signal
         }
     }
@@ -368,8 +344,7 @@ cpu_TestGetInstrBytes(const cpu_s *self, addr_t addr, u8 bytes[3], int *len)
     bytes[0] = opcode;
 
     int operandByteCnt = testGetOperandBytes(opcode);
-    for (int i = 0; i < operandByteCnt; ++i)
-    {
+    for (int i = 0; i < operandByteCnt; ++i) {
         bytes[i + 1] = cpu_getb_(self, (addr_t)(addr + i + 1));
     }
 
@@ -380,33 +355,32 @@ int
 testGetOperandBytes(u8 opcode)
 {
     addrmode_e addrmode = cpu_instrtable_[opcode].Addrmode;
-    switch (addrmode)
-    {
-        case AM_IMP:
-        case AM_ACC:
-            return 0;
-            break;
+    switch (addrmode) {
+    case AM_IMP:
+    case AM_ACC:
+        return 0;
+        break;
 
-        case AM_IMM:
-        case AM_ZP0:
-        case AM_ZPX:
-        case AM_ZPY:
-        case AM_IZX:
-        case AM_IZY:
-        case AM_REL:
-            return 1;
-            break;
+    case AM_IMM:
+    case AM_ZP0:
+    case AM_ZPX:
+    case AM_ZPY:
+    case AM_IZX:
+    case AM_IZY:
+    case AM_REL:
+        return 1;
+        break;
 
-        case AM_ABS:
-        case AM_ABX:
-        case AM_ABY:
-        case AM_IND:
-            return 2;
-            break;
+    case AM_ABS:
+    case AM_ABX:
+    case AM_ABY:
+    case AM_IND:
+        return 2;
+        break;
 
-        default:
-            return 0; // absurd value
-            break;
+    default:
+        return 0; // absurd value
+        break;
     }
 }
 
@@ -414,16 +388,14 @@ u8
 cpu_getb_(const cpu_s *self, addr_t addr)
 {
     // Mask out read
-    if (self->maskReadTmp_)
-    {
+    if (self->maskReadTmp_) {
         // Whatever can be returned, since after CPU resumes it will still do it
         // again (of course without "self->maskReadTmp_" set)
         return 0x00;
     }
 
     addr_t realaddr = addr;
-    if (NH_PPU_REG_ADDR_HEAD <= addr && addr <= NH_PPU_REG_ADDR_TAIL)
-    {
+    if (NH_PPU_REG_ADDR_HEAD <= addr && addr <= NH_PPU_REG_ADDR_TAIL) {
         realaddr = (addr & NH_PPU_REG_ADDR_MASK) | NH_PPU_REG_ADDR_HEAD;
     }
 
@@ -438,17 +410,12 @@ cpu_getb_(const cpu_s *self, addr_t addr)
      * controllers only see a single read for each contiguous set of reads of a
      * joypad register. */
     if (NH_CTRL1_REG_ADDR == realaddr &&
-        self->prevJoy1Read_ + 1 == self->cycle_)
-    {
+        self->prevJoy1Read_ + 1 == self->cycle_) {
         byte = mmem_GetLatch(self->mmem_);
-    }
-    else if (NH_CTRL2_REG_ADDR == realaddr &&
-             self->prevJoy2Read_ + 1 == self->cycle_)
-    {
+    } else if (NH_CTRL2_REG_ADDR == realaddr &&
+               self->prevJoy2Read_ + 1 == self->cycle_) {
         byte = mmem_GetLatch(self->mmem_);
-    }
-    else
-    {
+    } else {
         bool retainLatch = false;
         u8 prevLatch = 0;
         bool returnLatch = false;
@@ -457,51 +424,46 @@ cpu_getb_(const cpu_s *self, addr_t addr)
         // 1) dmc_dma_during_read4/dma_2007_read.nes
         // 2) dmc_dma_during_read4/double_2007_read.nes
         if (NH_PPUDATA_ADDR == realaddr &&
-            self->prevPpudataRead_ + 1 == self->cycle_)
-        {
+            self->prevPpudataRead_ + 1 == self->cycle_) {
             prevLatch = mmem_GetLatch(self->mmem_);
             retainLatch = true;
             returnLatch = true;
         }
 
         NHErr err = mmem_GetB(self->mmem_, addr, &byte);
-        if (NH_FAILED(err))
-        {
+        if (NH_FAILED(err)) {
             ASSERT_ERROR(self->logger_,
                          "Invalid memory read: " ADDRFMT ", " NHERRFMT, addr,
                          err);
             byte = 0xFF; // Apparent value
         }
 
-        if (retainLatch)
-        {
+        if (retainLatch) {
             mmem_OverrideLatch(self->mmem_, prevLatch);
         }
-        if (returnLatch)
-        {
+        if (returnLatch) {
             byte = mmem_GetLatch(self->mmem_);
         }
     }
 
-    switch (realaddr)
-    {
-        case NH_PPUSTATUS_ADDR:
-            ((cpu_s *)self)->ppustatReadTmp_ = true;
-            break;
-        case NH_PPUDATA_ADDR:
-            // Assuming cpu_getb_(self,) is called at most once per CPU cycle
-            ((cpu_s *)self)->prevPpudataRead_ = self->cycle_;
-            break;
-        case NH_CTRL1_REG_ADDR:
-            // Assuming cpu_getb_(self,) is called at most once per CPU cycle
-            ((cpu_s *)self)->prevJoy1Read_ = self->cycle_;
-            break;
-        case NH_CTRL2_REG_ADDR:
-            // Assuming cpu_getb_(self,) is called at most once per CPU cycle
-            ((cpu_s *)self)->prevJoy2Read_ = self->cycle_;
-            break;
-        default:
-            break;
+    switch (realaddr) {
+    case NH_PPUSTATUS_ADDR:
+        ((cpu_s *)self)->ppustatReadTmp_ = true;
+        break;
+    case NH_PPUDATA_ADDR:
+        // Assuming cpu_getb_(self,) is called at most once per CPU cycle
+        ((cpu_s *)self)->prevPpudataRead_ = self->cycle_;
+        break;
+    case NH_CTRL1_REG_ADDR:
+        // Assuming cpu_getb_(self,) is called at most once per CPU cycle
+        ((cpu_s *)self)->prevJoy1Read_ = self->cycle_;
+        break;
+    case NH_CTRL2_REG_ADDR:
+        // Assuming cpu_getb_(self,) is called at most once per CPU cycle
+        ((cpu_s *)self)->prevJoy2Read_ = self->cycle_;
+        break;
+    default:
+        break;
     }
 
     return byte;
@@ -515,12 +477,10 @@ cpu_setb_(cpu_s *self, addr_t addr, u8 b)
     self->writeTickTmp_ = true;
 
     // At hardware, this is done by setting to line to read instead of write
-    if (!self->irqNoMemWrite_)
-    {
+    if (!self->irqNoMemWrite_) {
         NHErr err = membase_SetB(&self->mmem_->Base, addr, b);
         if (NH_FAILED(err) && err == NH_ERR_READ_ONLY &&
-            err == NH_ERR_UNAVAILABLE)
-        {
+            err == NH_ERR_UNAVAILABLE) {
             ASSERT_ERROR(self->logger_,
                          "Invalid memory write: " ADDRFMT ", " NHERRFMT, addr,
                          err);
@@ -604,27 +564,22 @@ cpu_pollInterrupt_(cpu_s *self)
      */
     // Already pending interrupt sequence for execution next.
     bool pendingAlready = self->irqPcNoIncTmp_;
-    if (pendingAlready)
-    {
+    if (pendingAlready) {
         return;
     }
 
     // @TEST: a) RESET has highest priority? b)RESET is like others, polled only
     // at certain points?
-    if (self->resetSig_)
-    {
+    if (self->resetSig_) {
         self->irqPcNoIncTmp_ = true;
         self->irqNoMemWriteTmp_ = true;
     }
     // NMI has higher precedence than IRQ
     // https://www.nesdev.org/wiki/NMI
-    else if (self->nmiSig_)
-    {
+    else if (self->nmiSig_) {
         self->irqPcNoIncTmp_ = true;
         self->isNmiTmp_ = true;
-    }
-    else if (self->irqSig_)
-    {
+    } else if (self->irqSig_) {
         self->irqPcNoIncTmp_ = true;
     }
 }

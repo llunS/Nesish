@@ -29,7 +29,8 @@ extern "C" void
 nh_on_game_opened(const char *);
 #endif
 
-namespace sh {
+namespace sh
+{
 
 struct Renderer;
 struct AudioData;

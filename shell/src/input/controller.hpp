@@ -6,7 +6,8 @@
 
 #include <array>
 
-namespace sh {
+namespace sh
+{
 
 typedef int VirtualKey;
 typedef std::array<VirtualKey, NH_KEYS> KeyMapping;

@@ -15,8 +15,7 @@ bool
 mmem_Init(mmem_s *self, NHLogger *logger)
 {
     if (!membase_Init(&self->Base, NH_ADDRESSABLE_SIZE, MMP_SIZE, MMP_NAH,
-                      logger))
-    {
+                      logger)) {
         return false;
     }
 
@@ -45,14 +44,10 @@ mmem_GetB(const mmem_s *self, addr_t addr, u8 *val)
 {
     // https://www.nesdev.org/wiki/Open_bus_behavior
     NHErr err = membase_GetB(&self->Base, addr, val);
-    if (!NH_FAILED(err))
-    {
+    if (!NH_FAILED(err)) {
         ((mmem_s *)self)->readlatch_ = *val;
-    }
-    else
-    {
-        if (err == NH_ERR_UNAVAILABLE || err == NH_ERR_WRITE_ONLY)
-        {
+    } else {
+        if (err == NH_ERR_UNAVAILABLE || err == NH_ERR_WRITE_ONLY) {
             *val = self->readlatch_;
             err = NH_ERR_OK;
         }
@@ -75,14 +70,12 @@ mmem_OverrideLatch(mmem_s *self, u8 val)
 NHErr
 mmem_SetBulk(mmem_s *self, addr_t begin, addr_t end, u8 val)
 {
-    if (begin >= end)
-    {
+    if (begin >= end) {
         return NH_ERR_INVALID_ARGUMENT;
     }
 
     // optimize only simple cases for now.
-    if (begin < NH_INTERNAL_RAM_SIZE && end < NH_INTERNAL_RAM_SIZE)
-    {
+    if (begin < NH_INTERNAL_RAM_SIZE && end < NH_INTERNAL_RAM_SIZE) {
         memset(self->ram_ + begin, val, end - begin);
         return NH_ERR_OK;
     }
